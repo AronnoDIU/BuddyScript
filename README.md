@@ -13,6 +13,8 @@ This project was converted from static HTML/CSS/JS into a full-stack app:
 - Composer `2+`
 - Node.js `18+` and npm
 - MySQL `8+` running locally
+- PHP must have the `pdo_mysql` extension enabled for the CLI binary used by `npm run dev`
+- PHP must also have the XML extension enabled so Symfony's serializer can run without `XML_PI_NODE` errors
 
 ## Environment Setup
 
@@ -23,6 +25,8 @@ cp backend/.env backend/.env.local
 ```
 
 2. Ensure `DATABASE_URL` in `backend/.env.local` points to your MySQL instance.
+3. If migrations fail with `could not find driver`, install the PHP MySQL driver for your PHP 8.5 CLI package (for example `php8.5-mysql` on Debian/Ubuntu) and verify it with `php -m | grep pdo_mysql`.
+4. If the backend fails with `Undefined constant "XML_PI_NODE"`, install the PHP XML package for your PHP 8.5 CLI package (for example `php8.5-xml` on Debian/Ubuntu) and verify it with `php -r 'var_dump(defined("XML_PI_NODE"));'`.
 
 ## Run Everything With One Command
 

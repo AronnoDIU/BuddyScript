@@ -62,6 +62,7 @@ export default function FeedPage() {
   const [visibility, setVisibility] = useState('public');
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const [commentTextByPost, setCommentTextByPost] = useState({});
 
@@ -92,16 +93,15 @@ export default function FeedPage() {
     }
 
     setLoading(true);
+    setError('');
     try {
-      await api.post('/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await api.post('/posts', formData);
       setContent('');
       setVisibility('public');
       setImage(null);
       await loadData();
+    } catch (submitError) {
+      setError(submitError.response?.data?.message || 'Failed to create post.');
     } finally {
       setLoading(false);
     }
@@ -153,6 +153,7 @@ export default function FeedPage() {
 
         <div className="_feed_inner_text_area _b_radious6 _padd_t24 _padd_b24 _padd_r24 _padd_l24 _mar_b16">
           <form onSubmit={onCreatePost}>
+            {error && <div className="alert alert-danger">{error}</div>}
             <textarea
               className="form-control"
               rows="4"

@@ -4493,6 +4493,9 @@
           <argument key="Doctrine\DBAL\Platforms\PostgreSQLPlatform">4</argument>
         </argument>
       </call>
+      <call method="enableNativeLazyObjects">
+        <argument>false</argument>
+      </call>
       <call method="setRepositoryFactory">
         <argument type="service" id="doctrine.orm.container_repository_factory"/>
       </call>

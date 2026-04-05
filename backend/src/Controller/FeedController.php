@@ -285,7 +285,20 @@ class FeedController extends AbstractController
 
     private function storePostImage(UploadedFile $file): ?string
     {
-        if (!in_array($file->getMimeType(), ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], true)) {
+        $imageInfo = getimagesize($file->getPathname());
+        if ($imageInfo === false || !isset($imageInfo[2])) {
+            return null;
+        }
+
+        $extensionMap = [
+            IMAGETYPE_PNG => 'png',
+            IMAGETYPE_JPEG => 'jpg',
+            IMAGETYPE_WEBP => 'webp',
+            IMAGETYPE_GIF => 'gif',
+        ];
+
+        $extension = $extensionMap[$imageInfo[2]] ?? null;
+        if ($extension === null) {
             return null;
         }
 
@@ -298,7 +311,7 @@ class FeedController extends AbstractController
             throw new \RuntimeException(sprintf('Directory "%s" was not created', $uploadDir));
         }
 
-        $name = Uuid::v7()->toRfc4122() . '.' . ($file->guessExtension() ?: 'jpg');
+        $name = Uuid::v7()->toRfc4122() . '.' . $extension;
         $file->move($uploadDir, $name);
 
         return '/uploads/posts/' . $name;
