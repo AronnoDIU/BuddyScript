@@ -78,7 +78,7 @@ class FeedController extends AbstractController
             return $this->json(['errors' => (string) $errors], 422);
         }
 
-        $post = (new Post())
+        $post = new Post()
             ->setAuthor($user)
             ->setContent($content)
             ->setVisibility($visibility);
@@ -110,12 +110,16 @@ class FeedController extends AbstractController
             return $this->json(['message' => 'Post not found.'], 404);
         }
 
-        $content = trim((string) ((json_decode($request->getContent(), true) ?? [])['content'] ?? ''));
+        try {
+            $content = trim((string)((json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR) ?? [])['content'] ?? ''));
+        } catch (\JsonException $e) {
+            return $this->json(['message' => 'Invalid JSON.'], 422);
+        }
         if ($content === '') {
             return $this->json(['message' => 'Comment is required.'], 422);
         }
 
-        $comment = (new Comment())
+        $comment = new Comment()
             ->setPost($post)
             ->setAuthor($user)
             ->setContent($content);
@@ -143,12 +147,16 @@ class FeedController extends AbstractController
             return $this->json(['message' => 'Comment not found.'], 404);
         }
 
-        $content = trim((string) ((json_decode($request->getContent(), true) ?? [])['content'] ?? ''));
+        try {
+            $content = trim((string)((json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR) ?? [])['content'] ?? ''));
+        } catch (\JsonException $e) {
+            return $this->json(['message' => 'Invalid JSON.'], 422);
+        }
         if ($content === '') {
             return $this->json(['message' => 'Reply is required.'], 422);
         }
 
-        $reply = (new Comment())
+        $reply = new Comment()
             ->setPost($post)
             ->setParent($parent)
             ->setAuthor($user)
@@ -178,7 +186,7 @@ class FeedController extends AbstractController
         if ($like instanceof PostLike) {
             $this->entityManager->remove($like);
         } else {
-            $like = (new PostLike())
+            $like = new PostLike()
                 ->setPost($post)
                 ->setUser($user);
             $this->entityManager->persist($like);
@@ -213,7 +221,7 @@ class FeedController extends AbstractController
         if ($like instanceof CommentLike) {
             $this->entityManager->remove($like);
         } else {
-            $like = (new CommentLike())
+            $like = new CommentLike()
                 ->setComment($comment)
                 ->setUser($user);
             $this->entityManager->persist($like);
@@ -272,7 +280,7 @@ class FeedController extends AbstractController
 
     private function canAccessPost(Post $post, User $viewer): bool
     {
-        return $post->getVisibility() === Post::VISIBILITY_PUBLIC || $post->getAuthor()->getId()->equals($viewer->getId());
+        return $post->getVisibility() === Post::VISIBILITY_PUBLIC || $post->getAuthor()->id->equals($viewer->id);
     }
 
     private function storePostImage(UploadedFile $file): ?string
@@ -286,8 +294,8 @@ class FeedController extends AbstractController
         }
 
         $uploadDir = $this->projectDir . '/public/uploads/posts';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0775, true);
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $uploadDir));
         }
 
         $name = Uuid::v7()->toRfc4122() . '.' . ($file->guessExtension() ?: 'jpg');

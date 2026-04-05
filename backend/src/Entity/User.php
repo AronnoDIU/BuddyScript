@@ -20,7 +20,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    private Uuid $id;
+    public Uuid $id {
+        get {
+            return $this->id;
+        }
+    }
 
     #[ORM\Column(length: 120)]
     private string $firstName;
@@ -35,18 +39,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private string $password = '';
 
     #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
+    private \DateTimeImmutable $createdAt {
+        get {
+            return $this->createdAt;
+        }
+    }
 
     /** @var list<string> */
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
     /** @var Collection<int, Post> */
-    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Post::class)]
+    #[ORM\OneToMany(targetEntity: Post::class, mappedBy: 'author')]
     private Collection $posts;
 
     /** @var Collection<int, Comment> */
-    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Comment::class)]
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'author')]
     private Collection $comments;
 
     public function __construct()
@@ -55,11 +63,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->createdAt = new \DateTimeImmutable();
         $this->posts = new ArrayCollection();
         $this->comments = new ArrayCollection();
-    }
-
-    public function getId(): Uuid
-    {
-        return $this->id;
     }
 
     public function getFirstName(): string
@@ -140,14 +143,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
     }
 
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
     public function getDisplayName(): string
     {
         return trim($this->firstName . ' ' . $this->lastName);
     }
 }
-

@@ -12,12 +12,16 @@ use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: CommentRepository::class)]
-#[ORM\Index(columns: ['created_at'], name: 'idx_comment_created_at')]
+#[ORM\Index(name: 'idx_comment_created_at', columns: ['created_at'])]
 class Comment
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    private Uuid $id;
+    public Uuid $id {
+        get {
+            return $this->id;
+        }
+    }
 
     #[ORM\ManyToOne(targetEntity: Post::class, inversedBy: 'comments')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -32,19 +36,31 @@ class Comment
     private ?self $parent = null;
 
     /** @var Collection<int, self> */
-    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class, orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent', orphanRemoval: true)]
     #[ORM\OrderBy(['createdAt' => 'ASC'])]
-    private Collection $replies;
+    public Collection $replies {
+        get {
+            return $this->replies;
+        }
+    }
 
     #[ORM\Column(type: 'text')]
     private string $content;
 
     #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
+    public \DateTimeImmutable $createdAt {
+        get {
+            return $this->createdAt;
+        }
+    }
 
     /** @var Collection<int, CommentLike> */
-    #[ORM\OneToMany(mappedBy: 'comment', targetEntity: CommentLike::class, orphanRemoval: true)]
-    private Collection $likes;
+    #[ORM\OneToMany(targetEntity: CommentLike::class, mappedBy: 'comment', orphanRemoval: true)]
+    public Collection $likes {
+        get {
+            return $this->likes;
+        }
+    }
 
     public function __construct()
     {
@@ -52,11 +68,6 @@ class Comment
         $this->createdAt = new \DateTimeImmutable();
         $this->replies = new ArrayCollection();
         $this->likes = new ArrayCollection();
-    }
-
-    public function getId(): Uuid
-    {
-        return $this->id;
     }
 
     public function getPost(): Post
@@ -106,22 +117,4 @@ class Comment
 
         return $this;
     }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    /** @return Collection<int, self> */
-    public function getReplies(): Collection
-    {
-        return $this->replies;
-    }
-
-    /** @return Collection<int, CommentLike> */
-    public function getLikes(): Collection
-    {
-        return $this->likes;
-    }
 }
-

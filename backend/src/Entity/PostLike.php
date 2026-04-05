@@ -16,7 +16,11 @@ class PostLike
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    private Uuid $id;
+    private Uuid $id {
+        get {
+            return $this->id;
+        }
+    }
 
     #[ORM\ManyToOne(targetEntity: Post::class, inversedBy: 'likes')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -27,17 +31,16 @@ class PostLike
     private User $user;
 
     #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
+    private \DateTimeImmutable $createdAt {
+        get {
+            return $this->createdAt;
+        }
+    }
 
     public function __construct()
     {
         $this->id = Uuid::v7();
         $this->createdAt = new \DateTimeImmutable();
-    }
-
-    public function getId(): Uuid
-    {
-        return $this->id;
     }
 
     public function getPost(): Post
@@ -63,10 +66,4 @@ class PostLike
 
         return $this;
     }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
 }
-

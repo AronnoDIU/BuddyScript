@@ -33,7 +33,7 @@ class AuthController extends AbstractController
     public function register(Request $request): JsonResponse
     {
         /** @var array<string, mixed> $payload */
-        $payload = json_decode($request->getContent(), true) ?? [];
+        $payload = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR) ?? [];
 
         $constraints = new Assert\Collection([
             'firstName' => [new Assert\Required([new Assert\NotBlank(), new Assert\Length(max: 120)])],
@@ -51,7 +51,7 @@ class AuthController extends AbstractController
             return $this->json(['message' => 'Email is already in use.'], 409);
         }
 
-        $user = (new User())
+        $user = new User()
             ->setFirstName((string) $payload['firstName'])
             ->setLastName((string) $payload['lastName'])
             ->setEmail((string) $payload['email']);

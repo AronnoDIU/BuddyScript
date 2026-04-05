@@ -25,4 +25,3 @@ class PostLikeRepository extends ServiceEntityRepository
         return $this->findOneBy(['post' => $post, 'user' => $user]);
     }
 }
-

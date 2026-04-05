@@ -16,7 +16,7 @@ class ApiFormatter
     public function user(User $user): array
     {
         return [
-            'id' => $user->getId()->toRfc4122(),
+            'id' => $user->id->toRfc4122(),
             'firstName' => $user->getFirstName(),
             'lastName' => $user->getLastName(),
             'displayName' => $user->getDisplayName(),
@@ -31,15 +31,15 @@ class ApiFormatter
     {
         $likes = [];
         $likedByMe = false;
-        foreach ($post->getLikes() as $like) {
+        foreach ($post->likes as $like) {
             $likes[] = $this->user($like->getUser());
-            if ($like->getUser()->getId()->equals($viewer->getId())) {
+            if ($like->getUser()->id->equals($viewer->id)) {
                 $likedByMe = true;
             }
         }
 
         $comments = [];
-        foreach ($post->getComments() as $comment) {
+        foreach ($post->comments as $comment) {
             if ($comment->getParent() !== null) {
                 continue;
             }
@@ -47,11 +47,11 @@ class ApiFormatter
         }
 
         return [
-            'id' => $post->getId()->toRfc4122(),
+            'id' => $post->id->toRfc4122(),
             'content' => $post->getContent(),
             'visibility' => $post->getVisibility(),
             'imageUrl' => $post->getImagePath(),
-            'createdAt' => $post->getCreatedAt()->format(DATE_ATOM),
+            'createdAt' => $post->createdAt->format(DATE_ATOM),
             'author' => $this->user($post->getAuthor()),
             'likesCount' => count($likes),
             'likes' => $likes,
@@ -68,22 +68,22 @@ class ApiFormatter
         $likes = [];
         $likedByMe = false;
 
-        foreach ($comment->getLikes() as $like) {
+        foreach ($comment->likes as $like) {
             $likes[] = $this->user($like->getUser());
-            if ($like->getUser()->getId()->equals($viewer->getId())) {
+            if ($like->getUser()->id->equals($viewer->id)) {
                 $likedByMe = true;
             }
         }
 
         $replies = [];
-        foreach ($comment->getReplies() as $reply) {
+        foreach ($comment->replies as $reply) {
             $replies[] = $this->comment($reply, $viewer);
         }
 
         return [
-            'id' => $comment->getId()->toRfc4122(),
+            'id' => $comment->id->toRfc4122(),
             'content' => $comment->getContent(),
-            'createdAt' => $comment->getCreatedAt()->format(DATE_ATOM),
+            'createdAt' => $comment->createdAt->format(DATE_ATOM),
             'author' => $this->user($comment->getAuthor()),
             'likesCount' => count($likes),
             'likes' => $likes,
@@ -92,4 +92,3 @@ class ApiFormatter
         ];
     }
 }
-

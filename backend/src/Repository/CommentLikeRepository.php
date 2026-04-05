@@ -25,4 +25,3 @@ class CommentLikeRepository extends ServiceEntityRepository
         return $this->findOneBy(['comment' => $comment, 'user' => $user]);
     }
 }
-

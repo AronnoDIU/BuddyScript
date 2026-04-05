@@ -12,16 +12,20 @@ use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: PostRepository::class)]
-#[ORM\Index(columns: ['created_at'], name: 'idx_post_created_at')]
-#[ORM\Index(columns: ['visibility'], name: 'idx_post_visibility')]
+#[ORM\Index(name: 'idx_post_created_at', columns: ['created_at'])]
+#[ORM\Index(name: 'idx_post_visibility', columns: ['visibility'])]
 class Post
 {
-    public const VISIBILITY_PUBLIC = 'public';
-    public const VISIBILITY_PRIVATE = 'private';
+    public const string VISIBILITY_PUBLIC = 'public';
+    public const string VISIBILITY_PRIVATE = 'private';
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    private Uuid $id;
+    public Uuid $id {
+        get {
+            return $this->id;
+        }
+    }
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'posts')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -37,15 +41,27 @@ class Post
     private ?string $imagePath = null;
 
     #[ORM\Column]
-    private \DateTimeImmutable $createdAt;
+    public \DateTimeImmutable $createdAt {
+        get {
+            return $this->createdAt;
+        }
+    }
 
     /** @var Collection<int, Comment> */
-    #[ORM\OneToMany(mappedBy: 'post', targetEntity: Comment::class, orphanRemoval: true)]
-    private Collection $comments;
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'post', orphanRemoval: true)]
+    public Collection $comments {
+        get {
+            return $this->comments;
+        }
+    }
 
     /** @var Collection<int, PostLike> */
-    #[ORM\OneToMany(mappedBy: 'post', targetEntity: PostLike::class, orphanRemoval: true)]
-    private Collection $likes;
+    #[ORM\OneToMany(targetEntity: PostLike::class, mappedBy: 'post', orphanRemoval: true)]
+    public Collection $likes {
+        get {
+            return $this->likes;
+        }
+    }
 
     public function __construct()
     {
@@ -53,11 +69,6 @@ class Post
         $this->createdAt = new \DateTimeImmutable();
         $this->comments = new ArrayCollection();
         $this->likes = new ArrayCollection();
-    }
-
-    public function getId(): Uuid
-    {
-        return $this->id;
     }
 
     public function getAuthor(): User
@@ -108,22 +119,4 @@ class Post
 
         return $this;
     }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    /** @return Collection<int, Comment> */
-    public function getComments(): Collection
-    {
-        return $this->comments;
-    }
-
-    /** @return Collection<int, PostLike> */
-    public function getLikes(): Collection
-    {
-        return $this->likes;
-    }
 }
-
