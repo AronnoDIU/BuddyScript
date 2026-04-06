@@ -26,6 +26,28 @@ class PostRepository extends ServiceEntityRepository
      */
     public function findFeedForUser(User $viewer, int $limit = 50): array
     {
+        $commentsByViewerDql = $this->getEntityManager()->createQueryBuilder()
+            ->select('1')
+            ->from('App\\Entity\\Comment', 'vc')
+            ->where('vc.post = p')
+            ->andWhere('vc.author = :viewer')
+            ->getDQL();
+
+        $postIdRows = $this->createQueryBuilder('p')
+            ->select('p.id AS id')
+            ->where('p.visibility = :public OR p.author = :viewer OR EXISTS(' . $commentsByViewerDql . ')')
+            ->setParameter('public', Post::VISIBILITY_PUBLIC)
+            ->setParameter('viewer', $viewer)
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getScalarResult();
+
+        $postIds = array_values(array_filter(array_map(static fn (array $row): ?string => $row['id'] ?? null, $postIdRows)));
+        if ($postIds === []) {
+            return [];
+        }
+
         $qb = $this->createQueryBuilder('p')
             ->leftJoin('p.author', 'a')->addSelect('a')
             ->leftJoin('p.likes', 'pl')->addSelect('pl')
@@ -38,13 +60,16 @@ class PostRepository extends ServiceEntityRepository
             ->leftJoin('r.author', 'ra')->addSelect('ra')
             ->leftJoin('r.likes', 'rl')->addSelect('rl')
             ->leftJoin('rl.user', 'rlu')->addSelect('rlu')
-            ->where('p.visibility = :public OR p.author = :viewer')
-            ->setParameter('public', Post::VISIBILITY_PUBLIC)
-            ->setParameter('viewer', $viewer)
+            ->leftJoin('r.replies', 'rr')->addSelect('rr')
+            ->leftJoin('rr.author', 'rra')->addSelect('rra')
+            ->leftJoin('rr.likes', 'rrl')->addSelect('rrl')
+            ->leftJoin('rrl.user', 'rrlu')->addSelect('rrlu')
+            ->where('p.id IN (:ids)')
+            ->setParameter('ids', $postIds)
             ->orderBy('p.createdAt', 'DESC')
             ->addOrderBy('c.createdAt', 'ASC')
             ->addOrderBy('r.createdAt', 'ASC')
-            ->setMaxResults($limit);
+            ->addOrderBy('rr.createdAt', 'ASC');
 
         return $qb->getQuery()->getResult();
     }
@@ -61,10 +86,10 @@ class PostRepository extends ServiceEntityRepository
             ->innerJoin('post.author', 'author')
             ->addSelect('author')
             ->where('post.id = :id')
-            ->andWhere('post.visibility = :publicVisibility OR author = :viewer')
+            ->andWhere('post.visibility = :publicVisibility OR author.id = :viewerId')
             ->setParameter('id', $uuid, UuidType::NAME)
             ->setParameter('publicVisibility', Post::VISIBILITY_PUBLIC)
-            ->setParameter('viewer', $user)
+            ->setParameter('viewerId', $user->id, UuidType::NAME)
             ->getQuery()
             ->getOneOrNullResult();
     }

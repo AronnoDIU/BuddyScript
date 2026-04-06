@@ -29,7 +29,7 @@ body {
   top: calc(100% + 10px);
   background: #fff;
   border-radius: 6px;
-  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  box-shadow: rgba(149, 157, 165, 0.2) 0 8px 24px;
   padding: 16px;
   width: 220px;
   z-index: 1050;
@@ -166,7 +166,7 @@ body {
   top: 100%;
   background: #fff;
   border-radius: 6px;
-  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  box-shadow: rgba(149, 157, 165, 0.2) 0 8px 24px;
   padding: 8px;
   width: 180px;
   z-index: 100;
@@ -280,6 +280,23 @@ body {
   color: #1890FF;
 }
 
+/* Keep actions clickable/flowed for nested replies */
+._comment_details,
+._total_reactions,
+._comment_reply,
+._comment_reply_num {
+  position: static;
+  bottom: auto;
+}
+
+._comment_reply {
+  margin-top: 6px;
+}
+
+._comment_reply_list {
+  flex-wrap: wrap;
+}
+
 ._time_link {
   color: #999 !important;
 }
@@ -331,6 +348,177 @@ body {
 ._feed_inner_timeline_total_reacts_para1 a span {
   font-weight: 500;
   color: #444;
+}
+
+/* Like preview / liker modal */
+._like_preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0 0 10px;
+  text-align: left;
+  color: #666;
+}
+
+._like_preview_avatars {
+  display: flex;
+  align-items: center;
+}
+
+._like_preview_avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: -6px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1890ff, #7f53ac);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+._like_preview_avatar:first-child {
+  margin-left: 0;
+}
+
+._like_preview_text {
+  font-size: 13px;
+  line-height: 1.35;
+  color: #666;
+}
+
+._post_like_preview,
+._comment_like_preview {
+  cursor: pointer;
+}
+
+._comment_reply_action,
+._comment_reply_action_active {
+  cursor: pointer;
+}
+
+._comment_reply_action_active {
+  color: #1890ff !important;
+  font-weight: 600;
+}
+
+._feed_inner_timeline_reaction button:disabled,
+._feed_inner_comment_box_icon_btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+._likers_modal_backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 20, 40, 0.45);
+  z-index: 2000;
+}
+
+._likers_modal {
+  width: min(100%, 460px);
+  max-height: min(80vh, 640px);
+  overflow: hidden;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.24);
+  display: flex;
+  flex-direction: column;
+}
+
+._likers_modal_header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+._likers_modal_title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+._likers_modal_subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+._likers_modal_close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 24px;
+  line-height: 1;
+}
+
+._likers_modal_body {
+  overflow: auto;
+  padding: 8px 20px 20px;
+}
+
+._likers_modal_item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+._likers_modal_item:last-child {
+  border-bottom: none;
+}
+
+._likers_modal_avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1890ff, #0f766e);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+._likers_modal_item_txt h5 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+._likers_modal_item_txt p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+  word-break: break-all;
+}
+
+._likers_modal_empty {
+  margin: 24px 0 0;
+  color: #6b7280;
 }
 
 /* Mobile story */

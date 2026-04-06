@@ -9,6 +9,7 @@ use App\Entity\Post;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -29,16 +30,21 @@ class CommentRepository extends ServiceEntityRepository
             return null;
         }
 
-        $comment = $this->find($uuid);
-        if (!$comment instanceof Comment) {
-            return null;
-        }
-
-        $post = $comment->getPost();
-        if ($post->getVisibility() === Post::VISIBILITY_PUBLIC || $post->getAuthor()->id->equals($user->id)) {
-            return $comment;
-        }
-
-        return null;
+        return $this->createQueryBuilder('comment')
+            ->innerJoin('comment.post', 'post')
+            ->addSelect('post')
+            ->innerJoin('post.author', 'author')
+            ->addSelect('author')
+            ->innerJoin('comment.author', 'commentAuthor')
+            ->addSelect('commentAuthor')
+            ->leftJoin('post.comments', 'viewerComments', 'WITH', 'viewerComments.author = :viewer')
+            ->where('comment.id = :id')
+            ->andWhere('(post.visibility = :publicVisibility OR author.id = :viewerId OR commentAuthor.id = :viewerId OR viewerComments.id IS NOT NULL)')
+            ->setParameter('id', $uuid, UuidType::NAME)
+            ->setParameter('publicVisibility', Post::VISIBILITY_PUBLIC)
+            ->setParameter('viewer', $user)
+            ->setParameter('viewerId', $user->id, UuidType::NAME)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

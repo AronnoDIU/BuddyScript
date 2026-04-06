@@ -1,8 +1,97 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, clearToken, resolveMediaUrl } from '../api';
 
+const getDisplayName = (user) => user?.displayName || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Unknown user';
+
+const getInitials = (user) => {
+  const parts = getDisplayName(user).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return '?';
+  }
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || '?';
+};
+
+const describeLikers = (likes = []) => {
+  if (likes.length === 0) {
+    return '';
+  }
+
+  const names = likes.slice(0, 3).map(getDisplayName);
+  if (likes.length === 1) {
+    return `${names[0]} liked this`;
+  }
+
+  if (likes.length === 2) {
+    return `${names[0]} and ${names[1]} liked this`;
+  }
+
+  const remaining = likes.length - 2;
+  return `${names[0]}, ${names[1]} and ${remaining} other${remaining === 1 ? '' : 's'} liked this`;
+};
+
+function LikePreview({ likes = [], onClick, className = '' }) {
+  if (!likes.length) {
+    return null;
+  }
+
+  return (
+    <button type="button" className={`_like_preview ${className}`.trim()} onClick={onClick}>
+      <span className="_like_preview_avatars">
+        {likes.slice(0, 3).map((user) => (
+          <span className="_like_preview_avatar" key={user.id} title={getDisplayName(user)}>
+            {getInitials(user)}
+          </span>
+        ))}
+      </span>
+      <span className="_like_preview_text">{describeLikers(likes)}</span>
+    </button>
+  );
+}
+
+function LikersModal({ viewer, onClose }) {
+  if (viewer === null) {
+    return null;
+  }
+
+  return (
+    <div className="_likers_modal_backdrop" onClick={onClose} role="presentation">
+      <div className="_likers_modal" onClick={(event) => event.stopPropagation()}>
+        <div className="_likers_modal_header">
+          <div>
+            <h4 className="_likers_modal_title">{viewer.title}</h4>
+            <p className="_likers_modal_subtitle">{viewer.likes.length} like{viewer.likes.length === 1 ? '' : 's'}</p>
+          </div>
+          <button type="button" className="_likers_modal_close" onClick={onClose} aria-label="Close likes viewer">
+            ×
+          </button>
+        </div>
+
+        <div className="_likers_modal_body">
+          {viewer.likes.length === 0 ? (
+            <p className="_likers_modal_empty">No likes yet.</p>
+          ) : (
+            viewer.likes.map((user) => (
+              <div className="_likers_modal_item" key={user.id}>
+                <div className="_likers_modal_avatar">{getInitials(user)}</div>
+                <div className="_likers_modal_item_txt">
+                  <h5>{getDisplayName(user)}</h5>
+                  <p>{user.email}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Comment Item ─────────────────────────────────────────────────── */
-function CommentItem({ comment, onToggleLike, onReply }) {
+function CommentItem({ comment, onToggleLike, onReply, onShowLikes }) {
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
@@ -65,12 +154,20 @@ function CommentItem({ comment, onToggleLike, onReply }) {
             </div>
             <span className="_total">{comment.likesCount || 0}</span>
           </div>
+          <LikePreview
+            likes={comment.likes || []}
+            onClick={() => onShowLikes?.({
+              title: 'People who liked this comment',
+              likes: comment.likes || [],
+            })}
+            className="_comment_like_preview"
+          />
           <div className="_comment_reply">
             <div className="_comment_reply_num">
               <ul className="_comment_reply_list">
                 <li>
                   <span
-                    style={{ cursor: 'pointer' }}
+                    className={comment.likedByMe ? '_comment_reply_action _comment_reply_action_active' : '_comment_reply_action'}
                     onClick={() => onToggleLike(comment.id)}
                   >
                     {comment.likedByMe ? 'Unlike.' : 'Like.'}
@@ -118,7 +215,7 @@ function CommentItem({ comment, onToggleLike, onReply }) {
 
         {comment.replies?.map((reply) => (
           <div className="ms-4 mt-2" key={reply.id}>
-            <CommentItem comment={reply} onToggleLike={onToggleLike} onReply={onReply} />
+            <CommentItem comment={reply} onToggleLike={onToggleLike} onReply={onReply} onShowLikes={onShowLikes} />
           </div>
         ))}
       </div>
@@ -127,15 +224,27 @@ function CommentItem({ comment, onToggleLike, onReply }) {
 }
 
 /* ─── Post Item ─────────────────────────────────────────────────────── */
-function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onReply }) {
+function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onReply, onShowLikes }) {
   const [commentText, setCommentText] = useState('');
+  const [commentError, setCommentError] = useState('');
+  const [isCommenting, setIsCommenting] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropRef = useRef(null);
 
-  const submitComment = () => {
+  const submitComment = async () => {
     if (!commentText.trim()) return;
-    onAddComment(post.id, commentText.trim());
-    setCommentText('');
+
+    setIsCommenting(true);
+    setCommentError('');
+    try {
+      await onAddComment(post.id, commentText.trim());
+      setCommentText('');
+    } catch (error) {
+      setCommentError(error.response?.data?.message || 'Failed to add comment.');
+    } finally {
+      setIsCommenting(false);
+    }
   };
 
   const handleCommentKey = (e) => {
@@ -229,12 +338,29 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
           </p>
         </div>
       </div>
+        <LikePreview
+          likes={post.likes || []}
+          onClick={() => onShowLikes?.({
+            title: 'People who liked this post',
+            likes: post.likes || [],
+          })}
+          className="_post_like_preview"
+        />
 
       {/* Reaction buttons */}
       <div className="_feed_inner_timeline_reaction">
         <button
+          type="button"
           className={`_feed_inner_timeline_reaction_emoji _feed_reaction${post.likedByMe ? ' _feed_reaction_active' : ''}`}
-          onClick={() => onToggleLike(post.id)}
+          onClick={async () => {
+            setIsLiking(true);
+            try {
+              await onToggleLike(post.id);
+            } finally {
+              setIsLiking(false);
+            }
+          }}
+          disabled={isLiking}
         >
           <span className="_feed_inner_timeline_reaction_link">
             <span>
@@ -294,8 +420,9 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
                 />
               </div>
             </div>
+            {commentError && <div className="alert alert-danger mt-2 mb-0 w-100">{commentError}</div>}
             <div className="_feed_inner_comment_box_icon">
-              <button type="submit" className="_feed_inner_comment_box_icon_btn">
+              <button type="submit" className="_feed_inner_comment_box_icon_btn" disabled={isCommenting}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="13" fill="none" viewBox="0 0 14 13">
                   <path fill="#000" fillOpacity=".46" fillRule="evenodd"
                     d="M6.37 7.879l2.438 3.955a.335.335 0 00.34.162c.068-.01.23-.05.289-.247l3.049-10.297a.348.348 0 00-.09-.35.341.341 0 00-.34-.088L1.75 4.03a.34.34 0 00-.247.289.343.343 0 00.16.347L5.666 7.17 9.2 3.597a.5.5 0 01.712.703L6.37 7.88z"
@@ -314,6 +441,7 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
               comment={comment}
               onToggleLike={onToggleCommentLike}
               onReply={onReply}
+              onShowLikes={onShowLikes}
             />
           ))}
         </div>
@@ -333,19 +461,96 @@ export default function FeedPage() {
   const [error, setError] = useState('');
   const [profileDropOpen, setProfileDropOpen] = useState(false);
   const [notifyDropOpen, setNotifyDropOpen] = useState(false);
+  const [likesViewer, setLikesViewer] = useState(null);
 
-  const mapComments = (comments, targetId, applyUpdate) => (
-    comments.map((comment) => {
-      const nextReplies = comment.replies ? mapComments(comment.replies, targetId, applyUpdate) : [];
-      const nextComment = nextReplies !== comment.replies ? { ...comment, replies: nextReplies } : comment;
+  const mapComments = (comments, targetId, applyUpdate) => {
+    let changed = false;
+
+    const nextComments = comments.map((comment) => {
+      let nextComment = comment;
+
+      if (comment.replies?.length) {
+        const nextReplies = mapComments(comment.replies, targetId, applyUpdate);
+        if (nextReplies !== comment.replies) {
+          nextComment = { ...nextComment, replies: nextReplies };
+          changed = true;
+        }
+      }
 
       if (comment.id !== targetId) {
         return nextComment;
       }
 
+      changed = true;
       return applyUpdate(nextComment);
-    })
-  );
+    });
+
+    return changed ? nextComments : comments;
+  };
+
+  const appendCommentToTree = (comments, parentId, newComment) => {
+    let changed = false;
+
+    const nextComments = comments.map((comment) => {
+      if (comment.id === parentId) {
+        changed = true;
+        return {
+          ...comment,
+          replies: [...(comment.replies || []), newComment],
+        };
+      }
+
+      if (!comment.replies?.length) {
+        return comment;
+      }
+
+      const nextReplies = appendCommentToTree(comment.replies, parentId, newComment);
+      if (nextReplies !== comment.replies) {
+        changed = true;
+        return { ...comment, replies: nextReplies };
+      }
+
+      return comment;
+    });
+
+    return changed ? nextComments : comments;
+  };
+
+  const updatePostsByCommentId = (prevPosts, commentId, applyUpdate) => {
+    let changed = false;
+
+    const nextPosts = prevPosts.map((post) => {
+      const currentComments = post.comments || [];
+      const nextComments = mapComments(currentComments, commentId, applyUpdate);
+
+      if (nextComments === currentComments) {
+        return post;
+      }
+
+      changed = true;
+      return { ...post, comments: nextComments };
+    });
+
+    return { nextPosts, changed };
+  };
+
+  const insertReplyIntoPosts = (prevPosts, parentId, reply) => {
+    let changed = false;
+
+    const nextPosts = prevPosts.map((post) => {
+      const currentComments = post.comments || [];
+      const nextComments = appendCommentToTree(currentComments, parentId, reply);
+
+      if (nextComments === currentComments) {
+        return post;
+      }
+
+      changed = true;
+      return { ...post, comments: nextComments };
+    });
+
+    return { nextPosts, changed };
+  };
 
   const loadData = async () => {
     const [meResponse, feedResponse] = await Promise.all([api.get('/me'), api.get('/feed')]);
@@ -372,11 +577,16 @@ export default function FeedPage() {
     setLoading(true);
     setError('');
     try {
-      await api.post('/posts', formData);
+      const response = await api.post('/posts', formData);
+      const createdPost = response.data?.post;
       setContent('');
       setVisibility('public');
       setImage(null);
-      await loadData();
+      if (createdPost) {
+        setPosts((prevPosts) => [createdPost, ...prevPosts]);
+      } else {
+        await loadData();
+      }
     } catch (submitError) {
       setError(submitError.response?.data?.message || 'Failed to create post.');
     } finally {
@@ -385,8 +595,19 @@ export default function FeedPage() {
   };
 
   const togglePostLike = async (postId) => {
-    await api.post(`/posts/${postId}/likes/toggle`);
-    await loadData();
+    try {
+      const response = await api.post(`/posts/${postId}/likes/toggle`);
+      const likes = response.data?.likes || [];
+      const liked = Boolean(response.data?.liked);
+
+      setPosts((prevPosts) => prevPosts.map((post) => (
+        post.id === postId
+          ? { ...post, likedByMe: liked, likes, likesCount: likes.length }
+          : post
+      )));
+    } catch (submitError) {
+      setError(submitError.response?.data?.message || 'Failed to toggle post like.');
+    }
   };
 
   const toggleCommentLike = async (commentId) => {
@@ -395,15 +616,22 @@ export default function FeedPage() {
       const likes = response.data?.likes || [];
       const liked = Boolean(response.data?.liked);
 
-      setPosts((prevPosts) => prevPosts.map((post) => ({
-        ...post,
-        comments: mapComments(post.comments || [], commentId, (comment) => ({
+      let changed = false;
+      setPosts((prevPosts) => {
+        const result = updatePostsByCommentId(prevPosts, commentId, (comment) => ({
           ...comment,
           likedByMe: liked,
           likes,
           likesCount: likes.length,
-        })),
-      })));
+        }));
+
+        changed = result.changed;
+        return result.nextPosts;
+      });
+
+      if (!changed) {
+        await loadData();
+      }
     } catch (submitError) {
       setError(submitError.response?.data?.message || 'Failed to toggle comment like.');
     }
@@ -411,8 +639,18 @@ export default function FeedPage() {
 
   const addComment = async (postId, text) => {
     try {
-      await api.post(`/posts/${postId}/comments`, { content: text });
-      await loadData();
+      const response = await api.post(`/posts/${postId}/comments`, { content: text });
+      const comment = response.data?.comment;
+
+      if (comment) {
+        setPosts((prevPosts) => prevPosts.map((post) => (
+          post.id === postId
+            ? { ...post, comments: [...(post.comments || []), comment] }
+            : post
+        )));
+      } else {
+        await loadData();
+      }
     } catch (submitError) {
       setError(submitError.response?.data?.message || 'Failed to add comment.');
       throw submitError;
@@ -421,8 +659,23 @@ export default function FeedPage() {
 
   const addReply = async (commentId, text) => {
     try {
-      await api.post(`/comments/${commentId}/replies`, { content: text });
-      await loadData();
+      const response = await api.post(`/comments/${commentId}/replies`, { content: text });
+      const reply = response.data?.reply;
+
+      if (reply) {
+        let changed = false;
+        setPosts((prevPosts) => {
+          const result = insertReplyIntoPosts(prevPosts, commentId, reply);
+          changed = result.changed;
+          return result.nextPosts;
+        });
+
+        if (!changed) {
+          await loadData();
+        }
+      } else {
+        await loadData();
+      }
     } catch (submitError) {
       setError(submitError.response?.data?.message || 'Failed to add reply.');
       throw submitError;
@@ -963,6 +1216,7 @@ export default function FeedPage() {
                         onAddComment={addComment}
                         onToggleCommentLike={toggleCommentLike}
                         onReply={addReply}
+                        onShowLikes={setLikesViewer}
                       />
                     ))}
                   </div>
@@ -1074,6 +1328,7 @@ export default function FeedPage() {
         {/* ── Main Layout End ── */}
 
       </div>
+      <LikersModal viewer={likesViewer} onClose={() => setLikesViewer(null)} />
     </div>
   );
 }
