@@ -105,8 +105,8 @@ class FeedController extends AbstractController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $post = $this->postRepository->find($id);
-        if (!$post instanceof Post || !$this->canAccessPost($post, $user)) {
+        $post = $this->postRepository->findAccessibleForUser($id, $user);
+        if (!$post instanceof Post) {
             return $this->json(['message' => 'Post not found.'], 404);
         }
 
@@ -172,8 +172,8 @@ class FeedController extends AbstractController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $post = $this->postRepository->find($id);
-        if (!$post instanceof Post || !$this->canAccessPost($post, $user)) {
+        $post = $this->postRepository->findAccessibleForUser($id, $user);
+        if (!$post instanceof Post) {
             return $this->json(['message' => 'Post not found.'], 404);
         }
 
@@ -242,8 +242,8 @@ class FeedController extends AbstractController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $post = $this->postRepository->find($id);
-        if (!$post instanceof Post || !$this->canAccessPost($post, $user)) {
+        $post = $this->postRepository->findAccessibleForUser($id, $user);
+        if (!$post instanceof Post) {
             return $this->json(['message' => 'Post not found.'], 404);
         }
 
@@ -275,10 +275,6 @@ class FeedController extends AbstractController
         ]);
     }
 
-    private function canAccessPost(Post $post, User $viewer): bool
-    {
-        return $post->getVisibility() === Post::VISIBILITY_PUBLIC || $post->getAuthor()->id->equals($viewer->id);
-    }
 
     private function storePostImage(UploadedFile $file): ?string
     {

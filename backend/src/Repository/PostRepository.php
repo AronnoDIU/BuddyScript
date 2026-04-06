@@ -8,6 +8,8 @@ use App\Entity\Post;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<Post>
@@ -45,5 +47,25 @@ class PostRepository extends ServiceEntityRepository
             ->setMaxResults($limit);
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function findAccessibleForUser(string $id, User $user): ?Post
+    {
+        try {
+            $uuid = Uuid::fromString($id);
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
+
+        return $this->createQueryBuilder('post')
+            ->innerJoin('post.author', 'author')
+            ->addSelect('author')
+            ->where('post.id = :id')
+            ->andWhere('post.visibility = :publicVisibility OR author = :viewer')
+            ->setParameter('id', $uuid, UuidType::NAME)
+            ->setParameter('publicVisibility', Post::VISIBILITY_PUBLIC)
+            ->setParameter('viewer', $user)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }
