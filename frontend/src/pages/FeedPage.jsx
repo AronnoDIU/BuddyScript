@@ -5,13 +5,32 @@ import { api, clearToken, resolveMediaUrl } from '../api';
 function CommentItem({ comment, onToggleLike, onReply }) {
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyError, setReplyError] = useState('');
 
-  const submitReply = (event) => {
+  const submitReply = async (event) => {
     event.preventDefault();
     if (!replyText.trim()) return;
-    onReply(comment.id, replyText.trim());
-    setReplyText('');
-    setShowReply(false);
+
+    setIsReplying(true);
+    setReplyError('');
+    try {
+      await onReply(comment.id, replyText.trim());
+      setReplyText('');
+      setShowReply(false);
+    } catch (error) {
+      setReplyError(error.response?.data?.message || 'Failed to send reply.');
+      console.error('Failed to send reply:', error);
+    } finally {
+      setIsReplying(false);
+    }
+  };
+
+  const handleReplyKey = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      submitReply(event);
+    }
   };
 
   return (
@@ -81,8 +100,17 @@ function CommentItem({ comment, onToggleLike, onReply }) {
                     placeholder="Write a reply"
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={handleReplyKey}
                   />
                 </div>
+              </div>
+              {replyError && <div className="alert alert-danger mt-2 mb-0">{replyError}</div>}
+              <div className="_feed_inner_comment_box_icon">
+                <button type="submit" className="_feed_inner_comment_box_icon_btn" disabled={isReplying}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="13" fill="none" viewBox="0 0 14 13">
+                    <path fill="#000" fillOpacity=".46" fillRule="evenodd" d="M6.37 7.879l2.438 3.955a.335.335 0 00.34.162c.068-.01.23-.05.289-.247l3.049-10.297a.348.348 0 00-.09-.35.341.341 0 00-.34-.088L1.75 4.03a.34.34 0 00-.247.289.343.343 0 00.16.347L5.666 7.17 9.2 3.597a.5.5 0 01.712.703L6.37 7.88z" clipRule="evenodd" />
+                  </svg>
+                </button>
               </div>
             </form>
           </div>
@@ -99,7 +127,7 @@ function CommentItem({ comment, onToggleLike, onReply }) {
 }
 
 /* ─── Post Item ─────────────────────────────────────────────────────── */
-function PostItem({ post, me, onToggleLike, onAddComment, onToggleCommentLike, onReply }) {
+function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onReply }) {
   const [commentText, setCommentText] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const dropRef = useRef(null);
@@ -382,13 +410,23 @@ export default function FeedPage() {
   };
 
   const addComment = async (postId, text) => {
-    await api.post(`/posts/${postId}/comments`, { content: text });
-    await loadData();
+    try {
+      await api.post(`/posts/${postId}/comments`, { content: text });
+      await loadData();
+    } catch (submitError) {
+      setError(submitError.response?.data?.message || 'Failed to add comment.');
+      throw submitError;
+    }
   };
 
   const addReply = async (commentId, text) => {
-    await api.post(`/comments/${commentId}/replies`, { content: text });
-    await loadData();
+    try {
+      await api.post(`/comments/${commentId}/replies`, { content: text });
+      await loadData();
+    } catch (submitError) {
+      setError(submitError.response?.data?.message || 'Failed to add reply.');
+      throw submitError;
+    }
   };
 
   const logout = () => {
@@ -921,7 +959,6 @@ export default function FeedPage() {
                       <PostItem
                         key={post.id}
                         post={post}
-                        me={me}
                         onToggleLike={togglePostLike}
                         onAddComment={addComment}
                         onToggleCommentLike={toggleCommentLike}
