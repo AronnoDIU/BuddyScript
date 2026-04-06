@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, clearToken } from '../api';
+import { api, clearToken, resolveMediaUrl } from '../api';
 
 /* ─── Comment Item ─────────────────────────────────────────────────── */
 function CommentItem({ comment, onToggleLike, onReply }) {
@@ -180,12 +180,10 @@ function PostItem({ post, me, onToggleLike, onAddComment, onToggleCommentLike, o
         </div>
 
         {/* Post Content */}
-        <p className="_feed_inner_timeline_post_para" style={{ marginTop: 12, marginBottom: 12 }}>
-          {post.content}
-        </p>
+        <h4 className="_feed_inner_timeline_post_title">{post.content}</h4>
         {post.imageUrl && (
           <div className="_feed_inner_timeline_image">
-            <img src={post.imageUrl} alt="post" className="_time_img img-fluid" />
+            <img src={resolveMediaUrl(post.imageUrl)} alt="Post" className="_time_img" />
           </div>
         )}
       </div>

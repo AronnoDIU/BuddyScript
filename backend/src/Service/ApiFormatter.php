@@ -7,9 +7,15 @@ namespace App\Service;
 use App\Entity\Comment;
 use App\Entity\Post;
 use App\Entity\User;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class ApiFormatter
 {
+    public function __construct(
+        private readonly RequestStack $requestStack,
+    ) {
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -50,7 +56,7 @@ class ApiFormatter
             'id' => $post->id->toRfc4122(),
             'content' => $post->getContent(),
             'visibility' => $post->getVisibility(),
-            'imageUrl' => $post->getImagePath(),
+            'imageUrl' => $this->absoluteUrl($post->getImagePath()),
             'createdAt' => $post->createdAt->format(DATE_ATOM),
             'author' => $this->user($post->getAuthor()),
             'likesCount' => count($likes),
@@ -58,6 +64,24 @@ class ApiFormatter
             'likedByMe' => $likedByMe,
             'comments' => $comments,
         ];
+    }
+
+    private function absoluteUrl(?string $path): ?string
+    {
+        if ($path === null || $path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path) === 1) {
+            return $path;
+        }
+
+        $request = $this->requestStack->getCurrentRequest();
+        if ($request === null) {
+            return $path;
+        }
+
+        return $request->getSchemeAndHttpHost() . $path;
     }
 
     /**

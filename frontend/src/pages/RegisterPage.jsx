@@ -4,7 +4,13 @@ import { api } from '../api';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '', repeatPassword: '' });
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    repeatPassword: '',
+  });
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,6 +21,14 @@ export default function RegisterPage() {
 
   const onSubmit = async (event) => {
     event.preventDefault();
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      setError('First name and last name are required.');
+      return;
+    }
+    if (!agreed) {
+      setError('Please agree to terms & conditions.');
+      return;
+    }
     if (form.password !== form.repeatPassword) {
       setError('Passwords do not match.');
       return;
@@ -22,10 +36,15 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
     try {
-      await api.post('/auth/register', { email: form.email, password: form.password });
+      await api.post('/auth/register', {
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      });
       navigate('/login');
     } catch (submitError) {
-      setError(submitError.response?.data?.message || 'Failed to register.');
+      setError(submitError.response?.data?.message || submitError.response?.data?.errors || 'Failed to register.');
     } finally {
       setLoading(false);
     }
@@ -83,6 +102,34 @@ export default function RegisterPage() {
 
                 <form className="_social_registration_form" onSubmit={onSubmit}>
                   <div className="row">
+                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                      <div className="_social_registration_form_input _mar_b14">
+                        <label className="_social_registration_label _mar_b8">First Name</label>
+                        <input
+                          type="text"
+                          name="firstName"
+                          className="form-control _social_registration_input"
+                          value={form.firstName}
+                          onChange={onChange}
+                          required
+                          maxLength={120}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                      <div className="_social_registration_form_input _mar_b14">
+                        <label className="_social_registration_label _mar_b8">Last Name</label>
+                        <input
+                          type="text"
+                          name="lastName"
+                          className="form-control _social_registration_input"
+                          value={form.lastName}
+                          onChange={onChange}
+                          required
+                          maxLength={120}
+                        />
+                      </div>
+                    </div>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                       <div className="_social_registration_form_input _mar_b14">
                         <label className="_social_registration_label _mar_b8">Email</label>
