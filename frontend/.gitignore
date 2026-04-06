@@ -1,0 +1,14 @@
+# Node dependencies
+/node_modules/
+
+# Build output
+/dist/
+/coverage/
+
+# Local env overrides
+/.env.local
+/.env.*.local
+
+# Tooling cache
+/.eslintcache
+

@@ -1,44 +1,69 @@
-### Symfony template
-# Cache and logs (Symfony2)
-/app/cache/*
-/app/logs/*
-!app/cache/.gitkeep
-!app/logs/.gitkeep
+#############################
+# OS / Editor / IDE
+#############################
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
 
-# Email spool folder
-/app/spool/*
+.idea/
+.vscode/
+*.iml
 
-# Cache, session files and logs (Symfony3)
-/var/cache/*
-/var/logs/*
-/var/sessions/*
-!var/cache/.gitkeep
-!var/logs/.gitkeep
-!var/sessions/.gitkeep
+#############################
+# Monorepo generated output
+#############################
+node_modules/
+dist/
+build/
+coverage/
 
-# Logs (Symfony4)
-/var/log/*
-!var/log/.gitkeep
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Managed by Composer
-/app/bootstrap.php.cache
-/var/bootstrap.php.cache
-!bin/symfony_requirements
-/vendor/
+*.log
+logs/
 
-# Assets and user uploads
-/web/bundles/
-/web/uploads/
+.web-server-pid
 
-# PHPUnit
-/app/phpunit.xml
-/phpunit.xml
+#############################
+# Environment files
+#############################
+.env
+.env.local
+.env.*.local
+!.env.example
 
-# Build data
-/build/
+#############################
+# Legacy import artifacts
+#############################
+__MACOSX/
 
-# Composer PHAR
-/composer.phar
+#############################
+# Symfony backend (backend/)
+#############################
+backend/vendor/
+backend/var/cache/
+backend/var/log/
+backend/var/logs/
+backend/var/sessions/
+backend/var/tmp/
+backend/.phpunit.result.cache
+backend/.env.local.php
 
-# Embedded web-server pid file
-/.web-server-pid
+# Local uploads should never be versioned.
+backend/public/uploads/*
+!backend/public/uploads/.gitkeep
+!backend/public/uploads/posts/
+backend/public/uploads/posts/*
+!backend/public/uploads/posts/.gitkeep
+
+#############################
+# React frontend (frontend/)
+#############################
+frontend/node_modules/
+frontend/dist/
+frontend/.eslintcache

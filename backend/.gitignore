@@ -1,0 +1,25 @@
+# Dependencies
+/vendor/
+
+# Symfony runtime/cache artifacts
+/var/cache/
+/var/log/
+/var/logs/
+/var/sessions/
+/var/tmp/
+
+# Local environment overrides
+/.env.local
+/.env.local.php
+/.env.*.local
+
+# PHPUnit cache
+/.phpunit.result.cache
+
+# User uploads (keep directory placeholders only)
+/public/uploads/*
+!/public/uploads/.gitkeep
+!/public/uploads/posts/
+/public/uploads/posts/*
+!/public/uploads/posts/.gitkeep
+
