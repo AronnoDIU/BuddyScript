@@ -1,8 +1,9 @@
 #############################
-# OS / Editor / IDE
+# Global OS / Editor
 #############################
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.swp
 *.swo
 *.tmp
@@ -12,25 +13,18 @@ Thumbs.db
 *.iml
 
 #############################
-# Monorepo generated output
+# Logs / temp / process files
 #############################
-node_modules/
-dist/
-build/
-coverage/
-
+*.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
-*.log
-logs/
-
 .web-server-pid
 
 #############################
-# Environment files
+# Environment / secrets
 #############################
 .env
 .env.local
@@ -43,27 +37,39 @@ logs/
 __MACOSX/
 
 #############################
+# Node / frontend tool output (monorepo-wide)
+#############################
+node_modules/
+dist/
+build/
+coverage/
+.eslintcache
+.vite/
+
+#############################
 # Symfony backend (backend/)
 #############################
 backend/vendor/
-backend/var/cache/
-backend/var/log/
-backend/var/logs/
-backend/var/sessions/
-backend/var/tmp/
+backend/var/
+!backend/var/.gitignore
 backend/.phpunit.result.cache
 backend/.env.local.php
 
-# Local uploads should never be versioned.
+# Never commit runtime uploads.
 backend/public/uploads/*
 !backend/public/uploads/.gitkeep
 !backend/public/uploads/posts/
 backend/public/uploads/posts/*
 !backend/public/uploads/posts/.gitkeep
 
+# Never commit local JWT keypair material.
+backend/config/jwt/*.pem
+
 #############################
-# React frontend (frontend/)
+# Frontend package output (frontend/)
 #############################
 frontend/node_modules/
 frontend/dist/
+frontend/coverage/
 frontend/.eslintcache
+frontend/.vite/

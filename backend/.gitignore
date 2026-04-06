@@ -2,11 +2,8 @@
 /vendor/
 
 # Symfony runtime/cache artifacts
-/var/cache/
-/var/log/
-/var/logs/
-/var/sessions/
-/var/tmp/
+/var/
+!/var/.gitignore
 
 # Local environment overrides
 /.env.local
@@ -15,6 +12,9 @@
 
 # PHPUnit cache
 /.phpunit.result.cache
+
+# Local JWT keypair
+/config/jwt/*.pem
 
 # User uploads (keep directory placeholders only)
 /public/uploads/*
