@@ -5,7 +5,7 @@ This project was converted from static HTML/CSS/JS into a full-stack app:
 - Backend: Symfony 7 API (`backend/`)
 - Frontend: React + Vite (`frontend/`)
 - Database: MySQL 8
-- One-command startup (no Docker): `npm run dev`
+- One-command startup: `npm run dev`
 
 ## Requirements
 

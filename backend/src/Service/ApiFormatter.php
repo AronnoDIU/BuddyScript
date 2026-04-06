@@ -9,10 +9,10 @@ use App\Entity\Post;
 use App\Entity\User;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-class ApiFormatter
+readonly class ApiFormatter
 {
     public function __construct(
-        private readonly RequestStack $requestStack,
+        private RequestStack $requestStack,
     ) {
     }
 
