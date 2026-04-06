@@ -20,11 +20,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    public Uuid $id {
-        get {
-            return $this->id;
-        }
-    }
+    private Uuid $id;
 
     #[ORM\Column(length: 120)]
     private string $firstName;
@@ -39,11 +35,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private string $password = '';
 
     #[ORM\Column]
-    private \DateTimeImmutable $createdAt {
-        get {
-            return $this->createdAt;
-        }
-    }
+    private \DateTimeImmutable $createdAt;
 
     /** @var list<string> */
     #[ORM\Column(type: 'json')]
@@ -68,6 +60,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getFirstName(): string
     {
         return $this->firstName;
+    }
+
+    public function getId(): Uuid
+    {
+        return $this->id;
     }
 
     public function setFirstName(string $firstName): self
@@ -146,5 +143,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getDisplayName(): string
     {
         return trim($this->firstName . ' ' . $this->lastName);
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 }

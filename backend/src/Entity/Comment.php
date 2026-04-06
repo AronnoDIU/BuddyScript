@@ -18,11 +18,7 @@ class Comment
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    public Uuid $id {
-        get {
-            return $this->id;
-        }
-    }
+    private Uuid $id;
 
     #[ORM\ManyToOne(targetEntity: Post::class, inversedBy: 'comments')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -39,29 +35,17 @@ class Comment
     /** @var Collection<int, self> */
     #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent', orphanRemoval: true)]
     #[ORM\OrderBy(['createdAt' => 'ASC'])]
-    public Collection $replies {
-        get {
-            return $this->replies;
-        }
-    }
+    private Collection $replies;
 
     #[ORM\Column(type: 'text')]
     private string $content;
 
     #[ORM\Column]
-    public \DateTimeImmutable $createdAt {
-        get {
-            return $this->createdAt;
-        }
-    }
+    private \DateTimeImmutable $createdAt;
 
     /** @var Collection<int, Like> */
     #[ORM\OneToMany(targetEntity: Like::class, mappedBy: 'comment', orphanRemoval: true)]
-    public Collection $likes {
-        get {
-            return $this->likes;
-        }
-    }
+    private Collection $likes;
 
     public function __construct()
     {
@@ -74,6 +58,11 @@ class Comment
     public function getPost(): Post
     {
         return $this->post;
+    }
+
+    public function getId(): Uuid
+    {
+        return $this->id;
     }
 
     public function setPost(Post $post): self
@@ -110,6 +99,23 @@ class Comment
     public function getContent(): string
     {
         return $this->content;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    /** @return Collection<int, self> */
+    public function getReplies(): Collection
+    {
+        return $this->replies;
+    }
+
+    /** @return Collection<int, Like> */
+    public function getLikes(): Collection
+    {
+        return $this->likes;
     }
 
     public function setContent(string $content): self

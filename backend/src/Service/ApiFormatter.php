@@ -22,7 +22,7 @@ readonly class ApiFormatter
     public function user(User $user): array
     {
         return [
-            'id' => $user->id->toRfc4122(),
+            'id' => $user->getId()->toRfc4122(),
             'firstName' => $user->getFirstName(),
             'lastName' => $user->getLastName(),
             'displayName' => $user->getDisplayName(),
@@ -37,15 +37,15 @@ readonly class ApiFormatter
     {
         $likes = [];
         $likedByMe = false;
-        foreach ($post->likes as $like) {
+        foreach ($post->getLikes() as $like) {
             $likes[] = $this->user($like->getUser());
-            if ($like->getUser()->id->equals($viewer->id)) {
+            if ($like->getUser()->getId()->equals($viewer->getId())) {
                 $likedByMe = true;
             }
         }
 
         $comments = [];
-        foreach ($post->comments as $comment) {
+        foreach ($post->getComments() as $comment) {
             if ($comment->getParent() !== null) {
                 continue;
             }
@@ -53,11 +53,11 @@ readonly class ApiFormatter
         }
 
         return [
-            'id' => $post->id->toRfc4122(),
+            'id' => $post->getId()->toRfc4122(),
             'content' => $post->getContent(),
             'visibility' => $post->getVisibility(),
             'imageUrl' => $this->absoluteUrl($post->getImagePath()),
-            'createdAt' => $post->createdAt->format(DATE_ATOM),
+            'createdAt' => $post->getCreatedAt()->format(DATE_ATOM),
             'author' => $this->user($post->getAuthor()),
             'likesCount' => count($likes),
             'likes' => $likes,
@@ -92,22 +92,22 @@ readonly class ApiFormatter
         $likes = [];
         $likedByMe = false;
 
-        foreach ($comment->likes as $like) {
+        foreach ($comment->getLikes() as $like) {
             $likes[] = $this->user($like->getUser());
-            if ($like->getUser()->id->equals($viewer->id)) {
+            if ($like->getUser()->getId()->equals($viewer->getId())) {
                 $likedByMe = true;
             }
         }
 
         $replies = [];
-        foreach ($comment->replies as $reply) {
+        foreach ($comment->getReplies() as $reply) {
             $replies[] = $this->comment($reply, $viewer);
         }
 
         return [
-            'id' => $comment->id->toRfc4122(),
+            'id' => $comment->getId()->toRfc4122(),
             'content' => $comment->getContent(),
-            'createdAt' => $comment->createdAt->format(DATE_ATOM),
+            'createdAt' => $comment->getCreatedAt()->format(DATE_ATOM),
             'author' => $this->user($comment->getAuthor()),
             'likesCount' => count($likes),
             'likes' => $likes,

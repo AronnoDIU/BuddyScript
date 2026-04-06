@@ -43,7 +43,7 @@ class CommentRepository extends ServiceEntityRepository
             ->setParameter('id', $uuid, UuidType::NAME)
             ->setParameter('publicVisibility', Post::VISIBILITY_PUBLIC)
             ->setParameter('viewer', $user)
-            ->setParameter('viewerId', $user->id, UuidType::NAME)
+            ->setParameter('viewerId', $user->getId(), UuidType::NAME)
             ->getQuery()
             ->getOneOrNullResult();
     }

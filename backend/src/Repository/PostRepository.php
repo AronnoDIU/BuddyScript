@@ -89,7 +89,7 @@ class PostRepository extends ServiceEntityRepository
             ->andWhere('post.visibility = :publicVisibility OR author.id = :viewerId')
             ->setParameter('id', $uuid, UuidType::NAME)
             ->setParameter('publicVisibility', Post::VISIBILITY_PUBLIC)
-            ->setParameter('viewerId', $user->id, UuidType::NAME)
+            ->setParameter('viewerId', $user->getId(), UuidType::NAME)
             ->getQuery()
             ->getOneOrNullResult();
     }

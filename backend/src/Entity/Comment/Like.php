@@ -18,11 +18,7 @@ class Like
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    private Uuid $id {
-        get {
-            return $this->id;
-        }
-    }
+    private Uuid $id;
 
     #[ORM\ManyToOne(targetEntity: Comment::class, inversedBy: 'likes')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -33,11 +29,7 @@ class Like
     private User $user;
 
     #[ORM\Column]
-    private \DateTimeImmutable $createdAt {
-        get {
-            return $this->createdAt;
-        }
-    }
+    private \DateTimeImmutable $createdAt;
 
     public function __construct()
     {
@@ -48,6 +40,11 @@ class Like
     public function getComment(): Comment
     {
         return $this->comment;
+    }
+
+    public function getId(): Uuid
+    {
+        return $this->id;
     }
 
     public function setComment(Comment $comment): self
@@ -67,5 +64,10 @@ class Like
         $this->user = $user;
 
         return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 }
