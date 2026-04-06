@@ -7,10 +7,11 @@ namespace App\Controller;
 use App\Entity\Comment;
 use App\Entity\Comment\Like as CommentLike;
 use App\Entity\Post;
+use App\Entity\Post\Like as PostLike;
 use App\Entity\User;
-use App\Repository\Comment\LikeRepository;
+use App\Repository\Comment\LikeRepository as CommentLikeRepository;
 use App\Repository\CommentRepository;
-use App\Repository\Post\LikeRepository;
+use App\Repository\Post\LikeRepository as PostLikeRepository;
 use App\Repository\PostRepository;
 use App\Service\ApiFormatter;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,8 +32,8 @@ class FeedController extends AbstractController
     public function __construct(
         private readonly PostRepository         $postRepository,
         private readonly CommentRepository      $commentRepository,
-        private readonly LikeRepository         $postLikeRepository,
-        private readonly LikeRepository         $commentLikeRepository,
+        private readonly PostLikeRepository     $postLikeRepository,
+        private readonly CommentLikeRepository   $commentLikeRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly ApiFormatter           $formatter,
         private readonly ValidatorInterface     $validator,
@@ -179,10 +180,10 @@ class FeedController extends AbstractController
         $like = $this->postLikeRepository->findOneByPostAndUser($post, $user);
         $liked = false;
 
-        if ($like instanceof Like) {
+        if ($like instanceof PostLike) {
             $this->entityManager->remove($like);
         } else {
-            $like = new Like()
+            $like = new PostLike()
                 ->setPost($post)
                 ->setUser($user);
             $this->entityManager->persist($like);
@@ -195,7 +196,7 @@ class FeedController extends AbstractController
 
         return $this->json([
             'liked' => $liked,
-            'likes' => array_map(fn (Like $postLike): array => $this->formatter->user($postLike->getUser()), $likes),
+            'likes' => array_map(fn (PostLike $postLike): array => $this->formatter->user($postLike->getUser()), $likes),
         ]);
     }
 
@@ -214,10 +215,10 @@ class FeedController extends AbstractController
         $like = $this->commentLikeRepository->findOneByCommentAndUser($comment, $user);
         $liked = false;
 
-        if ($like instanceof Like) {
+        if ($like instanceof CommentLike) {
             $this->entityManager->remove($like);
         } else {
-            $like = new Like()
+            $like = new CommentLike()
                 ->setComment($comment)
                 ->setUser($user);
             $this->entityManager->persist($like);
@@ -230,7 +231,7 @@ class FeedController extends AbstractController
 
         return $this->json([
             'liked' => $liked,
-            'likes' => array_map(fn (Like $commentLike): array => $this->formatter->user($commentLike->getUser()), $likes),
+            'likes' => array_map(fn (CommentLike $commentLike): array => $this->formatter->user($commentLike->getUser()), $likes),
         ]);
     }
 
@@ -248,7 +249,7 @@ class FeedController extends AbstractController
 
         return $this->json([
             'likes' => array_map(
-                fn (Like $postLike): array => $this->formatter->user($postLike->getUser()),
+                fn (PostLike $postLike): array => $this->formatter->user($postLike->getUser()),
                 $this->postLikeRepository->findBy(['post' => $post], ['createdAt' => 'DESC'])
             ),
         ]);
