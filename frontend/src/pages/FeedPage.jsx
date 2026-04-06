@@ -306,6 +306,19 @@ export default function FeedPage() {
   const [profileDropOpen, setProfileDropOpen] = useState(false);
   const [notifyDropOpen, setNotifyDropOpen] = useState(false);
 
+  const mapComments = (comments, targetId, applyUpdate) => (
+    comments.map((comment) => {
+      const nextReplies = comment.replies ? mapComments(comment.replies, targetId, applyUpdate) : [];
+      const nextComment = nextReplies !== comment.replies ? { ...comment, replies: nextReplies } : comment;
+
+      if (comment.id !== targetId) {
+        return nextComment;
+      }
+
+      return applyUpdate(nextComment);
+    })
+  );
+
   const loadData = async () => {
     const [meResponse, feedResponse] = await Promise.all([api.get('/me'), api.get('/feed')]);
     setMe(meResponse.data.user);
@@ -349,8 +362,23 @@ export default function FeedPage() {
   };
 
   const toggleCommentLike = async (commentId) => {
-    await api.post(`/comments/${commentId}/likes/toggle`);
-    await loadData();
+    try {
+      const response = await api.post(`/comments/${commentId}/likes/toggle`);
+      const likes = response.data?.likes || [];
+      const liked = Boolean(response.data?.liked);
+
+      setPosts((prevPosts) => prevPosts.map((post) => ({
+        ...post,
+        comments: mapComments(post.comments || [], commentId, (comment) => ({
+          ...comment,
+          likedByMe: liked,
+          likes,
+          likesCount: likes.length,
+        })),
+      })));
+    } catch (submitError) {
+      setError(submitError.response?.data?.message || 'Failed to toggle comment like.');
+    }
   };
 
   const addComment = async (postId, text) => {

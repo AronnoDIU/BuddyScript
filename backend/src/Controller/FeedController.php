@@ -137,15 +137,12 @@ class FeedController extends AbstractController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $parent = $this->commentRepository->find($id);
+        $parent = $this->commentRepository->findAccessibleForUser($id, $user);
         if (!$parent instanceof Comment) {
             return $this->json(['message' => 'Comment not found.'], 404);
         }
 
         $post = $parent->getPost();
-        if (!$this->canAccessPost($post, $user)) {
-            return $this->json(['message' => 'Comment not found.'], 404);
-        }
 
         try {
             $content = trim((string)((json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR) ?? [])['content'] ?? ''));
@@ -210,8 +207,8 @@ class FeedController extends AbstractController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $comment = $this->commentRepository->find($id);
-        if (!$comment instanceof Comment || !$this->canAccessPost($comment->getPost(), $user)) {
+        $comment = $this->commentRepository->findAccessibleForUser($id, $user);
+        if (!$comment instanceof Comment) {
             return $this->json(['message' => 'Comment not found.'], 404);
         }
 
@@ -265,8 +262,8 @@ class FeedController extends AbstractController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $comment = $this->commentRepository->find($id);
-        if (!$comment instanceof Comment || !$this->canAccessPost($comment->getPost(), $user)) {
+        $comment = $this->commentRepository->findAccessibleForUser($id, $user);
+        if (!$comment instanceof Comment) {
             return $this->json(['message' => 'Comment not found.'], 404);
         }
 
