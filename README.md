@@ -55,6 +55,7 @@ This single command will:
 - Comment and reply creation
 - Comment/reply like/unlike
 - "Who liked" support for post/comment/reply
+- Profile page with real user info, visibility-aware stats, and recent timeline posts
 
 ## API Overview
 
@@ -62,6 +63,8 @@ Public endpoints:
 
 - `POST /api/auth/register`
 - `POST /api/login_check`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
 
 Protected endpoints (Bearer token):
 
@@ -74,8 +77,10 @@ Protected endpoints (Bearer token):
 - `POST /api/comments/{id}/replies`
 - `POST /api/comments/{id}/likes/toggle`
 - `GET /api/comments/{id}/likes`
+- `GET /api/profiles/{id}`
 
 ## Notes
 
 - Uploaded post images are stored in `backend/public/uploads/posts`.
 - Existing BuddyScript design assets are reused from `frontend/public/assets`.
+- Access JWTs are auto-refreshed via HttpOnly refresh-token cookies when the API returns `401 Expired JWT Token`.

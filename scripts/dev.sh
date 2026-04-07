@@ -138,10 +138,10 @@ if [[ ! -d "$FRONTEND_DIR/node_modules" ]]; then
   (cd "$FRONTEND_DIR" && npm install)
 fi
 
-echo "Running database migrations..."
-if ! (cd "$BACKEND_DIR" && "$PHP_BIN" bin/console doctrine:migrations:migrate --no-interaction); then
+echo "Synchronizing database schema..."
+if ! (cd "$BACKEND_DIR" && "$PHP_BIN" bin/console doctrine:schema:update --force); then
   echo ""
-  echo "Database migration failed."
+  echo "Database schema update failed."
   echo "Check backend/.env.local DATABASE_URL and ensure MySQL is running and credentials are valid."
   exit 1
 fi

@@ -1,0 +1,190 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { api, clearToken, resolveMediaUrl } from '../api';
+
+const formatDate = (value) => {
+  if (!value) return 'Unknown date';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown date';
+  return date.toLocaleString();
+};
+
+export default function ProfilePage() {
+  const { userId } = useParams();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [profile, setProfile] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [activeTab, setActiveTab] = useState('all');
+
+  const initials = useMemo(() => {
+    if (!profile?.displayName) return '?';
+    const parts = profile.displayName.split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() || '').join('') || '?';
+  }, [profile]);
+
+  const filteredPosts = useMemo(() => {
+    if (activeTab === 'public') {
+      return posts.filter((post) => post.visibility === 'public');
+    }
+
+    if (activeTab === 'private') {
+      return posts.filter((post) => post.visibility === 'private');
+    }
+
+    return posts;
+  }, [activeTab, posts]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const response = await api.get(`/profiles/${userId}`);
+        if (!isMounted) return;
+
+        setProfile(response.data?.profile || null);
+        setPosts(response.data?.posts || []);
+      } catch (loadError) {
+        if (!isMounted) return;
+
+        const status = loadError?.response?.status;
+        if (status === 401 || status === 403) {
+          clearToken();
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        setError(loadError?.response?.data?.message || 'Failed to load profile.');
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    if (userId) {
+      loadProfile();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate, userId]);
+
+  return (
+    <div className="profile_page">
+      <div className="profile_page_header">
+        <Link to="/feed" className="profile_page_back">← Back to feed</Link>
+      </div>
+
+      {loading && <div className="profile_page_state">Loading profile...</div>}
+
+      {!loading && error && (
+        <div className="profile_page_state profile_page_state_error">{error}</div>
+      )}
+
+      {!loading && !error && profile && (
+        <>
+          <section className="profile_hero">
+            <div
+              className="profile_hero_cover"
+              style={profile.coverUrl ? { backgroundImage: `url(${resolveMediaUrl(profile.coverUrl)})` } : undefined}
+            >
+              {!profile.coverUrl && <div className="profile_hero_cover_overlay" />}
+            </div>
+
+            <div className="profile_hero_body">
+              <div className="profile_hero_avatar_wrap">
+                {profile.avatarUrl ? (
+                  <img src={resolveMediaUrl(profile.avatarUrl)} alt={profile.displayName} className="profile_hero_avatar" />
+                ) : (
+                  <div className="profile_hero_avatar_fallback">{initials}</div>
+                )}
+              </div>
+
+              <div className="profile_hero_identity">
+                <h1 className="profile_name">{profile.displayName}</h1>
+                <p className="profile_meta">Joined {formatDate(profile.joinedAt)}</p>
+                <p className="profile_meta">{profile.stats?.postsCount ?? 0} total posts</p>
+              </div>
+
+              <div className="profile_hero_actions">
+                <span className="profile_visibility_chip">{profile.isMe ? 'Your profile' : 'Public profile view'}</span>
+              </div>
+            </div>
+          </section>
+
+          <div className="profile_grid">
+            <aside className="profile_sidebar">
+              <section className="profile_card">
+                <h2 className="profile_section_title">Intro</h2>
+                <p className="profile_meta">{profile.bio || 'No bio yet.'}</p>
+                {profile.email && <p className="profile_meta">Email: {profile.email}</p>}
+                <p className="profile_meta">Name: {profile.firstName} {profile.lastName}</p>
+              </section>
+
+              <section className="profile_card">
+                <h2 className="profile_section_title">Profile stats</h2>
+                <div className="profile_stats_grid">
+                  <div className="profile_stat_item"><strong>{profile.stats?.postsCount ?? 0}</strong><span>Posts</span></div>
+                  <div className="profile_stat_item"><strong>{profile.stats?.publicPostsCount ?? 0}</strong><span>Public</span></div>
+                  <div className="profile_stat_item"><strong>{profile.stats?.privatePostsCount ?? 0}</strong><span>Private</span></div>
+                  <div className="profile_stat_item"><strong>{profile.stats?.likesReceivedCount ?? 0}</strong><span>Likes</span></div>
+                  <div className="profile_stat_item"><strong>{profile.stats?.commentsReceivedCount ?? 0}</strong><span>Comments</span></div>
+                </div>
+              </section>
+            </aside>
+
+            <section className="profile_timeline">
+              <div className="profile_posts_header profile_card">
+                <h2 className="profile_section_title">Posts</h2>
+                <div className="profile_tabs">
+                  <button type="button" className={activeTab === 'all' ? 'profile_tab profile_tab_active' : 'profile_tab'} onClick={() => setActiveTab('all')}>All</button>
+                  <button type="button" className={activeTab === 'public' ? 'profile_tab profile_tab_active' : 'profile_tab'} onClick={() => setActiveTab('public')}>Public</button>
+                  {profile.isMe && (
+                    <button type="button" className={activeTab === 'private' ? 'profile_tab profile_tab_active' : 'profile_tab'} onClick={() => setActiveTab('private')}>Private</button>
+                  )}
+                </div>
+              </div>
+
+              {filteredPosts.length === 0 ? (
+                <div className="profile_page_state">No posts in this section yet.</div>
+              ) : (
+                filteredPosts.map((post) => (
+                  <article className="profile_post_card" key={post.id}>
+                    <div className="profile_post_header">
+                      <div>
+                        <strong>{post.author?.displayName || profile.displayName}</strong>
+                        <p className="profile_meta profile_post_meta">{formatDate(post.createdAt)}</p>
+                      </div>
+                      <span className="profile_post_visibility">{post.visibility}</span>
+                    </div>
+                    <p className="profile_post_content">{post.content}</p>
+                    {post.imageUrl && (
+                      <img
+                        src={resolveMediaUrl(post.imageUrl)}
+                        alt="Post"
+                        className="profile_post_image"
+                      />
+                    )}
+                    <div className="profile_post_footer">
+                      <span>{post.likesCount || 0} likes</span>
+                      <span>{(post.comments || []).length} comments</span>
+                    </div>
+                  </article>
+                ))
+              )}
+            </section>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+

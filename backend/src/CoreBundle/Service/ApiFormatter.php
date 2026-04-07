@@ -115,4 +115,39 @@ readonly class ApiFormatter
             'replies' => $replies,
         ];
     }
+
+    /**
+     * @param array<string, mixed> $stats
+     *
+     * @return array<string, mixed>
+     */
+    public function profile(User $profileUser, User $viewer, array $stats = []): array
+    {
+        $isMe = $profileUser->getId()->equals($viewer->getId());
+        $safeStats = [
+            'postsCount' => (int) ($stats['postsCount'] ?? 0),
+            'publicPostsCount' => (int) ($stats['publicPostsCount'] ?? 0),
+            'privatePostsCount' => (int) ($stats['privatePostsCount'] ?? 0),
+            'likesReceivedCount' => (int) ($stats['likesReceivedCount'] ?? 0),
+            'commentsReceivedCount' => (int) ($stats['commentsReceivedCount'] ?? 0),
+        ];
+
+        return [
+            'id' => $profileUser->getId()->toRfc4122(),
+            'firstName' => $profileUser->getFirstName(),
+            'lastName' => $profileUser->getLastName(),
+            'displayName' => $profileUser->getDisplayName(),
+            'email' => $isMe ? $profileUser->getEmail() : null,
+            'isMe' => $isMe,
+            'joinedAt' => $profileUser->getCreatedAt()->format(DATE_ATOM),
+            'avatarUrl' => null,
+            'coverUrl' => null,
+            'bio' => null,
+            'viewerPermissions' => [
+                'canViewPrivatePosts' => $isMe,
+                'canViewEmail' => $isMe,
+            ],
+            'stats' => $safeStats,
+        ];
+    }
 }

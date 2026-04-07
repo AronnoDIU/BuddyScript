@@ -92,7 +92,7 @@ function LikersModal({ viewer, onClose }) {
 }
 
 /* ─── Comment Item ─────────────────────────────────────────────────── */
-function CommentItem({ comment, onToggleLike, onReply, onShowLikes }) {
+function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfile }) {
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
@@ -134,7 +134,7 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes }) {
         <div className="_comment_details">
           <div className="_comment_details_top">
             <div className="_comment_name">
-              <a href="#0">
+              <a href="#0" onClick={(event) => { event.preventDefault(); onOpenProfile?.(comment.author?.id); }}>
                 <h4 className="_comment_name_title">{comment.author?.displayName}</h4>
               </a>
             </div>
@@ -216,7 +216,7 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes }) {
 
         {comment.replies?.map((reply) => (
           <div className="ms-4 mt-2" key={reply.id}>
-            <CommentItem comment={reply} onToggleLike={onToggleLike} onReply={onReply} onShowLikes={onShowLikes} />
+            <CommentItem comment={reply} onToggleLike={onToggleLike} onReply={onReply} onShowLikes={onShowLikes} onOpenProfile={onOpenProfile} />
           </div>
         ))}
       </div>
@@ -225,7 +225,7 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes }) {
 }
 
 /* ─── Post Item ─────────────────────────────────────────────────────── */
-function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onReply, onShowLikes }) {
+function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onReply, onShowLikes, onOpenProfile }) {
   const [commentText, setCommentText] = useState('');
   const [commentError, setCommentError] = useState('');
   const [isCommenting, setIsCommenting] = useState(false);
@@ -266,7 +266,9 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
             </div>
             <div className="_feed_inner_timeline_post_box_txt">
               <h4 className="_feed_inner_timeline_post_box_title">
-                {post.author?.displayName}
+                <a href="#0" onClick={(event) => { event.preventDefault(); onOpenProfile?.(post.author?.id); }}>
+                  {post.author?.displayName}
+                </a>
               </h4>
               <p className="_feed_inner_timeline_post_box_para">
                 Just now . <a href="#0">{post.visibility}</a>
@@ -443,6 +445,7 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
               onToggleLike={onToggleCommentLike}
               onReply={onReply}
               onShowLikes={onShowLikes}
+              onOpenProfile={onOpenProfile}
             />
           ))}
         </div>
@@ -690,10 +693,21 @@ export default function FeedPage() {
     }
   };
 
-  const logout = () => {
-    clearToken();
-    window.location.href = '/login';
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout', {}, { skipAuth: true });
+    } catch (logoutError) {
+      console.error('Logout request failed:', logoutError);
+    } finally {
+      clearToken();
+      window.location.href = '/login';
+    }
   };
+
+  const goToProfile = useCallback((id) => {
+    if (!id) return;
+    navigate(`/profile/${id}`);
+  }, [navigate]);
 
   return (
     <div className="_layout _layout_main_wrapper">
@@ -846,7 +860,17 @@ export default function FeedPage() {
                       </div>
                       <div className="_nav_profile_dropdown_info_txt">
                         <h4 className="_nav_dropdown_title">{me?.displayName || 'User'}</h4>
-                        <a href="#0" className="_nav_drop_profile">View Profile</a>
+                        <a
+                          href="#0"
+                          className="_nav_drop_profile"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setProfileDropOpen(false);
+                            goToProfile(me?.id);
+                          }}
+                        >
+                          View Profile
+                        </a>
                       </div>
                     </div>
                     <hr />
@@ -1225,6 +1249,7 @@ export default function FeedPage() {
                         onToggleCommentLike={toggleCommentLike}
                         onReply={addReply}
                         onShowLikes={setLikesViewer}
+                        onOpenProfile={goToProfile}
                       />
                     ))}
                   </div>

@@ -7,7 +7,9 @@ namespace ApiBundle\Controller;
 use CoreBundle\Entity\User;
 use CoreBundle\Repository\UserRepository;
 use CoreBundle\Service\ApiFormatter;
+use CoreBundle\Service\RefreshTokenManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +28,8 @@ class AuthController extends AbstractController
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly ValidatorInterface $validator,
         private readonly ApiFormatter $formatter,
+        private readonly JWTTokenManagerInterface $jwtTokenManager,
+        private readonly RefreshTokenManager $refreshTokenManager,
     ) {
     }
 
@@ -98,6 +102,57 @@ class AuthController extends AbstractController
         }
 
         return $this->json(['user' => $this->formatter->user($user)]);
+    }
+
+    #[Route('/auth/refresh', name: 'api_auth_refresh', methods: ['POST'])]
+    public function refresh(Request $request): JsonResponse
+    {
+        $refreshToken = (string) $request->cookies->get($this->refreshTokenManager->getCookieName(), '');
+        if ($refreshToken === '') {
+            return $this->refreshFailureResponse($request, 'Refresh token is missing.');
+        }
+
+        $rotatedToken = $this->refreshTokenManager->rotate($refreshToken);
+        if ($rotatedToken === null) {
+            return $this->refreshFailureResponse($request, 'Refresh token is invalid or expired.');
+        }
+
+        $user = $rotatedToken['user'];
+        $accessToken = $this->jwtTokenManager->create($user);
+
+        $response = $this->json([
+            'token' => $accessToken,
+            'user' => $this->formatter->user($user),
+        ]);
+
+        $response->headers->setCookie($this->refreshTokenManager->createCookie(
+            $rotatedToken['refreshToken'],
+            $request->isSecure(),
+        ));
+
+        return $response;
+    }
+
+    #[Route('/auth/logout', name: 'api_auth_logout', methods: ['POST'])]
+    public function logout(Request $request): JsonResponse
+    {
+        $refreshToken = (string) $request->cookies->get($this->refreshTokenManager->getCookieName(), '');
+        if ($refreshToken !== '') {
+            $this->refreshTokenManager->revokeByPlainToken($refreshToken);
+        }
+
+        $response = $this->json(['message' => 'Logged out successfully.']);
+        $response->headers->setCookie($this->refreshTokenManager->createClearedCookie($request->isSecure()));
+
+        return $response;
+    }
+
+    private function refreshFailureResponse(Request $request, string $message): JsonResponse
+    {
+        $response = $this->json(['message' => $message], 401);
+        $response->headers->setCookie($this->refreshTokenManager->createClearedCookie($request->isSecure()));
+
+        return $response;
     }
 }
 
