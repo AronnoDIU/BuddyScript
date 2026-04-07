@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ApiBundle\Controller;
 
+use CoreBundle\Entity\Post;
 use CoreBundle\Entity\User;
 use CoreBundle\Repository\PostRepository;
 use CoreBundle\Repository\UserRepository;

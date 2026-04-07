@@ -8,6 +8,7 @@ use CoreBundle\Entity\Post;
 use CoreBundle\Entity\Post\Like as PostLikeEntity;
 use CoreBundle\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
@@ -26,8 +27,10 @@ class PostRepository extends ServiceEntityRepository
     /**
      * @return list<Post>
      */
-    public function findFeedForUser(User $viewer, int $limit = 50): array
+    public function findFeedForUser(User $viewer, int $limit = 50, ?string $query = null): array
     {
+        $query = $query !== null ? trim($query) : null;
+
         $commentsByViewerDql = $this->getEntityManager()->createQueryBuilder()
             ->select('1')
             ->from(CommentEntity::class, 'vc')
@@ -35,22 +38,29 @@ class PostRepository extends ServiceEntityRepository
             ->andWhere('vc.author = :viewer')
             ->getDQL();
 
-        $postIdRows = $this->createQueryBuilder('p')
-            ->select('p.id AS id')
+        $postSeedQb = $this->createQueryBuilder('p')
+            ->select('p')
+            ->innerJoin('p.author', 'a')
             ->where('p.visibility = :public OR p.author = :viewer OR EXISTS(' . $commentsByViewerDql . ')')
             ->setParameter('public', Post::VISIBILITY_PUBLIC)
             ->setParameter('viewer', $viewer)
             ->orderBy('p.createdAt', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getScalarResult();
+            ->setMaxResults($limit);
 
-        $postIds = array_map(static fn(array $row): ?string => $row['id'] ?? null, $postIdRows)
-                |> array_filter(...)
-                |> array_values(...);
-        if ($postIds === []) {
+        if ($query !== null && $query !== '') {
+            $search = '%' . mb_strtolower($query) . '%';
+            $postSeedQb
+                ->andWhere('LOWER(p.content) LIKE :search OR LOWER(a.email) LIKE :search OR LOWER(CONCAT(CONCAT(a.firstName, :space), a.lastName)) LIKE :search')
+                ->setParameter('search', $search)
+                ->setParameter('space', ' ');
+        }
+
+        $seedPosts = $postSeedQb->getQuery()->getResult();
+        if ($seedPosts === []) {
             return [];
         }
+
+        $seedPostIds = array_map(static fn (Post $post): Uuid => $post->getId(), $seedPosts);
 
         $qb = $this->createQueryBuilder('p')
             ->leftJoin('p.author', 'a')->addSelect('a')
@@ -68,12 +78,12 @@ class PostRepository extends ServiceEntityRepository
             ->leftJoin('rr.author', 'rra')->addSelect('rra')
             ->leftJoin('rr.likes', 'rrl')->addSelect('rrl')
             ->leftJoin('rrl.user', 'rrlu')->addSelect('rrlu')
-            ->where('p.id IN (:ids)')
-            ->setParameter('ids', $postIds)
             ->orderBy('p.createdAt', 'DESC')
             ->addOrderBy('c.createdAt', 'ASC')
             ->addOrderBy('r.createdAt', 'ASC')
             ->addOrderBy('rr.createdAt', 'ASC');
+
+        $this->applyUuidIdFilter($qb, 'p.id', $seedPostIds);
 
         return $qb->getQuery()->getResult();
     }
@@ -103,7 +113,29 @@ class PostRepository extends ServiceEntityRepository
      */
     public function findProfileFeedForUser(User $profileUser, User $viewer, int $limit = 20): array
     {
-        return $this->createQueryBuilder('p')
+        $isOwner = $profileUser->getId()->equals($viewer->getId());
+
+        $seedQb = $this->createQueryBuilder('p')
+            ->select('p')
+            ->where('IDENTITY(p.author) = :profileUserId')
+            ->setParameter('profileUserId', $profileUser->getId(), UuidType::NAME)
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults($limit);
+
+        if (!$isOwner) {
+            $seedQb
+                ->andWhere('p.visibility = :public')
+                ->setParameter('public', Post::VISIBILITY_PUBLIC);
+        }
+
+        $seedPosts = $seedQb->getQuery()->getResult();
+        if ($seedPosts === []) {
+            return [];
+        }
+
+        $seedPostIds = array_map(static fn (Post $post): Uuid => $post->getId(), $seedPosts);
+
+        $qb = $this->createQueryBuilder('p')
             ->leftJoin('p.author', 'a')->addSelect('a')
             ->leftJoin('p.likes', 'pl')->addSelect('pl')
             ->leftJoin('pl.user', 'plu')->addSelect('plu')
@@ -119,18 +151,14 @@ class PostRepository extends ServiceEntityRepository
             ->leftJoin('rr.author', 'rra')->addSelect('rra')
             ->leftJoin('rr.likes', 'rrl')->addSelect('rrl')
             ->leftJoin('rrl.user', 'rrlu')->addSelect('rrlu')
-            ->where('p.author = :profileUser')
-            ->andWhere('p.visibility = :public OR p.author = :viewer')
-            ->setParameter('profileUser', $profileUser)
-            ->setParameter('viewer', $viewer)
-            ->setParameter('public', Post::VISIBILITY_PUBLIC)
             ->orderBy('p.createdAt', 'DESC')
             ->addOrderBy('c.createdAt', 'ASC')
             ->addOrderBy('r.createdAt', 'ASC')
-            ->addOrderBy('rr.createdAt', 'ASC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+            ->addOrderBy('rr.createdAt', 'ASC');
+
+        $this->applyUuidIdFilter($qb, 'p.id', $seedPostIds);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -141,13 +169,13 @@ class PostRepository extends ServiceEntityRepository
         $isOwner = $profileUser->getId()->equals($viewer->getId());
 
         $visibilityClause = $isOwner
-            ? 'p.author = :profileUser'
-            : 'p.author = :profileUser AND p.visibility = :public';
+            ? 'IDENTITY(p.author) = :profileUserId'
+            : 'IDENTITY(p.author) = :profileUserId AND p.visibility = :public';
 
         $postCountsQb = $this->createQueryBuilder('p')
             ->select('p.visibility AS visibility, COUNT(p.id) AS count')
             ->where($visibilityClause)
-            ->setParameter('profileUser', $profileUser)
+            ->setParameter('profileUserId', $profileUser->getId(), UuidType::NAME)
             ->groupBy('p.visibility');
         if (!$isOwner) {
             $postCountsQb->setParameter('public', Post::VISIBILITY_PUBLIC);
@@ -175,7 +203,7 @@ class PostRepository extends ServiceEntityRepository
             ->from(PostLikeEntity::class, 'pl')
             ->innerJoin('pl.post', 'p')
             ->where($visibilityClause)
-            ->setParameter('profileUser', $profileUser);
+            ->setParameter('profileUserId', $profileUser->getId(), UuidType::NAME);
         if (!$isOwner) {
             $likesQb->setParameter('public', Post::VISIBILITY_PUBLIC);
         }
@@ -185,7 +213,7 @@ class PostRepository extends ServiceEntityRepository
             ->from(CommentEntity::class, 'c')
             ->innerJoin('c.post', 'p')
             ->where($visibilityClause)
-            ->setParameter('profileUser', $profileUser);
+            ->setParameter('profileUserId', $profileUser->getId(), UuidType::NAME);
         if (!$isOwner) {
             $commentsQb->setParameter('public', Post::VISIBILITY_PUBLIC);
         }
@@ -197,5 +225,26 @@ class PostRepository extends ServiceEntityRepository
             'likesReceivedCount' => (int) $likesQb->getQuery()->getSingleScalarResult(),
             'commentsReceivedCount' => (int) $commentsQb->getQuery()->getSingleScalarResult(),
         ];
+    }
+
+    /**
+     * @param list<Uuid> $ids
+     */
+    private function applyUuidIdFilter(QueryBuilder $qb, string $field, array $ids): void
+    {
+        if ($ids === []) {
+            $qb->andWhere('1 = 0');
+
+            return;
+        }
+
+        $orX = $qb->expr()->orX();
+        foreach ($ids as $index => $id) {
+            $param = 'uuid_' . $index;
+            $orX->add($qb->expr()->eq($field, ':' . $param));
+            $qb->setParameter($param, $id, UuidType::NAME);
+        }
+
+        $qb->andWhere($orX);
     }
 }

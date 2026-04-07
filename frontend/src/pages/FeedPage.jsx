@@ -467,6 +467,8 @@ export default function FeedPage() {
   const [profileDropOpen, setProfileDropOpen] = useState(false);
   const [notifyDropOpen, setNotifyDropOpen] = useState(false);
   const [likesViewer, setLikesViewer] = useState(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const mapComments = (comments, targetId, applyUpdate) => {
     let changed = false;
@@ -557,14 +559,18 @@ export default function FeedPage() {
     return { nextPosts, changed };
   };
 
-  const loadData = useCallback(async () => {
-    const [meResponse, feedResponse] = await Promise.all([api.get('/me'), api.get('/feed')]);
+  const loadData = useCallback(async (query = '') => {
+    const normalizedQuery = query.trim();
+    const [meResponse, feedResponse] = await Promise.all([
+      api.get('/me'),
+      api.get('/feed', { params: normalizedQuery ? { q: normalizedQuery } : {} }),
+    ]);
     setMe(meResponse.data.user);
     setPosts(feedResponse.data.posts || []);
   }, []);
 
   useEffect(() => {
-    loadData().catch((loadError) => {
+    loadData(searchQuery).catch((loadError) => {
       const status = loadError?.response?.status;
       if (status === 401 || status === 403) {
         clearToken();
@@ -574,7 +580,17 @@ export default function FeedPage() {
 
       setError(loadError?.response?.data?.message || 'Failed to load feed data.');
     });
-  }, [loadData, navigate]);
+  }, [loadData, navigate, searchQuery]);
+
+  const onSearchSubmit = (event) => {
+    event.preventDefault();
+    setSearchQuery(searchInput.trim());
+  };
+
+  const onSearchReset = () => {
+    setSearchInput('');
+    setSearchQuery('');
+  };
 
   const onCreatePost = async (event) => {
     event.preventDefault();
@@ -732,12 +748,23 @@ export default function FeedPage() {
             <div className="collapse navbar-collapse" id="navbarSupportedContent">
               {/* Search */}
               <div className="_header_form ms-auto">
-                <form className="_header_form_grp">
+                <form className="_header_form_grp" onSubmit={onSearchSubmit}>
                   <svg className="_header_form_svg" xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 17 17">
                     <circle cx="7" cy="7" r="6" stroke="#666" />
                     <path stroke="#666" strokeLinecap="round" d="M16 16l-3-3" />
                   </svg>
-                  <input className="form-control me-2 _inpt1" type="search" placeholder="input search text" />
+                  <input
+                    className="form-control me-2 _inpt1"
+                    type="search"
+                    placeholder="Search posts or people"
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                  />
+                  {searchQuery && (
+                    <button type="button" className="btn btn-link p-0" onClick={onSearchReset}>
+                      Clear
+                    </button>
+                  )}
                 </form>
               </div>
 

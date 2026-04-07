@@ -43,16 +43,18 @@ class FeedController extends AbstractController
     }
 
     #[Route('/feed', name: 'api_feed', methods: ['GET'])]
-    public function feed(#[CurrentUser] ?User $user): JsonResponse
+    public function feed(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $posts = $this->postRepository->findFeedForUser($user);
+        $query = trim((string) $request->query->get('q', ''));
+        $posts = $this->postRepository->findFeedForUser($user, 50, $query === '' ? null : $query);
 
         return $this->json([
             'posts' => array_map(fn (Post $post): array => $this->formatter->post($post, $user), $posts),
+            'query' => $query,
         ]);
     }
 

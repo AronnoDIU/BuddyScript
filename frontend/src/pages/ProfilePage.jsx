@@ -9,6 +9,11 @@ const formatDate = (value) => {
   return date.toLocaleString();
 };
 
+const getDisplayName = (user) => user?.displayName
+  || [user?.firstName, user?.lastName].filter(Boolean).join(' ')
+  || user?.email
+  || 'Unknown user';
+
 export default function ProfilePage() {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -26,15 +31,21 @@ export default function ProfilePage() {
   }, [profile]);
 
   const filteredPosts = useMemo(() => {
+    const normalizedPosts = posts.map((post) => ({
+      ...post,
+      visibility: post?.visibility || 'public',
+      comments: Array.isArray(post?.comments) ? post.comments : [],
+    }));
+
     if (activeTab === 'public') {
-      return posts.filter((post) => post.visibility === 'public');
+      return normalizedPosts.filter((post) => post.visibility === 'public');
     }
 
     if (activeTab === 'private') {
-      return posts.filter((post) => post.visibility === 'private');
+      return normalizedPosts.filter((post) => post.visibility === 'private');
     }
 
-    return posts;
+    return normalizedPosts;
   }, [activeTab, posts]);
 
   useEffect(() => {
@@ -49,7 +60,7 @@ export default function ProfilePage() {
         if (!isMounted) return;
 
         setProfile(response.data?.profile || null);
-        setPosts(response.data?.posts || []);
+        setPosts(Array.isArray(response.data?.posts) ? response.data.posts : []);
       } catch (loadError) {
         if (!isMounted) return;
 
@@ -77,10 +88,28 @@ export default function ProfilePage() {
     };
   }, [navigate, userId]);
 
+  useEffect(() => {
+    setActiveTab('all');
+  }, [userId]);
+
+  useEffect(() => {
+    if (profile && !profile.isMe && activeTab === 'private') {
+      setActiveTab('all');
+    }
+  }, [activeTab, profile]);
+
   return (
     <div className="profile_page">
-      <div className="profile_page_header">
-        <Link to="/feed" className="profile_page_back">← Back to feed</Link>
+      <div className="profile_page_header _feed_inner_area _b_radious6 _padd_t24 _padd_b24 _padd_r24 _padd_l24">
+        <div className="profile_page_header_row">
+          <div>
+            <h4 className="_title5 profile_page_heading">View Profile</h4>
+            <p className="profile_meta profile_page_heading_meta">
+              {profile ? `${profile.displayName} profile overview` : 'Profile overview'}
+            </p>
+          </div>
+          <Link to="/feed" className="profile_page_back">Back to feed</Link>
+        </div>
       </div>
 
       {loading && <div className="profile_page_state">Loading profile...</div>}
@@ -165,6 +194,7 @@ export default function ProfilePage() {
                       </div>
                       <span className="profile_post_visibility">{post.visibility}</span>
                     </div>
+                    <p className="profile_meta profile_post_meta">By {getDisplayName(post.author)}</p>
                     <p className="profile_post_content">{post.content}</p>
                     {post.imageUrl && (
                       <img

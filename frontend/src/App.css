@@ -9,6 +9,22 @@
   margin-bottom: 16px;
 }
 
+.profile_page_header_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile_page_heading {
+  margin: 0;
+}
+
+.profile_page_heading_meta {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
 .profile_page_back {
   color: #377dff;
   text-decoration: none;
@@ -229,6 +245,10 @@
 }
 
 @media (max-width: 992px) {
+  .profile_page_header_row {
+    flex-wrap: wrap;
+  }
+
   .profile_grid {
     grid-template-columns: 1fr;
   }
