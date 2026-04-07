@@ -84,11 +84,43 @@
       <path value="$PROJECT_DIR$/backend/vendor/symfony/filesystem" />
       <path value="$PROJECT_DIR$/backend/vendor/symfony/string" />
       <path value="$PROJECT_DIR$/backend/vendor/symfony/type-info" />
+      <path value="$PROJECT_DIR$/backend/vendor/phpstan/phpdoc-parser" />
+      <path value="$PROJECT_DIR$/backend/vendor/jms/serializer-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/jms/metadata" />
+      <path value="$PROJECT_DIR$/backend/vendor/jms/serializer" />
+      <path value="$PROJECT_DIR$/backend/vendor/pagerfanta/doctrine-orm-adapter" />
+      <path value="$PROJECT_DIR$/backend/vendor/pagerfanta/core" />
+      <path value="$PROJECT_DIR$/backend/vendor/twig/string-extra" />
+      <path value="$PROJECT_DIR$/backend/vendor/twig/twig" />
+      <path value="$PROJECT_DIR$/backend/vendor/nyholm/psr7" />
+      <path value="$PROJECT_DIR$/backend/vendor/knplabs/gaufrette" />
+      <path value="$PROJECT_DIR$/backend/vendor/imagine/imagine" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/mime" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/polyfill-intl-icu" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/options-resolver" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/twig-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/polyfill-intl-idn" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/twig-bridge" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/form" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/translation" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/asset" />
+      <path value="$PROJECT_DIR$/backend/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/backend/vendor/sonata-project/media-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/psr/http-client" />
+      <path value="$PROJECT_DIR$/backend/vendor/sonata-project/twig-extensions" />
+      <path value="$PROJECT_DIR$/backend/vendor/sonata-project/form-extensions" />
+      <path value="$PROJECT_DIR$/backend/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/backend/vendor/sonata-project/doctrine-extensions" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.5" />
   <component name="PhpStanOptionsConfiguration">
     <option name="transferred" value="true" />
+  </component>
+  <component name="PhpUnit">
+    <phpunit_settings>
+      <PhpUnitSettings custom_loader_path="$PROJECT_DIR$/backend/vendor/autoload.php" />
+    </phpunit_settings>
   </component>
   <component name="PsalmOptionsConfiguration">
     <option name="transferred" value="true" />

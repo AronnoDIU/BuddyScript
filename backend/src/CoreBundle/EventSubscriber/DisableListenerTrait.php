@@ -2,9 +2,6 @@
 
 namespace CoreBundle\EventSubscriber;
 
-/**
- * Trait DisableListenerTrait
- */
 trait DisableListenerTrait
 {
     private bool $enabled = true;

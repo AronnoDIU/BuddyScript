@@ -9,13 +9,13 @@ use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 /**
  * Class Api
  */
-class Api
+readonly class Api
 {
-    private readonly AuthorizationCheckerInterface $authorizationChecker;
+    private AuthorizationCheckerInterface $authorizationChecker;
 
-    private readonly SerializerInterface $serializerService;
+    private SerializerInterface $serializerService;
 
-    private readonly CacheService $cacheService;
+    private CacheService $cacheService;
 
     public function __construct(
         AuthorizationCheckerInterface $authorizationChecker,
@@ -40,24 +40,5 @@ class Api
     public function isGranted(string $role): bool
     {
         return $this->authorizationChecker->isGranted($role);
-    }
-
-    public function preventDoubleClick(int $objectId, string $object, string $action)
-    {
-        $key = \sprintf('double-click-%s-%s-%s', $action, $object, $objectId);
-        $cacheItem = $this->cacheService->getItem($key);
-        if ($cacheItem->isHit()) {
-            throw new \Exception('Hey! please slow down! You are trying to access too fast.');
-        }
-
-        $expiresAfter = 10;
-        if ('deposit' === $object && 'approve' === $action) {
-            $expiresAfter = 300;
-        }
-
-        $cacheItem
-            ->set(true)
-            ->expiresAfter($expiresAfter);
-        $this->cacheService->save($cacheItem);
     }
 }

@@ -148,7 +148,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         cookie_name?: scalar|Param|null, // The name of the cookie to use when using stateless protection. // Default: "csrf-token"
  *     },
  *     form?: bool|array{ // Form configuration
- *         enabled?: bool|Param, // Default: false
+ *         enabled?: bool|Param, // Default: true
  *         csrf_protection?: bool|array{
  *             enabled?: scalar|Param|null, // Default: null
  *             token_id?: scalar|Param|null, // Default: null
@@ -264,7 +264,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         formats?: array<string, string|list<scalar|Param|null>>,
  *     },
  *     assets?: bool|array{ // Assets configuration
- *         enabled?: bool|Param, // Default: false
+ *         enabled?: bool|Param, // Default: true
  *         strict_mode?: bool|Param, // Throw an exception if an entry is missing from the manifest.json. // Default: false
  *         version_strategy?: scalar|Param|null, // Default: null
  *         version?: scalar|Param|null, // Default: null
@@ -302,7 +302,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         },
  *     },
  *     translator?: bool|array{ // Translator configuration
- *         enabled?: bool|Param, // Default: false
+ *         enabled?: bool|Param, // Default: true
  *         fallbacks?: list<scalar|Param|null>,
  *         logging?: bool|Param, // Default: false
  *         formatter?: scalar|Param|null, // Default: "translator.formatter.default"
@@ -1379,6 +1379,215 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     enable_profiler?: bool|Param, // Whether or not to enable the profiler collector to calculate and visualize migration status. This adds some queries overhead. // Default: false
  *     transactional?: bool|Param, // Whether or not to wrap migrations in a single transaction. // Default: true
  * }
+ * @psalm-type TwigConfig = array{
+ *     form_themes?: list<scalar|Param|null>,
+ *     globals?: array<string, array{ // Default: []
+ *         id?: scalar|Param|null,
+ *         type?: scalar|Param|null,
+ *         value?: mixed,
+ *     }>,
+ *     autoescape_service?: scalar|Param|null, // Default: null
+ *     autoescape_service_method?: scalar|Param|null, // Default: null
+ *     base_template_class?: scalar|Param|null, // Deprecated: The child node "base_template_class" at path "twig.base_template_class" is deprecated.
+ *     cache?: scalar|Param|null, // Default: true
+ *     charset?: scalar|Param|null, // Default: "%kernel.charset%"
+ *     debug?: bool|Param, // Default: "%kernel.debug%"
+ *     strict_variables?: bool|Param, // Default: "%kernel.debug%"
+ *     auto_reload?: scalar|Param|null,
+ *     optimizations?: int|Param,
+ *     default_path?: scalar|Param|null, // The default path used to load templates. // Default: "%kernel.project_dir%/templates"
+ *     file_name_pattern?: list<scalar|Param|null>,
+ *     paths?: array<string, mixed>,
+ *     date?: array{ // The default format options used by the date filter.
+ *         format?: scalar|Param|null, // Default: "F j, Y H:i"
+ *         interval_format?: scalar|Param|null, // Default: "%d days"
+ *         timezone?: scalar|Param|null, // The timezone used when formatting dates, when set to null, the timezone returned by date_default_timezone_get() is used. // Default: null
+ *     },
+ *     number_format?: array{ // The default format options for the number_format filter.
+ *         decimals?: int|Param, // Default: 0
+ *         decimal_point?: scalar|Param|null, // Default: "."
+ *         thousands_separator?: scalar|Param|null, // Default: ","
+ *     },
+ *     mailer?: array{
+ *         html_to_text_converter?: scalar|Param|null, // A service implementing the "Symfony\Component\Mime\HtmlToTextConverter\HtmlToTextConverterInterface". // Default: null
+ *     },
+ * }
+ * @psalm-type SonataTwigConfig = array{
+ *     form_type?: "standard"|"horizontal"|Param, // Style used in the forms, some of the widgets need to be wrapped in a special div element depending on this style. // Default: "standard"
+ *     flashmessage?: array<string, array{ // Default: []
+ *         css_class?: scalar|Param|null,
+ *         types?: list<scalar|Param|null>,
+ *     }>,
+ * }
+ * @psalm-type SonataFormConfig = array{
+ *     form_type?: scalar|Param|null, // Must be one of standard, horizontal // Default: "standard"
+ * }
+ * @psalm-type SonataMediaConfig = array{
+ *     db_driver?: scalar|Param|null, // Choose persistence mechanism driver from the following list: "doctrine_orm", "doctrine_mongodb" // Default: "no_driver"
+ *     default_context?: scalar|Param|null,
+ *     force_disable_category?: bool|Param, // true IF you really want to disable the relation with category // Default: false
+ *     admin_format?: array{ // Configures the thumbnail preview for the admin
+ *         width?: scalar|Param|null, // Default: 200
+ *         height?: scalar|Param|null, // Default: null
+ *         quality?: scalar|Param|null, // Default: 90
+ *         format?: scalar|Param|null, // Default: "jpg"
+ *         constraint?: scalar|Param|null, // Default: true
+ *         resizer?: scalar|Param|null, // Default: null
+ *         resizer_options?: array<string, scalar|Param|null>,
+ *     },
+ *     contexts?: array<string, array{ // Default: []
+ *         download?: array{
+ *             strategy?: scalar|Param|null, // Default: "sonata.media.security.superadmin_strategy"
+ *             mode?: scalar|Param|null, // Default: "http"
+ *         },
+ *         providers?: list<scalar|Param|null>,
+ *         formats?: array<string, array{ // Default: []
+ *             width?: int|Param, // Default: null
+ *             height?: int|Param, // Default: null
+ *             quality?: int|Param, // Default: 80
+ *             format?: scalar|Param|null, // Default: "jpg"
+ *             constraint?: bool|Param, // Default: true
+ *             resizer?: scalar|Param|null, // Default: null
+ *             resizer_options?: array<string, scalar|Param|null>,
+ *         }>,
+ *     }>,
+ *     cdn?: array{
+ *         server?: array{
+ *             path?: scalar|Param|null, // Default: "/uploads/media"
+ *         },
+ *         cloudfront?: array{
+ *             path?: scalar|Param|null, // e.g. http://xxxxxxxxxxxxxx.cloudfront.net/uploads/media
+ *             distribution_id?: scalar|Param|null,
+ *             key?: scalar|Param|null,
+ *             secret?: scalar|Param|null,
+ *             region?: scalar|Param|null,
+ *             version?: scalar|Param|null,
+ *         },
+ *         fallback?: array{
+ *             primary?: scalar|Param|null,
+ *             fallback?: scalar|Param|null,
+ *         },
+ *     },
+ *     filesystem?: array{
+ *         local?: array{
+ *             directory?: scalar|Param|null, // Default: "%kernel.project_dir%/web/uploads/media"
+ *             create?: scalar|Param|null, // Default: false
+ *         },
+ *         ftp?: array{
+ *             directory?: scalar|Param|null,
+ *             host?: scalar|Param|null,
+ *             username?: scalar|Param|null,
+ *             password?: scalar|Param|null,
+ *             port?: scalar|Param|null, // Default: 21
+ *             passive?: scalar|Param|null, // Default: false
+ *             create?: scalar|Param|null, // Default: false
+ *             mode?: scalar|Param|null, // Default: 2
+ *         },
+ *         s3?: array{
+ *             directory?: scalar|Param|null, // Default: ""
+ *             bucket?: scalar|Param|null,
+ *             accessKey?: scalar|Param|null,
+ *             secretKey?: scalar|Param|null,
+ *             create?: scalar|Param|null, // Default: false
+ *             storage?: scalar|Param|null, // Default: "standard"
+ *             cache_control?: scalar|Param|null, // Default: ""
+ *             acl?: scalar|Param|null, // Default: "public"
+ *             encryption?: scalar|Param|null, // Default: ""
+ *             region?: scalar|Param|null, // Default: "s3.amazonaws.com"
+ *             endpoint?: scalar|Param|null, // Default: null
+ *             version?: scalar|Param|null, // Using "latest" in a production application is not recommended because pulling in a new minor version of the SDK that includes an API update could break your production application. See https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_configuration.html#cfg-version. // Default: "latest"
+ *             meta?: array<string, scalar|Param|null>,
+ *             async?: bool|Param, // Default: false
+ *         },
+ *         azure?: array{
+ *             container_name?: scalar|Param|null,
+ *             connection_string?: scalar|Param|null,
+ *             create_container?: scalar|Param|null, // Default: false
+ *             cache_control?: scalar|Param|null, // Default: ""
+ *             meta?: array<string, scalar|Param|null>,
+ *         },
+ *         replicate?: array{
+ *             primary?: scalar|Param|null,
+ *             secondary?: scalar|Param|null,
+ *         },
+ *     },
+ *     providers?: array{
+ *         file?: array{
+ *             service?: scalar|Param|null, // Default: "sonata.media.provider.file"
+ *             resizer?: scalar|Param|null, // Default: null
+ *             filesystem?: scalar|Param|null, // Default: "sonata.media.filesystem.local"
+ *             cdn?: scalar|Param|null, // Default: "sonata.media.cdn.server"
+ *             generator?: scalar|Param|null, // Default: "sonata.media.generator.default"
+ *             thumbnail?: scalar|Param|null, // Default: "sonata.media.thumbnail.file"
+ *             allowed_extensions?: list<scalar|Param|null>,
+ *             allowed_mime_types?: list<scalar|Param|null>,
+ *         },
+ *         image?: array{
+ *             service?: scalar|Param|null, // Default: "sonata.media.provider.image"
+ *             resizer?: scalar|Param|null, // Default: "sonata.media.resizer.default"
+ *             filesystem?: scalar|Param|null, // Default: "sonata.media.filesystem.local"
+ *             cdn?: scalar|Param|null, // Default: "sonata.media.cdn.server"
+ *             generator?: scalar|Param|null, // Default: "sonata.media.generator.default"
+ *             thumbnail?: scalar|Param|null, // Default: "sonata.media.thumbnail.format"
+ *             adapter?: scalar|Param|null, // Default: "sonata.media.adapter.image.default"
+ *             allowed_extensions?: list<scalar|Param|null>,
+ *             allowed_mime_types?: list<scalar|Param|null>,
+ *         },
+ *         youtube?: array{
+ *             service?: scalar|Param|null, // Default: "sonata.media.provider.youtube"
+ *             resizer?: scalar|Param|null, // Default: "sonata.media.resizer.default"
+ *             filesystem?: scalar|Param|null, // Default: "sonata.media.filesystem.local"
+ *             cdn?: scalar|Param|null, // Default: "sonata.media.cdn.server"
+ *             generator?: scalar|Param|null, // Default: "sonata.media.generator.default"
+ *             thumbnail?: scalar|Param|null, // Default: "sonata.media.thumbnail.format"
+ *             html5?: scalar|Param|null, // Default: false
+ *         },
+ *         dailymotion?: array{
+ *             service?: scalar|Param|null, // Default: "sonata.media.provider.dailymotion"
+ *             resizer?: scalar|Param|null, // Default: "sonata.media.resizer.default"
+ *             filesystem?: scalar|Param|null, // Default: "sonata.media.filesystem.local"
+ *             cdn?: scalar|Param|null, // Default: "sonata.media.cdn.server"
+ *             generator?: scalar|Param|null, // Default: "sonata.media.generator.default"
+ *             thumbnail?: scalar|Param|null, // Default: "sonata.media.thumbnail.format"
+ *         },
+ *         vimeo?: array{
+ *             service?: scalar|Param|null, // Default: "sonata.media.provider.vimeo"
+ *             resizer?: scalar|Param|null, // Default: "sonata.media.resizer.default"
+ *             filesystem?: scalar|Param|null, // Default: "sonata.media.filesystem.local"
+ *             cdn?: scalar|Param|null, // Default: "sonata.media.cdn.server"
+ *             generator?: scalar|Param|null, // Default: "sonata.media.generator.default"
+ *             thumbnail?: scalar|Param|null, // Default: "sonata.media.thumbnail.format"
+ *         },
+ *     },
+ *     class?: array{
+ *         media?: scalar|Param|null, // Default: "App\\Entity\\SonataMediaMedia"
+ *         gallery?: scalar|Param|null, // Default: "App\\Entity\\SonataMediaGallery"
+ *         gallery_item?: scalar|Param|null, // Default: "App\\Entity\\SonataMediaGalleryItem"
+ *         category?: scalar|Param|null, // Default: "App\\Entity\\SonataClassificationCategory"
+ *     },
+ *     http?: array{
+ *         client?: scalar|Param|null, // Alias of the http client. // Default: "sonata.media.http.base_client"
+ *         message_factory?: scalar|Param|null, // Alias of the message factory. // Default: "sonata.media.http.base_message_factory"
+ *     },
+ *     resizer?: array{
+ *         simple?: array{
+ *             mode?: int|Param, // Default: 1
+ *         },
+ *         square?: array{
+ *             mode?: int|Param, // Default: 1
+ *         },
+ *     },
+ *     resizers?: array{
+ *         default?: scalar|Param|null, // Default: "sonata.media.resizer.simple"
+ *     },
+ *     adapters?: array{
+ *         default?: scalar|Param|null, // Default: "sonata.media.adapter.image.gd"
+ *     },
+ *     messenger?: bool|array{
+ *         enabled?: bool|Param, // Default: false
+ *         generate_thumbnails_bus?: scalar|Param|null, // Default: "messenger.default_bus"
+ *     },
+ * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
@@ -1389,6 +1598,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     nelmio_cors?: NelmioCorsConfig,
  *     doctrine?: DoctrineConfig,
  *     doctrine_migrations?: DoctrineMigrationsConfig,
+ *     twig?: TwigConfig,
+ *     sonata_twig?: SonataTwigConfig,
+ *     sonata_form?: SonataFormConfig,
+ *     sonata_media?: SonataMediaConfig,
  *     "when@dev"?: array{
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
@@ -1400,6 +1613,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         maker?: MakerConfig,
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,
+ *         twig?: TwigConfig,
+ *         sonata_twig?: SonataTwigConfig,
+ *         sonata_form?: SonataFormConfig,
+ *         sonata_media?: SonataMediaConfig,
  *     },
  *     "when@prod"?: array{
  *         imports?: ImportsConfig,
@@ -1411,6 +1628,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         nelmio_cors?: NelmioCorsConfig,
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,
+ *         twig?: TwigConfig,
+ *         sonata_twig?: SonataTwigConfig,
+ *         sonata_form?: SonataFormConfig,
+ *         sonata_media?: SonataMediaConfig,
  *     },
  *     "when@test"?: array{
  *         imports?: ImportsConfig,
@@ -1422,6 +1643,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         nelmio_cors?: NelmioCorsConfig,
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,
+ *         twig?: TwigConfig,
+ *         sonata_twig?: SonataTwigConfig,
+ *         sonata_form?: SonataFormConfig,
+ *         sonata_media?: SonataMediaConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias
  *         imports?: ImportsConfig,

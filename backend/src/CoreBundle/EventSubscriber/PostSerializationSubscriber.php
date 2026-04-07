@@ -9,14 +9,11 @@ use JMS\Serializer\JsonSerializationVisitor;
 use Sonata\MediaBundle\Provider\ImageProviderInterface;
 use Sonata\MediaBundle\Provider\Pool as MediaPool;
 
-/**
- * Class PostSerializationSubscriber
- */
-class PostSerializationSubscriber implements EventSubscriberInterface
+readonly class PostSerializationSubscriber implements EventSubscriberInterface
 {
-    private readonly ImageProviderInterface $imageProvider;
+    private ImageProviderInterface $imageProvider;
 
-    private readonly MediaPool $mediaPool;
+    private MediaPool $mediaPool;
 
     public function __construct(ImageProviderInterface $imageProvider, MediaPool $mediaPool)
     {
@@ -35,7 +32,7 @@ class PostSerializationSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function serializeMedia(ObjectEvent $event)
+    public function serializeMedia(ObjectEvent $event): void
     {
         /** @var MediaEntity $media */
         $media = $event->getObject();

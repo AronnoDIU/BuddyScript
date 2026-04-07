@@ -2,27 +2,29 @@
 
 namespace CoreBundle\Util\Pagination;
 
-/**
- * Class PaginatedCollection
- */
 class PaginatedCollection
 {
-    protected array $data;
+    protected array $data = [];
 
     public function __construct(array $items, int $totalItems)
     {
-        $this->data['items'] = $items;
-        $this->data['total'] = $totalItems;
-        $this->data['count'] = \count($items);
+        $this->data = [
+            'items' => $items,
+            'total' => $totalItems,
+            'count' => \count($items),
+        ];
     }
 
-    public function addPagination(string $rel, int $page)
+    public function addPagination(string $rel, int $page): void
     {
-        $this->data['pagination'][$rel] = $page;
+        $data = $this->data;
+        $data['pagination'][$rel] = $page;
+        $this->data = $data;
     }
 
     public function getData(): array
     {
         return $this->data;
     }
+
 }

@@ -42,11 +42,6 @@ class Like
         return $this->comment;
     }
 
-    public function getId(): Uuid
-    {
-        return $this->id;
-    }
-
     public function setComment(Comment $comment): self
     {
         $this->comment = $comment;

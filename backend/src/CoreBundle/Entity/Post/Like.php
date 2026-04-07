@@ -42,11 +42,6 @@ class Like
         return $this->post;
     }
 
-    public function getId(): Uuid
-    {
-        return $this->id;
-    }
-
     public function setPost(Post $post): self
     {
         $this->post = $post;

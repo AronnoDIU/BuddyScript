@@ -10,6 +10,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
+use CoreBundle\Entity\Comment as CommentEntity;
 
 /**
  * @extends ServiceEntityRepository<Post>
@@ -28,7 +29,7 @@ class PostRepository extends ServiceEntityRepository
     {
         $commentsByViewerDql = $this->getEntityManager()->createQueryBuilder()
             ->select('1')
-            ->from('CoreBundle\\Entity\\Comment', 'vc')
+            ->from(CommentEntity::class, 'vc')
             ->where('vc.post = p')
             ->andWhere('vc.author = :viewer')
             ->getDQL();
@@ -43,7 +44,9 @@ class PostRepository extends ServiceEntityRepository
             ->getQuery()
             ->getScalarResult();
 
-        $postIds = array_values(array_filter(array_map(static fn (array $row): ?string => $row['id'] ?? null, $postIdRows)));
+        $postIds = array_map(static fn(array $row): ?string => $row['id'] ?? null, $postIdRows)
+                |> array_filter(...)
+                |> array_values(...);
         if ($postIds === []) {
             return [];
         }

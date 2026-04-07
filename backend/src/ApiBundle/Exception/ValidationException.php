@@ -2,12 +2,9 @@
 
 namespace ApiBundle\Exception;
 
-/**
- * Class ValidationException
- */
 class ValidationException extends \Exception
 {
-    protected $errors;
+    protected array $errors;
 
     public function __construct($message, $errors)
     {
@@ -15,7 +12,7 @@ class ValidationException extends \Exception
         parent::__construct($message);
     }
 
-    public function getErrors()
+    public function getErrors(): array
     {
         return $this->errors;
     }

@@ -310,5 +310,3 @@ class FeedController extends AbstractController
         return '/uploads/posts/' . $name;
     }
 }
-
-

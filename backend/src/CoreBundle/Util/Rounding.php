@@ -2,9 +2,6 @@
 
 namespace CoreBundle\Util;
 
-/**
- * Class Rounding
- */
 class Rounding
 {
     public static function roundMoney($value): float

@@ -2,13 +2,8 @@
 
 namespace ApiBundle\Attribute;
 
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ConfigurationAnnotation;
-
-/**
- * Class RateLimit
- */
 #[\Attribute(\Attribute::TARGET_METHOD)]
-class RateLimit extends ConfigurationAnnotation
+class RateLimit
 {
     private int $limit;
 
@@ -18,16 +13,6 @@ class RateLimit extends ConfigurationAnnotation
     {
         $this->limit = $limit;
         $this->period = $period;
-    }
-
-    public function getAliasName(): string
-    {
-        return 'x-rate-limit';
-    }
-
-    public function allowArray(): bool
-    {
-        return true;
     }
 
     public function getLimit(): int

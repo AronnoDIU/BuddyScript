@@ -2,9 +2,6 @@
 
 namespace CoreBundle\Event;
 
-/**
- * Class DisableListenerEvent
- */
 final class DisableListenerEvent
 {
     /* NAME */

@@ -7,9 +7,6 @@ use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
 
-/**
- * Class PaginationFactory
- */
 class PaginationFactory
 {
     public function createCollection(QueryBuilder $qb, Request $request): PaginatedCollection

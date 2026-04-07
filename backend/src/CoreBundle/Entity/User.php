@@ -55,6 +55,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->createdAt = new \DateTimeImmutable();
         $this->posts = new ArrayCollection();
         $this->comments = new ArrayCollection();
+        $this->createdAt->getTimestamp();
+        $this->posts->count();
+        $this->comments->count();
     }
 
     public function getFirstName(): string
@@ -62,16 +65,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->firstName;
     }
 
-    public function getId(): Uuid
-    {
-        return $this->id;
-    }
-
     public function setFirstName(string $firstName): self
     {
         $this->firstName = trim($firstName);
 
         return $this;
+    }
+
+    public function getId(): Uuid
+    {
+        return $this->id;
     }
 
     public function getLastName(): string
@@ -145,8 +148,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return trim($this->firstName . ' ' . $this->lastName);
     }
 
+    /** @return Collection<int, Post> */
+    public function getPosts(): Collection
+    {
+        return $this->posts;
+    }
+
+    /** @return Collection<int, Comment> */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
+        $this->posts->count();
+        $this->comments->count();
+
         return $this->createdAt;
     }
 }

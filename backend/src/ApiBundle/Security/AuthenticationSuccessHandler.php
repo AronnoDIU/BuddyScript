@@ -15,7 +15,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
 
 /**
@@ -27,7 +27,7 @@ class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterf
 
     private readonly EventDispatcherInterface $dispatcher;
 
-    private readonly Security $security;
+    private readonly AuthorizationCheckerInterface $authorizationChecker;
 
     private readonly EntityManagerInterface $em;
 
@@ -36,13 +36,13 @@ class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterf
     public function __construct(
         JWTTokenManagerInterface $jwtTokenManager,
         EventDispatcherInterface $dispatcher,
-        Security $security,
+        AuthorizationCheckerInterface $authorizationChecker,
         EntityManagerInterface $em,
         SerializerInterface $jmsSerializer,
     ) {
         $this->jwtTokenManager = $jwtTokenManager;
         $this->dispatcher = $dispatcher;
-        $this->security = $security;
+        $this->authorizationChecker = $authorizationChecker;
         $this->em = $em;
         $this->jmsSerializer = $jmsSerializer;
     }

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api, clearToken, resolveMediaUrl } from '../api';
 
 const getDisplayName = (user) => user?.displayName || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Unknown user';
@@ -452,6 +453,7 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
 
 /* ─── Feed Page ─────────────────────────────────────────────────────── */
 export default function FeedPage() {
+  const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [posts, setPosts] = useState([]);
   const [content, setContent] = useState('');
@@ -552,18 +554,24 @@ export default function FeedPage() {
     return { nextPosts, changed };
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     const [meResponse, feedResponse] = await Promise.all([api.get('/me'), api.get('/feed')]);
     setMe(meResponse.data.user);
     setPosts(feedResponse.data.posts || []);
-  };
+  }, []);
 
   useEffect(() => {
-    loadData().catch(() => {
-      clearToken();
-      window.location.href = '/login';
+    loadData().catch((loadError) => {
+      const status = loadError?.response?.status;
+      if (status === 401 || status === 403) {
+        clearToken();
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      setError(loadError?.response?.data?.message || 'Failed to load feed data.');
     });
-  }, []);
+  }, [loadData, navigate]);
 
   const onCreatePost = async (event) => {
     event.preventDefault();
