@@ -1,0 +1,4 @@
+services:
+  api.security.authenticator:
+    class: ApiBundle\Security\JwtTokenAuthenticator
+    parent: lexik_jwt_authentication.security.jwt_authenticator
