@@ -95,6 +95,7 @@ This command orchestrates the local stack and will:
 - Comment/reply like/unlike
 - "Who liked" support for posts, comments, and replies
 - Profile page with visibility-aware stats and recent timeline posts
+- Messenger conversations with near real-time updates, attachments, and read states
 
 ## API Overview
 
@@ -127,6 +128,16 @@ This command orchestrates the local stack and will:
 - `GET /api/v1/notifications`
 - `POST /api/v1/notifications/{id}/read`
 - `POST /api/v1/notifications/read-all`
+- `GET /api/v1/messenger/conversations`
+- `GET /api/v1/messenger/conversations/{id}/messages`
+- `POST /api/v1/messenger/messages`
+- `POST /api/v1/messenger/stream-token`
+- `POST /api/v1/messenger/conversations/{id}/read`
+- `POST /api/v1/messenger/conversations/{id}/pin`
+- `POST /api/v1/messenger/conversations/{id}/mute`
+- `POST /api/v1/messenger/conversations/{id}/archive`
+- `GET /api/v1/messenger/updates`
+- `GET /api/v1/messenger/stream`
 
 ## Operational Notes
 

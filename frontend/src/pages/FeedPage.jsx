@@ -598,30 +598,6 @@ export default function FeedPage() {
     }
   };
 
-  const mapComments = (comments, targetId, applyUpdate) => {
-    let changed = false;
-
-    const nextComments = comments.map((comment) => {
-      let nextComment = comment;
-
-      if (comment.replies?.length) {
-        const nextReplies = mapComments(comment.replies, targetId, applyUpdate);
-        if (nextReplies !== comment.replies) {
-          nextComment = { ...nextComment, replies: nextReplies };
-          changed = true;
-        }
-      }
-
-      if (comment.id !== targetId) {
-        return nextComment;
-      }
-
-      changed = true;
-      return applyUpdate(nextComment);
-    });
-
-    return changed ? nextComments : comments;
-  };
 
   const appendCommentToTree = (comments, parentId, newComment) => {
     let changed = false;
@@ -651,23 +627,6 @@ export default function FeedPage() {
     return changed ? nextComments : comments;
   };
 
-  const updatePostsByCommentId = (prevPosts, commentId, applyUpdate) => {
-    let changed = false;
-
-    const nextPosts = prevPosts.map((post) => {
-      const currentComments = post.comments || [];
-      const nextComments = mapComments(currentComments, commentId, applyUpdate);
-
-      if (nextComments === currentComments) {
-        return post;
-      }
-
-      changed = true;
-      return { ...post, comments: nextComments };
-    });
-
-    return { nextPosts, changed };
-  };
 
   const insertReplyIntoPosts = (prevPosts, parentId, reply) => {
     let changed = false;
@@ -972,7 +931,7 @@ export default function FeedPage() {
                 </li>
                 {/* Chat */}
                 <li className="nav-item _header_nav_item">
-                  <a className="nav-link _header_nav_link" href="/reactions">
+                  <a className="nav-link _header_nav_link" href="/messenger">
                     <svg xmlns="http://www.w3.org/2000/svg" width="23" height="22" fill="none" viewBox="0 0 23 22">
                       <path fill="#000" fillOpacity=".6" fillRule="evenodd"
                         d="M11.43 0c2.96 0 5.743 1.143 7.833 3.22 4.32 4.29 4.32 11.271 0 15.562C17.145 20.886 14.293 22 11.405 22c-1.575 0-3.16-.33-4.643-1.012-.437-.174-.847-.338-1.14-.338-.338.002-.793.158-1.232.308-.9.307-2.022.69-2.852-.131-.826-.822-.445-1.932-.138-2.826.152-.44.307-.895.307-1.239 0-.282-.137-.642-.347-1.161C-.57 11.46.322 6.47 3.596 3.22A11.04 11.04 0 0111.43 0z"

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace CoreBundle\Entity;
 
 use CoreBundle\Entity\SocialGraph\Connection;
+use CoreBundle\Entity\Messenger\ConversationParticipant;
+use CoreBundle\Entity\Messenger\Message;
 use CoreBundle\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -77,6 +79,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
     #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'recipient')]
     private Collection $notifications;
 
+    #[ORM\OneToMany(targetEntity: ConversationParticipant::class, mappedBy: 'user')]
+    private Collection $messengerParticipations;
+
+    #[ORM\OneToMany(targetEntity: Message::class, mappedBy: 'sender')]
+    private Collection $sentMessages;
+
     public function __construct()
     {
         $this->id = Uuid::v7();
@@ -86,6 +94,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
         $this->connectionsSent = new ArrayCollection();
         $this->connectionsReceived = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->messengerParticipations = new ArrayCollection();
+        $this->sentMessages = new ArrayCollection();
         $this->createdAt->getTimestamp();
         $this->posts->count();
         $this->comments->count();
@@ -268,6 +278,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
     public function getNotifications(): Collection
     {
         return $this->notifications;
+    }
+
+    /** @return Collection<int, ConversationParticipant> */
+    public function getMessengerParticipations(): Collection
+    {
+        return $this->messengerParticipations;
+    }
+
+    /** @return Collection<int, Message> */
+    public function getSentMessages(): Collection
+    {
+        return $this->sentMessages;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

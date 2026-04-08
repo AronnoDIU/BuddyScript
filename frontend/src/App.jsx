@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import FeedPage from './pages/FeedPage';
 import LoginPage from './pages/LoginPage';
+import MessengerPage from './pages/MessengerPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
 import ReactionsPage from './pages/ReactionsPage';
@@ -51,6 +52,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/messenger"
+        element={
+          <ProtectedRoute>
+            <MessengerPage />
           </ProtectedRoute>
         }
       />

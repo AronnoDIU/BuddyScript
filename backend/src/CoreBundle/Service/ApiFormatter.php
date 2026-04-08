@@ -27,7 +27,16 @@ readonly class ApiFormatter
             'lastName' => $user->getLastName(),
             'displayName' => $user->getDisplayName(),
             'email' => $user->getEmail(),
+            'avatarUrl' => $this->avatarUrl($user),
         ];
+    }
+
+    private function avatarUrl(User $user): string
+    {
+        $email = mb_strtolower(trim($user->getEmail()));
+        $hash = md5($email);
+
+        return sprintf('https://www.gravatar.com/avatar/%s?d=identicon&s=128', $hash);
     }
 
     /**
@@ -140,7 +149,7 @@ readonly class ApiFormatter
             'email' => $isMe ? $profileUser->getEmail() : null,
             'isMe' => $isMe,
             'joinedAt' => $profileUser->getCreatedAt()->format(DATE_ATOM),
-            'avatarUrl' => null,
+            'avatarUrl' => $this->avatarUrl($profileUser),
             'coverUrl' => null,
             'bio' => null,
             'viewerPermissions' => [
