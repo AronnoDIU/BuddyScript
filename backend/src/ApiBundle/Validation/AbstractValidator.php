@@ -4,7 +4,7 @@ namespace ApiBundle\Validation;
 
 use ApiBundle\Exception\ValidationException;
 use Doctrine\ORM\EntityManagerInterface;
-use Respect\Validation\Exceptions\NestedValidationException;
+use Respect\Validation\ValidatorBuilder;
 
 abstract class AbstractValidator
 {
@@ -63,31 +63,34 @@ abstract class AbstractValidator
         $this->setCurrentInputs($inputs);
 
         foreach ($this->getValidationRules() as $rule => $validator) {
-            try {
-                $isDependent = \is_array($validator);
-                $value = $inputs[$rule] ?? null;
+            $isDependent = \is_array($validator);
+            $value = $inputs[$rule] ?? null;
 
-                if ($isDependent) {
-                    $dependencyValue = $inputs[$validator['dependency']] ?? null;
-                    $dependencyValue = \is_string($dependencyValue) ? \sprintf('\'%s\'', $dependencyValue)
-                        : $dependencyValue;
-                    $expectedValue = \is_string($validator['value']) ? \sprintf('\'%s\'', $validator['value'])
-                        : $validator['value'];
-                    $expr = \sprintf('return %s %s %s;', $dependencyValue, $validator['operator'], $expectedValue);
-                    if ($dependencyValue && eval($expr)) {
-                        foreach ($validator['rules'] as $rule => $childValidator) {
-                            $childRule = explode('.', (string) $rule);
-                            $childRule = $childRule[array_key_last($childRule)];
-                            $childValue = $value && \is_array($value) ? $value[$childRule] ?? null : $value;
+            if ($isDependent) {
+                $dependencyValue = $inputs[$validator['dependency']] ?? null;
+                $dependencyValue = \is_string($dependencyValue) ? \sprintf('\'%s\'', $dependencyValue)
+                    : $dependencyValue;
+                $expectedValue = \is_string($validator['value']) ? \sprintf('\'%s\'', $validator['value'])
+                    : $validator['value'];
+                $expr = \sprintf('return %s %s %s;', $dependencyValue, $validator['operator'], $expectedValue);
 
-                            $childValidator->assert($childValue);
+                if ($dependencyValue && eval($expr)) {
+                    foreach ($validator['rules'] as $childRuleName => $childValidator) {
+                        $childRuleParts = explode('.', (string) $childRuleName);
+                        $childRuleKey = $childRuleParts[array_key_last($childRuleParts)];
+                        $childValue = $value && \is_array($value) ? $value[$childRuleKey] ?? null : $value;
+
+                        $resultQuery = ValidatorBuilder::init($childValidator)->validate($childValue);
+                        if ($resultQuery->hasFailed()) {
+                            $this->errors[$childRuleName]['errors'] = $resultQuery->getMessages();
                         }
                     }
-                } else {
-                    $validator->assert($value);
                 }
-            } catch (NestedValidationException $exception) {
-                $this->errors[$rule]['errors'] = $this->getValidationMessages($exception);
+            } else {
+                $resultQuery = ValidatorBuilder::init($validator)->validate($value);
+                if ($resultQuery->hasFailed()) {
+                    $this->errors[$rule]['errors'] = $resultQuery->getMessages();
+                }
             }
         }
 
@@ -134,18 +137,4 @@ abstract class AbstractValidator
         throw new ValidationException($message, $errors);
     }
 
-    protected function getValidationMessages(NestedValidationException $exception): array
-    {
-        $messages = $this->messages;
-
-        if (\count($messages) > 0) {
-            return $exception->findMessages($messages);
-        }
-
-        if ($exception->hasCustomTemplate()) {
-            return [$exception->getMessage()];
-        }
-
-        return $exception->getMessages();
-    }
 }
