@@ -70,7 +70,7 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const refreshResponse = await api.post('/refresh', {}, { skipAuth: true });
+      const refreshResponse = await api.post('/v1/refresh', {}, { skipAuth: true });
       const newToken = refreshResponse?.data?.token;
 
       if (!newToken) {

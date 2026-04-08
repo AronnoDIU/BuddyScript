@@ -562,8 +562,8 @@ export default function FeedPage() {
   const loadData = useCallback(async (query = '') => {
     const normalizedQuery = query.trim();
     const [meResponse, feedResponse] = await Promise.all([
-      api.get('/me'),
-      api.get('/feed', { params: normalizedQuery ? { q: normalizedQuery } : {} }),
+      api.get('/v1/me'),
+      api.get('/v1/feed', { params: normalizedQuery ? { q: normalizedQuery } : {} }),
     ]);
     setMe(meResponse.data.user);
     setPosts(feedResponse.data.posts || []);
@@ -604,7 +604,7 @@ export default function FeedPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.post('/posts', formData);
+      const response = await api.post('/v1/posts', formData);
       const createdPost = response.data?.post;
       setContent('');
       setVisibility('public');
@@ -623,7 +623,7 @@ export default function FeedPage() {
 
   const togglePostLike = async (postId) => {
     try {
-      const response = await api.post(`/posts/${postId}/likes/toggle`);
+      const response = await api.post(`/v1/posts/${postId}/likes/toggle`);
       const likes = response.data?.likes || [];
       const liked = Boolean(response.data?.liked);
 
@@ -639,7 +639,7 @@ export default function FeedPage() {
 
   const toggleCommentLike = async (commentId) => {
     try {
-      const response = await api.post(`/comments/${commentId}/likes/toggle`);
+      const response = await api.post(`/v1/comments/${commentId}/likes/toggle`);
       const likes = response.data?.likes || [];
       const liked = Boolean(response.data?.liked);
 
@@ -666,7 +666,7 @@ export default function FeedPage() {
 
   const addComment = async (postId, text) => {
     try {
-      const response = await api.post(`/posts/${postId}/comments`, { content: text });
+      const response = await api.post(`/v1/posts/${postId}/comments`, { content: text });
       const comment = response.data?.comment;
 
       if (comment) {
@@ -686,7 +686,7 @@ export default function FeedPage() {
 
   const addReply = async (commentId, text) => {
     try {
-      const response = await api.post(`/comments/${commentId}/replies`, { content: text });
+      const response = await api.post(`/v1/comments/${commentId}/replies`, { content: text });
       const reply = response.data?.reply;
 
       if (reply) {
@@ -711,7 +711,7 @@ export default function FeedPage() {
 
   const logout = async () => {
     try {
-      await api.post('/logout', {}, { skipAuth: true });
+      await api.post('/v1/logout', {}, { skipAuth: true });
     } catch (logoutError) {
       console.error('Logout request failed:', logoutError);
     } finally {

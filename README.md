@@ -61,23 +61,23 @@ This single command will:
 
 Public endpoints:
 
-- `POST /api/auth/register`
+- `POST /api/v1/register`
 - `POST /api/auth/login_check`
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
+- `POST /api/v1/refresh`
+- `POST /api/v1/logout`
 
 Protected endpoints (Bearer token):
 
-- `GET /api/me`
-- `GET /api/feed`
-- `POST /api/posts`
-- `POST /api/posts/{id}/likes/toggle`
-- `GET /api/posts/{id}/likes`
-- `POST /api/posts/{id}/comments`
-- `POST /api/comments/{id}/replies`
-- `POST /api/comments/{id}/likes/toggle`
-- `GET /api/comments/{id}/likes`
-- `GET /api/profiles/{id}`
+- `GET /api/v1/me`
+- `GET /api/v1/feed`
+- `POST /api/v1/posts`
+- `POST /api/v1/posts/{id}/likes/toggle`
+- `GET /api/v1/posts/{id}/likes`
+- `POST /api/v1/posts/{id}/comments`
+- `POST /api/v1/comments/{id}/replies`
+- `POST /api/v1/comments/{id}/likes/toggle`
+- `GET /api/v1/comments/{id}/likes`
+- `GET /api/v1/profiles/{id}`
 
 ## Notes
 

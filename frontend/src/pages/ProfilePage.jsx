@@ -56,7 +56,7 @@ export default function ProfilePage() {
       setError('');
 
       try {
-        const response = await api.get(`/profiles/${userId}`);
+        const response = await api.get(`/v1/profiles/${userId}`);
         if (!isMounted) return;
 
         setProfile(response.data?.profile || null);
