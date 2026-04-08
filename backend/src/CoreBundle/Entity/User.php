@@ -116,6 +116,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
     {
         $this->email = mb_strtolower(trim($email));
 
+        if (!isset($this->username) || trim($this->username) === '') {
+            $this->username = $this->buildUsernameFromEmail($this->email);
+        }
+
         return $this;
     }
 
@@ -131,9 +135,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
 
     public function setUsername(string $username): self
     {
-        $this->username = $username;
+        $normalized = mb_strtolower(trim($username));
+        $this->username = mb_substr($normalized, 0, 50);
 
         return $this;
+    }
+
+    private function buildUsernameFromEmail(string $email): string
+    {
+        $localPart = explode('@', $email)[0] ?? '';
+        $localPart = preg_replace('/[^a-z0-9._-]+/i', '', $localPart) ?? '';
+        $localPart = mb_strtolower(trim($localPart));
+
+        if ($localPart === '') {
+            return 'user_' . mb_substr(str_replace('-', '', $this->id->toRfc4122()), 0, 12);
+        }
+
+        return mb_substr($localPart, 0, 50);
     }
 
     public function getRoles(): array
