@@ -1,0 +1,27 @@
+sonata_admin:
+    title: 'BuddyScript'
+    dashboard:
+        blocks:
+            - { type: sonata.admin.block.admin_list, position: left }
+
+        groups:
+            User:
+                icon: fa fa-users
+                roles: [ ROLE_SONATA_ADMIN ]
+
+sonata_block:
+    blocks:
+        sonata.admin.block.admin_list:
+            contexts: [admin]
+
+services:
+    admin.user:
+        class: AdminBundle\Admin\UserAdmin
+        arguments:
+            - ~
+            - CoreBundle\Entity\User
+            - AdminBundle\Controller\UserAdminController
+            - '@security.token_storage'
+            - '@CoreBundle\Service\User'
+        tags:
+            - { name: sonata.admin, manager_type: orm, group: User, label: All }

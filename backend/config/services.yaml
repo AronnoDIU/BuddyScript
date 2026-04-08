@@ -28,6 +28,11 @@ services:
         resource: '../src/CoreBundle/*'
         exclude: '../src/CoreBundle/{Entity}'
 
+    CoreBundle\Repository\UserRepository:
+        factory: ['@doctrine.orm.default_entity_manager', 'getRepository']
+        arguments:
+            - CoreBundle\Entity\User
+
     ApiBundle\EventListener\ExceptionListener:
         class: ApiBundle\EventListener\ExceptionListener
         tags:

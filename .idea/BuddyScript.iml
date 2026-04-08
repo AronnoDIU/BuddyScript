@@ -131,6 +131,7 @@
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/sonata-project/doctrine-orm-admin-bundle" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/sonata-project/exporter" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/expression-language" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/rate-limiter" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/stimulus-bundle" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/web-profiler-bundle" />
     </content>

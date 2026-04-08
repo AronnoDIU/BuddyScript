@@ -1,6 +1,6 @@
 <?php
 
-namespace App\CoreBundle\Entity;
+namespace CoreBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Sonata\MediaBundle\Entity\BaseMedia;
