@@ -7,8 +7,21 @@
 # To list all registered routes, run the following command:
 #   bin/console debug:router
 
-controllers:
-    resource:
-        path: ../src/ApiBundle/Controller/
-        namespace: ApiBundle\Controller
+api_login_check:
+    path: /api/auth/login_check
+
+admin_controllers:
+    resource: '../src/AdminBundle/Controller/'
+    type: attribute
+    prefix: '/admin'
+    trailing_slash_on_root: false
+
+api_controllers:
+    resource: '../src/ApiBundle/Controller/'
+    type: attribute
+    prefix: '/api/v1'
+    trailing_slash_on_root: false
+
+kernel:
+    resource: App\Kernel
     type: attribute

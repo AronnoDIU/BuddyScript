@@ -10,7 +10,6 @@ use CoreBundle\Service\ApiFormatter;
 use CoreBundle\Service\RefreshTokenManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -19,8 +18,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-#[Route('/api')]
-class AuthController extends AbstractController
+class AuthController extends BaseController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -31,9 +29,10 @@ class AuthController extends AbstractController
         private readonly JWTTokenManagerInterface $jwtTokenManager,
         private readonly RefreshTokenManager $refreshTokenManager,
     ) {
+        parent::__construct();
     }
 
-    #[Route('/auth/register', name: 'api_register', methods: ['POST'])]
+    #[Route('/register', name: 'api_register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
         $payload = $this->extractPayload($request);
@@ -104,7 +103,7 @@ class AuthController extends AbstractController
         return $this->json(['user' => $this->formatter->user($user)]);
     }
 
-    #[Route('/auth/refresh', name: 'api_auth_refresh', methods: ['POST'])]
+    #[Route('/refresh', name: 'api_auth_refresh', methods: ['POST'])]
     public function refresh(Request $request): JsonResponse
     {
         $refreshToken = (string) $request->cookies->get($this->refreshTokenManager->getCookieName(), '');
@@ -133,7 +132,7 @@ class AuthController extends AbstractController
         return $response;
     }
 
-    #[Route('/auth/logout', name: 'api_auth_logout', methods: ['POST'])]
+    #[Route('/logout', name: 'api_auth_logout', methods: ['POST'])]
     public function logout(Request $request): JsonResponse
     {
         $refreshToken = (string) $request->cookies->get($this->refreshTokenManager->getCookieName(), '');
@@ -155,5 +154,3 @@ class AuthController extends AbstractController
         return $response;
     }
 }
-
-

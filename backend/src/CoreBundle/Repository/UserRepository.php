@@ -5,19 +5,44 @@ declare(strict_types=1);
 namespace CoreBundle\Repository;
 
 use CoreBundle\Entity\User;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * @extends ServiceEntityRepository<User>
- */
-class UserRepository extends ServiceEntityRepository
+class UserRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function filter(Request $request): QueryBuilder
     {
-        parent::__construct($registry, User::class);
+        $qb = $this->createQueryBuilder('u');
+
+        if ($id = $request->query->get('id')) {
+            $qb->andWhere('u.id = :id')
+                ->setParameter('id', $id);
+        }
+
+        if ($userName = $request->query->get('user_name')) {
+            $qb->andWhere('u.username like :userName')
+                ->setParameter('userName', \sprintf('%s%s%s', '%', $userName, '%'));
+        }
+
+        if ($email = $request->query->get('email')) {
+            $qb->andWhere('u.email = :email')
+                ->setParameter('email', $email);
+        }
+
+        if ($phone = $request->query->get('phone')) {
+            $qb->andWhere('u.phone = :phone')
+                ->setParameter('phone', $phone);
+        }
+
+        $enabled = $request->query->get('enabled');
+        if (null !== $enabled) {
+            $qb->andWhere('u.enabled = :enabled')
+                ->setParameter('enabled', $request->query->getBoolean('enabled'));
+        }
+
+        return $qb;
     }
 
     public function findOneById(string $id): ?User

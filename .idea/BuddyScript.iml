@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/backend/tests" isTestSource="true" packagePrefix="App\Tests\" />
       <sourceFolder url="file://$MODULE_DIR$/backend/src/ApiBundle" isTestSource="false" packagePrefix="ApiBundle\" />
       <sourceFolder url="file://$MODULE_DIR$/backend/src/CoreBundle" isTestSource="false" packagePrefix="CoreBundle\" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/src/AdminBundle" isTestSource="false" packagePrefix="AdminBundle\" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/composer" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/doctrine/collections" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/doctrine/dbal" />
@@ -105,6 +106,23 @@
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/twig-bundle" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/twig/string-extra" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/twig/twig" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/friendsofsymfony/rest-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/giggsey/libphonenumber-for-php" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/giggsey/locale" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/laravel/serializable-closure" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/nelmio/api-doc-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/php-di/invoker" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/php-di/php-di" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/phpdocumentor/reflection-common" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/phpdocumentor/reflection-docblock" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/phpdocumentor/type-resolver" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/respect/string-formatter" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/respect/stringifier" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/respect/validation" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/webmozart/assert" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/willdurand/jsonp-callback-validator" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/willdurand/negotiation" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/zircote/swagger-php" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -36,7 +36,7 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
     try {
-      await api.post('/auth/register', {
+      await api.post('/register', {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         email: form.email.trim(),

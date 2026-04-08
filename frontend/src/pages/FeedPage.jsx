@@ -711,7 +711,7 @@ export default function FeedPage() {
 
   const logout = async () => {
     try {
-      await api.post('/auth/logout', {}, { skipAuth: true });
+      await api.post('/logout', {}, { skipAuth: true });
     } catch (logoutError) {
       console.error('Logout request failed:', logoutError);
     } finally {

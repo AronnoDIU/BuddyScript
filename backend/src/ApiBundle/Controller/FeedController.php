@@ -15,7 +15,6 @@ use CoreBundle\Repository\Post\LikeRepository as PostLikeRepository;
 use CoreBundle\Repository\PostRepository;
 use CoreBundle\Service\ApiFormatter;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,8 +25,7 @@ use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-#[Route('/api')]
-class FeedController extends AbstractController
+class FeedController extends BaseController
 {
     public function __construct(
         private readonly PostRepository         $postRepository,
@@ -40,6 +38,7 @@ class FeedController extends AbstractController
         #[Autowire('%kernel.project_dir%')]
         private readonly string                 $projectDir,
     ) {
+        parent::__construct();
     }
 
     #[Route('/feed', name: 'api_feed', methods: ['GET'])]

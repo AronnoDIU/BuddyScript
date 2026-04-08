@@ -44,7 +44,7 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const requestUrl = originalRequest?.url || '';
 
-    const isRefreshRequest = requestUrl.includes('/auth/refresh');
+    const isRefreshRequest = requestUrl.includes('/refresh');
     const isLoginRequest = requestUrl.includes('/login_check');
 
     if (
@@ -70,7 +70,7 @@ api.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const refreshResponse = await api.post('/auth/refresh', {}, { skipAuth: true });
+      const refreshResponse = await api.post('/refresh', {}, { skipAuth: true });
       const newToken = refreshResponse?.data?.token;
 
       if (!newToken) {

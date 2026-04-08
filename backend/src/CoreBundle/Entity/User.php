@@ -8,19 +8,26 @@ use CoreBundle\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JMS\Serializer\Annotation as JMS;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\Table(name: '`user`')]
+#[JMS\ExclusionPolicy('all')]
+#[ORM\Table(name: 'user')]
 #[ORM\UniqueConstraint(name: 'uniq_user_email', columns: ['email'])]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, \Stringable
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     private Uuid $id;
+
+    #[ORM\Column(name: 'username', type: 'string', length: 50, unique: true)]
+    #[JMS\Expose]
+    #[JMS\Groups(['user_details'])]
+    private string $username;
 
     #[ORM\Column(length: 120)]
     private string $firstName;
@@ -32,20 +39,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private string $email;
 
     #[ORM\Column]
-    private string $password = '';
+    private string $password;
+
+    private ?string $plainPassword = null;
+
+    #[ORM\Column(name: 'phone', type: 'string', length: 16, nullable: true)]
+    #[JMS\Expose]
+    #[JMS\Groups(['user_details', 'wish_list_details', 'order_details', 'challan_details'])]
+    private ?string $phone = null;
+
+    #[ORM\Column(name: 'enabled', type: 'boolean')]
+    #[JMS\Expose]
+    #[JMS\Groups(['user_details'])]
+    private bool $enabled = true;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
-    /** @var list<string> */
-    #[ORM\Column(type: 'json')]
+    #[ORM\Column(name: 'roles', type: 'json')]
+    #[JMS\Expose]
+    #[JMS\Groups(['user_details'])]
     private array $roles = [];
 
-    /** @var Collection<int, Post> */
     #[ORM\OneToMany(targetEntity: Post::class, mappedBy: 'author')]
     private Collection $posts;
 
-    /** @var Collection<int, Comment> */
     #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'author')]
     private Collection $comments;
 
@@ -103,12 +121,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUserIdentifier(): string
     {
-        return $this->email;
+        return $this->username;
     }
 
-    /**
-     * @return list<string>
-     */
+    public function getUsername(): ?string
+    {
+        return $this->username ?? null;
+    }
+
+    public function setUsername(string $username): self
+    {
+        $this->username = $username;
+
+        return $this;
+    }
+
     public function getRoles(): array
     {
         $roles = $this->roles;
@@ -117,9 +144,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_values(array_unique($roles));
     }
 
-    /**
-     * @param list<string> $roles
-     */
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;
@@ -139,13 +163,50 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getPlainPassword(): ?string
+    {
+        return $this->plainPassword;
+    }
+
+    public function setPlainPassword(?string $plainPassword): self
+    {
+        $this->plainPassword = $plainPassword;
+
+        return $this;
+    }
+
     public function eraseCredentials(): void
     {
+        $this->plainPassword = null;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): self
+    {
+        $this->phone = $phone;
+
+        return $this;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): self
+    {
+        $this->enabled = $enabled;
+
+        return $this;
     }
 
     public function getDisplayName(): string
     {
-        return trim($this->firstName . ' ' . $this->lastName);
+        return \sprintf('%s %s', $this->firstName, $this->lastName);
     }
 
     /** @return Collection<int, Post> */
@@ -166,5 +227,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->comments->count();
 
         return $this->createdAt;
+    }
+
+    public function __toString(): string
+    {
+        return $this->getDisplayName();
     }
 }
