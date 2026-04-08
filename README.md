@@ -1,72 +1,111 @@
 # BuddyScript Full Stack (Symfony + React)
 
-This project was converted from static HTML/CSS/JS into a full-stack app:
+BuddyScript is a full-stack social feed application built from the original static UI and upgraded into a production-style architecture.
 
-- Backend: Symfony 7 API (`backend/`)
-- Frontend: React + Vite (`frontend/`)
-- Database: MySQL 8
-- One-command startup: `npm run dev`
+- **Backend:** Symfony 7 API (`backend/`)
+- **Frontend:** React + Vite (`frontend/`)
+- **Database:** MySQL 8
+- **Unified local startup:** `npm run dev`
 
-## Requirements
+## Tech Stack
 
 - PHP `8.5+`
 - Composer `2+`
 - Node.js `18+` and npm
-- MySQL `8+` running locally
-- PHP must have the `pdo_mysql` extension enabled for the CLI binary used by `npm run dev`
-- PHP must also have the XML extension enabled so Symfony's serializer can run without `XML_PI_NODE` errors
+- MySQL `8+`
+- JWT authentication (LexikJWTAuthenticationBundle)
 
-## Environment Setup
+## Prerequisites
 
-1. Copy backend environment file and adjust DB credentials if needed:
+Before starting, ensure the PHP CLI binary you use has these extensions enabled:
+
+- `pdo_mysql` (required for Doctrine + MySQL)
+- `xml` (required by Symfony serializer components)
+
+Verification commands:
+
+```bash
+php -m | grep pdo_mysql
+php -r 'var_dump(defined("XML_PI_NODE"));'
+```
+
+## Formal Setup Guide (After Cloning)
+
+From the project root, complete the steps below in order.
+
+### 1) Create local environment file
 
 ```bash
 cp backend/.env backend/.env.local
 ```
 
-2. Ensure `DATABASE_URL` in `backend/.env.local` points to your MySQL instance.
-3. If migrations fail with `could not find driver`, install the PHP MySQL driver for your PHP 8.5 CLI package (for example `php8.5-mysql` on Debian/Ubuntu) and verify it with `php -m | grep pdo_mysql`.
-4. If the backend fails with `Undefined constant "XML_PI_NODE"`, install the PHP XML package for your PHP 8.5 CLI package (for example `php8.5-xml` on Debian/Ubuntu) and verify it with `php -r 'var_dump(defined("XML_PI_NODE"));'`.
+Then update `backend/.env.local` with your database credentials (`username`, `password`, host, port, and database name) in `DATABASE_URL`.
 
-## Run Everything With One Command
+### 2) Create the database
 
-From project root:
+Create the database configured in `DATABASE_URL`.
+
+Example (MySQL):
+
+```bash
+cd backend
+php bin/console doctrine:database:creat
+cd ..
+```
+
+### 3) Install backend dependencies
+
+```bash
+cd backend
+composer install
+cd ..
+```
+
+### 4) Generate JWT key pair
+
+```bash
+cd backend
+php bin/console lexik:jwt:generate-keypair
+cd ..
+```
+
+### 5) Run the full project with one command
 
 ```bash
 npm run dev
 ```
 
-This single command will:
+This command orchestrates the local stack and will:
 
-- Install backend/frontend dependencies if missing
-- Run DB migrations
-- Start backend on `http://127.0.0.1:8000`
-- Start frontend on `http://127.0.0.1:5173`
+- install missing backend/frontend dependencies
+- run database migrations
+- start backend at `http://127.0.0.1:8000`
+- start frontend at `http://127.0.0.1:5173`
 
-## Features Implemented
+## Core Features
 
-- Authentication and authorization with JWT
-- Registration (`firstName`, `lastName`, `email`, `password`)
-- Login and protected feed route
-- Feed sorted by newest post first
-- Create post with text + image upload
+- JWT-based authentication and authorization
+- User registration (`firstName`, `lastName`, `email`, `password`)
+- Login and protected feed access
+- Feed ordered by newest posts first
+- Post creation with text and optional image upload
 - Public/private post visibility
 - Post like/unlike
 - Comment and reply creation
 - Comment/reply like/unlike
-- "Who liked" support for post/comment/reply
-- Profile page with real user info, visibility-aware stats, and recent timeline posts
+- "Who liked" support for posts, comments, and replies
+- Profile page with visibility-aware stats and recent timeline posts
 
 ## API Overview
 
-Public endpoints:
+### Public endpoints
 
 - `POST /api/v1/register`
 - `POST /api/auth/login_check`
 - `POST /api/v1/refresh`
 - `POST /api/v1/logout`
 
-Protected endpoints (Bearer token):
+### Protected endpoints (Bearer token)
 
 - `GET /api/v1/me`
 - `GET /api/v1/feed`
@@ -79,8 +118,13 @@ Protected endpoints (Bearer token):
 - `GET /api/v1/comments/{id}/likes`
 - `GET /api/v1/profiles/{id}`
 
-## Notes
+## Operational Notes
 
 - Uploaded post images are stored in `backend/public/uploads/posts`.
 - Existing BuddyScript design assets are reused from `frontend/public/assets`.
-- Access JWTs are auto-refreshed via HttpOnly refresh-token cookies when the API returns `401 Expired JWT Token`.
+- Access JWTs are auto-refreshed via HttpOnly refresh-token cookies when the API responds with `401 Expired JWT Token`.
+
+## Troubleshooting
+
+- If migrations fail with `could not find driver`, install the PHP MySQL extension for your CLI version (for example, `php8.5-mysql` on Debian/Ubuntu).
+- If backend requests fail with `Undefined constant "XML_PI_NODE"`, install the PHP XML extension for your CLI version (for example, `php8.5-xml` on Debian/Ubuntu).
