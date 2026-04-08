@@ -11,15 +11,14 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Cookie;
 
-class RefreshTokenManager
+readonly class RefreshTokenManager
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly RefreshTokenRepository $refreshTokenRepository,
+        private EntityManagerInterface $entityManager,
         #[Autowire('%env(int:REFRESH_TOKEN_TTL)%')]
-        private readonly int $refreshTokenTtl,
+        private int                    $refreshTokenTtl,
         #[Autowire('%env(REFRESH_TOKEN_COOKIE_NAME)%')]
-        private readonly string $refreshTokenCookieName,
+        private string                 $refreshTokenCookieName,
     ) {
     }
 
@@ -27,10 +26,11 @@ class RefreshTokenManager
     {
         $plainToken = $this->generatePlainToken();
 
-        $refreshToken = (new RefreshToken())
-            ->setUser($user)
-            ->setTokenHash($this->hashToken($plainToken))
-            ->setExpiresAt((new \DateTimeImmutable())->modify(sprintf('+%d seconds', $this->refreshTokenTtl)));
+        $refreshToken = sprintf('+%d seconds', $this->refreshTokenTtl)
+                |> (new \DateTimeImmutable())(...)
+                |> new RefreshToken()
+                    ->setUser($user)
+                    ->setTokenHash($this->hashToken($plainToken))(...);
 
         $this->entityManager->persist($refreshToken);
         $this->entityManager->flush();
@@ -44,7 +44,7 @@ class RefreshTokenManager
     public function rotate(string $plainToken): ?array
     {
         $now = new \DateTimeImmutable();
-        $currentToken = $this->refreshTokenRepository->findActiveByTokenHash($this->hashToken($plainToken), $now);
+        $currentToken = $this->getRefreshTokenRepository()->findActiveByTokenHash($this->hashToken($plainToken), $now);
 
         if ($currentToken === null) {
             return null;
@@ -54,10 +54,11 @@ class RefreshTokenManager
 
         $currentToken->setRevokedAt($now);
 
-        $newToken = (new RefreshToken())
-            ->setUser($currentToken->getUser())
-            ->setTokenHash($this->hashToken($newPlainToken))
-            ->setExpiresAt($now->modify(sprintf('+%d seconds', $this->refreshTokenTtl)));
+        $newToken = sprintf('+%d seconds', $this->refreshTokenTtl)
+                |> $now(...)
+                |> new RefreshToken()
+                    ->setUser($currentToken->getUser())
+                    ->setTokenHash($this->hashToken($newPlainToken))(...);
 
         $this->entityManager->persist($newToken);
         $this->entityManager->flush();
@@ -70,7 +71,7 @@ class RefreshTokenManager
 
     public function revokeByPlainToken(string $plainToken): void
     {
-        $token = $this->refreshTokenRepository->findOneByTokenHash($this->hashToken($plainToken));
+        $token = $this->getRefreshTokenRepository()->findOneByTokenHash($this->hashToken($plainToken));
         if ($token === null || $token->getRevokedAt() !== null) {
             return;
         }
@@ -81,12 +82,13 @@ class RefreshTokenManager
 
     public function createCookie(string $plainToken, bool $isSecureRequest): Cookie
     {
-        return Cookie::create($this->refreshTokenCookieName, $plainToken)
-            ->withHttpOnly(true)
-            ->withSecure($isSecureRequest)
-            ->withSameSite(Cookie::SAMESITE_LAX)
-            ->withPath('/api/auth')
-            ->withExpires((new \DateTimeImmutable())->modify(sprintf('+%d seconds', $this->refreshTokenTtl)));
+        return sprintf('+%d seconds', $this->refreshTokenTtl)
+                |> (new \DateTimeImmutable())(...)
+                |> Cookie::create($this->refreshTokenCookieName, $plainToken)
+                    ->withHttpOnly(true)
+                    ->withSecure($isSecureRequest)
+                    ->withSameSite(Cookie::SAMESITE_LAX)
+                    ->withPath('/api/auth')(...);
     }
 
     public function createClearedCookie(bool $isSecureRequest): Cookie
@@ -107,12 +109,26 @@ class RefreshTokenManager
 
     private function generatePlainToken(): string
     {
-        return rtrim(strtr(base64_encode(random_bytes(64)), '+/', '-_'), '=');
+        return 64
+                |> random_bytes(...)
+                |> base64_encode(...)
+                |> (static fn($x) => strtr($x, '+/', '-_'))
+                |> (static fn($x) => rtrim($x, '='));
     }
 
     private function hashToken(string $plainToken): string
     {
         return hash('sha256', $plainToken);
+    }
+
+    private function getRefreshTokenRepository(): RefreshTokenRepository
+    {
+        $repository = $this->entityManager->getRepository(RefreshToken::class);
+        if (!$repository instanceof RefreshTokenRepository) {
+            throw new \LogicException('Refresh token repository is not configured correctly.');
+        }
+
+        return $repository;
     }
 }
 

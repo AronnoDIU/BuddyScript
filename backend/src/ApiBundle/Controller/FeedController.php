@@ -1,44 +1,28 @@
 <?php
 
-declare(strict_types=1);
-
 namespace ApiBundle\Controller;
 
-use CoreBundle\Entity\Comment;
-use CoreBundle\Entity\Comment\Like as CommentLike;
-use CoreBundle\Entity\Post;
-use CoreBundle\Entity\Post\Like as PostLike;
+use ApiBundle\Exception\ValidationException;
+use ApiBundle\Validation\FeedValidator;
 use CoreBundle\Entity\User;
-use CoreBundle\Repository\Comment\LikeRepository as CommentLikeRepository;
-use CoreBundle\Repository\CommentRepository;
-use CoreBundle\Repository\Post\LikeRepository as PostLikeRepository;
-use CoreBundle\Repository\PostRepository;
-use CoreBundle\Service\ApiFormatter;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use CoreBundle\Service\Feed as FeedService;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use Symfony\Component\Uid\Uuid;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class FeedController extends BaseController
 {
-    public function __construct(
-        private readonly PostRepository         $postRepository,
-        private readonly CommentRepository      $commentRepository,
-        private readonly PostLikeRepository     $postLikeRepository,
-        private readonly CommentLikeRepository   $commentLikeRepository,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly ApiFormatter           $formatter,
-        private readonly ValidatorInterface     $validator,
-        #[Autowire('%kernel.project_dir%')]
-        private readonly string                 $projectDir,
-    ) {
+    private readonly FeedService $feedService;
+
+    private readonly FeedValidator $feedValidator;
+
+    public function __construct(FeedService $feedService, FeedValidator $feedValidator)
+    {
         parent::__construct();
+        $this->feedService = $feedService;
+        $this->feedValidator = $feedValidator;
     }
 
     #[Route('/feed', name: 'api_feed', methods: ['GET'])]
@@ -48,13 +32,7 @@ class FeedController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $query = trim((string) $request->query->get('q', ''));
-        $posts = $this->postRepository->findFeedForUser($user, 50, $query === '' ? null : $query);
-
-        return $this->json([
-            'posts' => array_map(fn (Post $post): array => $this->formatter->post($post, $user), $posts),
-            'query' => $query,
-        ]);
+        return $this->json($this->feedService->feed($user, (string) $request->query->get('q', '')));
     }
 
     #[Route('/posts', name: 'api_post_create', methods: ['POST'])]
@@ -64,39 +42,27 @@ class FeedController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $content = trim((string) $request->request->get('content', ''));
-        $visibility = (string) $request->request->get('visibility', Post::VISIBILITY_PUBLIC);
+        $payload = $this->combineRequestData($request);
+        $payload['visibility'] = $payload['visibility'] ?? 'public';
 
-        $errors = $this->validator->validate(
-            ['content' => $content, 'visibility' => $visibility],
-            new Assert\Collection([
-                'content' => [new Assert\Required([new Assert\NotBlank(), new Assert\Length(max: 5000)])],
-                'visibility' => [new Assert\Required([new Assert\Choice([Post::VISIBILITY_PUBLIC, Post::VISIBILITY_PRIVATE])])],
-            ])
-        );
-
-        if (count($errors) > 0) {
-            return $this->json(['errors' => (string) $errors], 422);
+        try {
+            $this->feedValidator->setAction('create_post')->validate($payload);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
         }
 
-        $post = new Post()
-            ->setAuthor($user)
-            ->setContent($content)
-            ->setVisibility($visibility);
-
-        $image = $request->files->get('image');
-        if ($image instanceof UploadedFile) {
-            $path = $this->storePostImage($image);
-            if ($path === null) {
-                return $this->json(['message' => 'Invalid image upload.'], 422);
-            }
-            $post->setImagePath($path);
+        try {
+            $result = $this->feedService->createPost(
+                $user,
+                (string) $payload['content'],
+                (string) $payload['visibility'],
+                $request->files->get('image') instanceof UploadedFile ? $request->files->get('image') : null,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['message' => $e->getMessage()], 422);
         }
 
-        $this->entityManager->persist($post);
-        $this->entityManager->flush();
-
-        return $this->json(['post' => $this->formatter->post($post, $user)], 201);
+        return $this->json($result, 201);
     }
 
     #[Route('/posts/{id}/comments', name: 'api_post_comment_create', methods: ['POST'])]
@@ -106,29 +72,26 @@ class FeedController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $post = $this->postRepository->findAccessibleForUser($id, $user);
-        if (!$post instanceof Post) {
+        try {
+            $payload = $this->feedService->extractJsonPayload($request);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['message' => $e->getMessage()], 422);
+        }
+
+        $payload['id'] = $id;
+
+        try {
+            $this->feedValidator->setAction('add_comment')->validate($payload);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        $result = $this->feedService->addComment($user, $id, (string) ($payload['content'] ?? ''));
+        if ($result === null) {
             return $this->json(['message' => 'Post not found.'], 404);
         }
 
-        try {
-            $content = trim((string)((json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR) ?? [])['content'] ?? ''));
-        } catch (\JsonException $e) {
-            return $this->json(['message' => 'Invalid JSON.'], 422);
-        }
-        if ($content === '') {
-            return $this->json(['message' => 'Comment is required.'], 422);
-        }
-
-        $comment = new Comment()
-            ->setPost($post)
-            ->setAuthor($user)
-            ->setContent($content);
-
-        $this->entityManager->persist($comment);
-        $this->entityManager->flush();
-
-        return $this->json(['comment' => $this->formatter->comment($comment, $user)], 201);
+        return $this->json($result, 201);
     }
 
     #[Route('/comments/{id}/replies', name: 'api_comment_reply_create', methods: ['POST'])]
@@ -138,32 +101,26 @@ class FeedController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $parent = $this->commentRepository->findAccessibleForUser($id, $user);
-        if (!$parent instanceof Comment) {
+        try {
+            $payload = $this->feedService->extractJsonPayload($request);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['message' => $e->getMessage()], 422);
+        }
+
+        $payload['id'] = $id;
+
+        try {
+            $this->feedValidator->setAction('add_reply')->validate($payload);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        $result = $this->feedService->addReply($user, $id, (string) ($payload['content'] ?? ''));
+        if ($result === null) {
             return $this->json(['message' => 'Comment not found.'], 404);
         }
 
-        $post = $parent->getPost();
-
-        try {
-            $content = trim((string)((json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR) ?? [])['content'] ?? ''));
-        } catch (\JsonException $e) {
-            return $this->json(['message' => 'Invalid JSON.'], 422);
-        }
-        if ($content === '') {
-            return $this->json(['message' => 'Reply is required.'], 422);
-        }
-
-        $reply = new Comment()
-            ->setPost($post)
-            ->setParent($parent)
-            ->setAuthor($user)
-            ->setContent($content);
-
-        $this->entityManager->persist($reply);
-        $this->entityManager->flush();
-
-        return $this->json(['reply' => $this->formatter->comment($reply, $user)], 201);
+        return $this->json($result, 201);
     }
 
     #[Route('/posts/{id}/likes/toggle', name: 'api_post_like_toggle', methods: ['POST'])]
@@ -173,32 +130,18 @@ class FeedController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $post = $this->postRepository->findAccessibleForUser($id, $user);
-        if (!$post instanceof Post) {
+        try {
+            $this->feedValidator->setAction('toggle_post_like')->validate(['id' => $id]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        $result = $this->feedService->togglePostLike($user, $id);
+        if ($result === null) {
             return $this->json(['message' => 'Post not found.'], 404);
         }
 
-        $like = $this->postLikeRepository->findOneByPostAndUser($post, $user);
-        $liked = false;
-
-        if ($like instanceof PostLike) {
-            $this->entityManager->remove($like);
-        } else {
-            $like = new PostLike()
-                ->setPost($post)
-                ->setUser($user);
-            $this->entityManager->persist($like);
-            $liked = true;
-        }
-
-        $this->entityManager->flush();
-
-        $likes = $this->postLikeRepository->findBy(['post' => $post], ['createdAt' => 'DESC']);
-
-        return $this->json([
-            'liked' => $liked,
-            'likes' => array_map(fn (PostLike $postLike): array => $this->formatter->user($postLike->getUser()), $likes),
-        ]);
+        return $this->json($result);
     }
 
     #[Route('/comments/{id}/likes/toggle', name: 'api_comment_like_toggle', methods: ['POST'])]
@@ -208,32 +151,18 @@ class FeedController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $comment = $this->commentRepository->findAccessibleForUser($id, $user);
-        if (!$comment instanceof Comment) {
+        try {
+            $this->feedValidator->setAction('toggle_comment_like')->validate(['id' => $id]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        $result = $this->feedService->toggleCommentLike($user, $id);
+        if ($result === null) {
             return $this->json(['message' => 'Comment not found.'], 404);
         }
 
-        $like = $this->commentLikeRepository->findOneByCommentAndUser($comment, $user);
-        $liked = false;
-
-        if ($like instanceof CommentLike) {
-            $this->entityManager->remove($like);
-        } else {
-            $like = new CommentLike()
-                ->setComment($comment)
-                ->setUser($user);
-            $this->entityManager->persist($like);
-            $liked = true;
-        }
-
-        $this->entityManager->flush();
-
-        $likes = $this->commentLikeRepository->findBy(['comment' => $comment], ['createdAt' => 'DESC']);
-
-        return $this->json([
-            'liked' => $liked,
-            'likes' => array_map(fn (CommentLike $commentLike): array => $this->formatter->user($commentLike->getUser()), $likes),
-        ]);
+        return $this->json($result);
     }
 
     #[Route('/posts/{id}/likes', name: 'api_post_likes', methods: ['GET'])]
@@ -243,17 +172,18 @@ class FeedController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $post = $this->postRepository->findAccessibleForUser($id, $user);
-        if (!$post instanceof Post) {
+        try {
+            $this->feedValidator->setAction('post_likes')->validate(['id' => $id]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        $result = $this->feedService->postLikes($user, $id);
+        if ($result === null) {
             return $this->json(['message' => 'Post not found.'], 404);
         }
 
-        return $this->json([
-            'likes' => array_map(
-                fn (PostLike $postLike): array => $this->formatter->user($postLike->getUser()),
-                $this->postLikeRepository->findBy(['post' => $post], ['createdAt' => 'DESC'])
-            ),
-        ]);
+        return $this->json($result);
     }
 
     #[Route('/comments/{id}/likes', name: 'api_comment_likes', methods: ['GET'])]
@@ -263,51 +193,17 @@ class FeedController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        $comment = $this->commentRepository->findAccessibleForUser($id, $user);
-        if (!$comment instanceof Comment) {
+        try {
+            $this->feedValidator->setAction('comment_likes')->validate(['id' => $id]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        $result = $this->feedService->commentLikes($user, $id);
+        if ($result === null) {
             return $this->json(['message' => 'Comment not found.'], 404);
         }
 
-        return $this->json([
-            'likes' => array_map(
-                fn (CommentLike $commentLike): array => $this->formatter->user($commentLike->getUser()),
-                $this->commentLikeRepository->findBy(['comment' => $comment], ['createdAt' => 'DESC'])
-            ),
-        ]);
-    }
-
-
-    private function storePostImage(UploadedFile $file): ?string
-    {
-        $imageInfo = getimagesize($file->getPathname());
-        if ($imageInfo === false || !isset($imageInfo[2])) {
-            return null;
-        }
-
-        $extensionMap = [
-            IMAGETYPE_PNG => 'png',
-            IMAGETYPE_JPEG => 'jpg',
-            IMAGETYPE_WEBP => 'webp',
-            IMAGETYPE_GIF => 'gif',
-        ];
-
-        $extension = $extensionMap[$imageInfo[2]] ?? null;
-        if ($extension === null) {
-            return null;
-        }
-
-        if ($file->getSize() !== null && $file->getSize() > 5 * 1024 * 1024) {
-            return null;
-        }
-
-        $uploadDir = $this->projectDir . '/public/uploads/posts';
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
-            throw new \RuntimeException(sprintf('Directory "%s" was not created', $uploadDir));
-        }
-
-        $name = Uuid::v7()->toRfc4122() . '.' . $extension;
-        $file->move($uploadDir, $name);
-
-        return '/uploads/posts/' . $name;
+        return $this->json($result);
     }
 }

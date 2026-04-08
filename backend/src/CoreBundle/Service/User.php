@@ -95,7 +95,7 @@ class User extends BaseService
         $this->em->flush();
     }
 
-    protected function getUserRepository(): UserRepository
+    private function getUserRepository(): UserRepository
     {
         $repository = $this->em->getRepository(UserEntity::class);
 

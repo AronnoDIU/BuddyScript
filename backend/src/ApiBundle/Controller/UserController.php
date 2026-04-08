@@ -59,7 +59,7 @@ class UserController extends BaseController
     public function list(Request $request): JsonResponse|View|Response
     {
         try {
-            $this->denyAccessUnlessGranted('ROLE_ERP');
+            $this->denyAccessUnlessGranted('ROLE_USER_ADMIN');
         } catch (\Exception $e) {
             return $this->respondAccessDenied($e->getMessage());
         }
