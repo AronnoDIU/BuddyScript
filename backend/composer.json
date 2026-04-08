@@ -8,6 +8,7 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-xml": "*",
+        "ext-zend-opcache": "*",
         "doctrine/orm": "^3.6",
         "friendsofsymfony/rest-bundle": "*",
         "giggsey/libphonenumber-for-php": "*",
@@ -16,6 +17,8 @@
         "nelmio/api-doc-bundle": "*",
         "pagerfanta/doctrine-orm-adapter": "^4.8",
         "respect/validation": "*",
+        "sonata-project/admin-bundle": "*",
+        "sonata-project/doctrine-orm-admin-bundle": "*",
         "sonata-project/media-bundle": "^4.20",
         "symfony/console": "7.4.*",
         "symfony/dotenv": "7.4.*",
@@ -37,7 +40,8 @@
         "doctrine/doctrine-migrations-bundle": "^3.7",
         "lexik/jwt-authentication-bundle": "^3.2",
         "nelmio/cors-bundle": "^2.6",
-        "symfony/maker-bundle": "^1.67"
+        "symfony/maker-bundle": "^1.67",
+        "symfony/web-profiler-bundle": "7.4.*"
     },
     "config": {
         "allow-plugins": {

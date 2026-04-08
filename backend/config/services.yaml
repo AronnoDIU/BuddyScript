@@ -28,8 +28,30 @@ services:
         resource: '../src/CoreBundle/*'
         exclude: '../src/CoreBundle/{Entity}'
 
+    ApiBundle\EventListener\ExceptionListener:
+        class: ApiBundle\EventListener\ExceptionListener
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception }
+
+    CoreBundle\EventSubscriber\PostSerializationSubscriber:
+        arguments:
+            - '@sonata.media.provider.image'
+            - '@sonata.media.pool'
+
+    # Media bundle
+    Sonata\MediaBundle\Model\MediaManagerInterface: '@sonata.media.manager.media'
+    Sonata\MediaBundle\Model\GalleryManagerInterface: '@sonata.media.manager.gallery'
     Sonata\MediaBundle\Provider\ImageProviderInterface: '@sonata.media.provider.image'
 
+imports:
+    - { resource: '../src/ApiBundle/Resources/config/services.yaml' }
+
+
+when@dev:
+    services:
+        _defaults:
+            autowire: true
+            autoconfigure: true
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

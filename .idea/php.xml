@@ -128,6 +128,16 @@
       <path value="$PROJECT_DIR$/backend/vendor/respect/validation" />
       <path value="$PROJECT_DIR$/backend/vendor/giggsey/locale" />
       <path value="$PROJECT_DIR$/backend/vendor/giggsey/libphonenumber-for-php" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/stimulus-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/expression-language" />
+      <path value="$PROJECT_DIR$/backend/vendor/sonata-project/exporter" />
+      <path value="$PROJECT_DIR$/backend/vendor/sonata-project/admin-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/sonata-project/block-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/sonata-project/doctrine-orm-admin-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/knplabs/knp-menu" />
+      <path value="$PROJECT_DIR$/backend/vendor/knplabs/knp-menu-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/doctrine/common" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/web-profiler-bundle" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.5" />

@@ -1,4 +1,9 @@
 sonata_media:
+    db_driver: doctrine_orm
+    class:
+        media: CoreBundle\Entity\Media
+        gallery: CoreBundle\Entity\Media\Gallery
+        gallery_item: CoreBundle\Entity\Media\Gallery\Item
     default_context: default
     contexts:
         default:

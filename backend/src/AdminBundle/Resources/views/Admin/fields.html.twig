@@ -1,0 +1,34 @@
+{# link #}
+{% block link_widget %}
+  {% if form.vars.href is same as('#') or form.vars.href is empty %}
+    <div class="font-weight-bold">{{ form.vars.text }}</div>
+  {% else %}
+    {% if form.vars.ajax %}
+      <a id="widget-link" href="#" data-url="{{ form.vars.href }}">{{ form.vars.text }}</a>
+    {% else %}
+      <a target="_bank" href="{{ form.vars.href }}">{{ form.vars.text }}</a>
+    {% endif %}
+
+    {% if form.vars.ajax %}
+      <script type="text/javascript">
+          $( "#widget-link" ).on("click", function( e ) {
+              e.preventDefault();
+              var that = $(this);
+              $.ajax({
+                  url: Routing.generate( that.data('url') ),
+                  type: "{{ form.vars.ajax.type }}",
+                  data: {{ form.vars.ajax.data|raw }},
+                  success: function ( response ) {
+                      if ( response.success ) {
+                          that.html( '<span style="color:green">Successfully unblocked the user</span>' );
+                      } else {
+                          that.parent().append( '<span style="color:red; margin-left: 30px">Error: '+ response.error +'</span>' );
+                      }
+                  }
+              });
+          });
+      </script>
+    {% endif %}
+
+  {% endif %}
+{% endblock %}

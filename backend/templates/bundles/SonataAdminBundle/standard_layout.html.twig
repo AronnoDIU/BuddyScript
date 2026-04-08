@@ -1,0 +1,59 @@
+{% extends '@!SonataAdmin/standard_layout.html.twig' %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        $(document).ready(function () {
+
+            let modalRequestRunning = false;
+            $('body').on('click', '.ajax-modal[data-toggle="modal"]', function (e) {
+                e.preventDefault();
+                if (modalRequestRunning)
+                    return false;
+
+                modalRequestRunning = true;
+
+                let url = $(this).attr('href');
+                $.ajax({
+                    url: url,
+                    type: "GET",
+                    success: function (response) {
+                        modalRequestRunning = false;
+                        $('<div class="modal fade ajax-modal-content"></div>').html(response).modal();
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block sonata_top_nav_menu %}
+     {% if app.user and is_granted('IS_AUTHENTICATED_FULLY') %}
+         <div class="navbar-custom-menu">
+             <ul class="nav navbar-nav">
+                 {% block sonata_top_nav_menu_add_block %}
+                     <li class="dropdown">
+                         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                             <i class="fa fa-plus-square fa-fw" aria-hidden="true"></i> <i class="fa fa-caret-down" aria-hidden="true"></i>
+                         </a>
+                     </li>
+                 {% endblock %}
+                 {% block sonata_top_nav_menu_user_block %}
+                     <li class="dropdown user-menu">
+                         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                             <i class="fa fa-user fa-fw" aria-hidden="true"></i> <i class="fa fa-caret-down" aria-hidden="true"></i>
+                         </a>
+                         <ul class="dropdown-menu dropdown-user">
+                             <li class="user-footer">
+                                 <div class="pull-right">
+                                     <a href="{{ path('admin_logout') }}" class="btn btn-default btn-flat"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
+                                 </div>
+                             </li>
+                         </ul>
+                     </li>
+                 {% endblock %}
+             </ul>
+         </div>
+     {% endif %}
+ {% endblock %}

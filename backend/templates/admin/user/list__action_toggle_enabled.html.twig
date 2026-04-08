@@ -1,0 +1,9 @@
+{% if object.enabled %}
+    <a class="btn btn-sm btn-default" href="{{ admin.generateObjectUrl('toggle_enabled', object) }}">
+        <i class="fa fa-times"></i> Disable
+    </a>
+{% else %}
+    <a class="btn btn-sm btn-default" href="{{ admin.generateObjectUrl('toggle_enabled', object) }}">
+        <i class="fa fa-check"></i> Enable
+    </a>
+{% endif %}

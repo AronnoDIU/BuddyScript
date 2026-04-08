@@ -1,5 +1,9 @@
 twig:
-    file_name_pattern: '*.twig'
+    default_path: '%kernel.project_dir%/templates'
+    form_themes:
+        - '@sonata_extensions/fields.html.twig'
+    paths:
+        '%kernel.project_dir%/src/AdminBundle/Resources/views/Admin': sonata_extensions
 
 when@test:
     twig:

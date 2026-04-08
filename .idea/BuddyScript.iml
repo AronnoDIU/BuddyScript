@@ -123,6 +123,16 @@
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/willdurand/jsonp-callback-validator" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/willdurand/negotiation" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/zircote/swagger-php" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/doctrine/common" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/knplabs/knp-menu" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/knplabs/knp-menu-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/sonata-project/admin-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/sonata-project/block-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/sonata-project/doctrine-orm-admin-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/sonata-project/exporter" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/expression-language" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/stimulus-bundle" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/web-profiler-bundle" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

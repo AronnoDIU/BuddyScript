@@ -56,6 +56,9 @@
             "ref": "cc04e10cf7171525b50c18b36004edf64cb478be"
         }
     },
+    "knplabs/knp-menu-bundle": {
+        "version": "v3.7.0"
+    },
     "lexik/jwt-authentication-bundle": {
         "version": "3.2",
         "recipe": {
@@ -105,6 +108,32 @@
             "config/packages/nyholm_psr7.yaml"
         ]
     },
+    "sonata-project/admin-bundle": {
+        "version": "4.42",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "4.0",
+            "ref": "0e5931df1732e3dccfba42a20853049e5e9db6ae"
+        },
+        "files": [
+            "config/packages/sonata_admin.yaml",
+            "config/routes/sonata_admin.yaml",
+            "src/Admin/.gitignore"
+        ]
+    },
+    "sonata-project/block-bundle": {
+        "version": "5.4",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "4.11",
+            "ref": "b4edd2a1e6ac1827202f336cac2771cb529de542"
+        },
+        "files": [
+            "config/packages/sonata_block.yaml"
+        ]
+    },
     "sonata-project/doctrine-extensions": {
         "version": "2.6",
         "recipe": {
@@ -112,6 +141,18 @@
             "branch": "main",
             "version": "1.8",
             "ref": "4ea4a4b6730f83239608d7d4c849533645c70169"
+        }
+    },
+    "sonata-project/doctrine-orm-admin-bundle": {
+        "version": "4.21.0"
+    },
+    "sonata-project/exporter": {
+        "version": "3.4",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "2.4",
+            "ref": "93d6df022ef1dc24bdfa8667ddd560bbde89a7cc"
         }
     },
     "sonata-project/form-extensions": {
@@ -253,6 +294,21 @@
             "config/routes/security.yaml"
         ]
     },
+    "symfony/stimulus-bundle": {
+        "version": "2.34",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "2.24",
+            "ref": "d21494ed2ddbde38942e8278299a23ce5cf4a9a1"
+        },
+        "files": [
+            "assets/controllers.json",
+            "assets/controllers/csrf_protection_controller.js",
+            "assets/controllers/hello_controller.js",
+            "assets/stimulus_bootstrap.js"
+        ]
+    },
     "symfony/translation": {
         "version": "7.4",
         "recipe": {
@@ -298,6 +354,19 @@
         },
         "files": [
             "config/packages/validator.yaml"
+        ]
+    },
+    "symfony/web-profiler-bundle": {
+        "version": "7.4",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "7.3",
+            "ref": "a363460c1b0b4a4d0242f2ce1a843ca0f6ac9026"
+        },
+        "files": [
+            "config/packages/web_profiler.yaml",
+            "config/routes/web_profiler.yaml"
         ]
     }
 }

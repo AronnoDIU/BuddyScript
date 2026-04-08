@@ -1,14 +1,15 @@
 security:
+    enable_authenticator_manager: true
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'bcrypt'
 
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        app_user_provider:
+        core_user_provider:
             entity:
                 class: CoreBundle\Entity\User
-                property: email
+                property: username
 
     firewalls:
         dev:
@@ -16,12 +17,13 @@ security:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
         login:
-            pattern: ^/api/login_check
+            pattern: ^/api/auth/login
             stateless: true
+            login_throttling:
+                max_attempts: 3
+                interval: '1 minute'
             json_login:
-                check_path: api_login_check
-                username_path: email
-                password_path: password
+                check_path: /api/auth/login_check
                 success_handler: ApiBundle\Security\AuthenticationSuccessHandler
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
@@ -29,11 +31,25 @@ security:
             pattern: ^/api
             stateless: true
             provider: app_user_provider
-            jwt: ~
+            jwt:
+                authenticator: api.security.authenticator
+
+        admin:
+            pattern: /admin(.*)
+            provider: core_user_provider
+            form_login:
+                login_path: admin_login
+                check_path: admin_login
+                default_target_path: /admin
+                enable_csrf: true
+            logout:
+                path: admin_logout
+                target: /admin/login
+            lazy: true
 
         main:
             lazy: true
-            provider: app_user_provider
+            provider: core_user_provider
 
             # Activate different ways to authenticate:
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -46,7 +62,7 @@ security:
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/refresh, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/logout, roles: PUBLIC_ACCESS }
-        - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
 when@test:

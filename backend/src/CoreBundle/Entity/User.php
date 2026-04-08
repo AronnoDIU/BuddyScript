@@ -229,6 +229,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
         return $this->createdAt;
     }
 
+    public function hasRole(string $role): bool
+    {
+        return \in_array(strtoupper($role), $this->roles, true);
+    }
+
     public function __toString(): string
     {
         return $this->getDisplayName();
