@@ -6,7 +6,6 @@ use CoreBundle\Entity\User as UserEntity;
 use CoreBundle\Repository\UserRepository;
 use CoreBundle\Util\Pagination\PaginationFactory;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\EntityRepository;
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberUtil;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,16 +39,16 @@ class User extends BaseService
         $phoneUtil = PhoneNumberUtil::getInstance();
 
         try {
-            $phone = $phoneUtil->parse($phone, $region ?: 'BD');
+            $parsedPhone = $phoneUtil->parse($phone, $region ?: 'BD');
         } catch (NumberParseException $e) {
             throw new \RuntimeException($e->getMessage());
         }
 
-        if (!$phoneUtil->isValidNumber($phone)) {
+        if (!$phoneUtil->isValidNumber($parsedPhone)) {
             throw new \RuntimeException(\sprintf('Phone no is not valid, %s', $phone));
         }
 
-        return \sprintf('+%s%s', $phone->getCountryCode(), $phone->getNationalNumber());
+        return \sprintf('+%s%s', $parsedPhone->getCountryCode(), $parsedPhone->getNationalNumber());
     }
 
     public function getList(Request $request): array
@@ -98,7 +97,13 @@ class User extends BaseService
 
     protected function getUserRepository(): UserRepository
     {
-        return $this->em->getRepository(UserEntity::class);
+        $repository = $this->em->getRepository(UserEntity::class);
+
+        if (!$repository instanceof UserRepository) {
+            throw new \LogicException('User repository is not configured correctly.');
+        }
+
+        return $repository;
     }
 
     private function getHashedPassword(UserEntity $user, string $password): string
