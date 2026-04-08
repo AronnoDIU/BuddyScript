@@ -12,6 +12,8 @@ use Symfony\Component\Uid\Uuid;
 
 class Reaction
 {
+    public const int BATCH_MAX_TARGETS = 180;
+
     private readonly EntityManagerInterface $entityManager;
 
     private readonly ApiFormatter $formatter;
@@ -109,6 +111,43 @@ class Reaction
     }
 
     /**
+     * @param array<int,array<string,mixed>> $targets
+     *
+     * @return array{summaries:array<string,array<string,mixed>>}
+     */
+    public function batchTargetReactions(User $viewer, array $targets): array
+    {
+        if (count($targets) > self::BATCH_MAX_TARGETS) {
+            throw new \InvalidArgumentException(sprintf('A maximum of %d targets is allowed per request.', self::BATCH_MAX_TARGETS));
+        }
+
+        $summaries = [];
+
+        foreach ($targets as $target) {
+            if (!is_array($target)) {
+                throw new \InvalidArgumentException('Each target must be an object.');
+            }
+
+            $targetType = (string) ($target['targetType'] ?? '');
+            $targetId = (string) ($target['targetId'] ?? '');
+
+            if (!in_array($targetType, ['post', 'comment', 'reply'], true)) {
+                throw new \InvalidArgumentException('Invalid target type.');
+            }
+
+            if ($targetId === '') {
+                throw new \InvalidArgumentException('Target id is required.');
+            }
+
+            $summaries[$this->targetKey($targetType, $targetId)] = $this->targetReactions($viewer, $targetType, $targetId);
+        }
+
+        return [
+            'summaries' => $summaries,
+        ];
+    }
+
+    /**
      * @return list<string>
      */
     public static function reactionTypes(): array
@@ -141,6 +180,11 @@ class Reaction
         }
 
         return $repository;
+    }
+
+    private function targetKey(string $targetType, string $targetId): string
+    {
+        return sprintf('%s:%s', $targetType, $targetId);
     }
 }
 

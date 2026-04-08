@@ -4,6 +4,7 @@ namespace ApiBundle\Validation;
 
 use CoreBundle\Service\Reaction as ReactionService;
 use Respect\Validation\Validators\AllOf;
+use Respect\Validation\Validators\ArrayType;
 use Respect\Validation\Validators\Blank;
 use Respect\Validation\Validators\In;
 use Respect\Validation\Validators\Not;
@@ -28,6 +29,9 @@ class ReactionValidator extends AbstractValidator
             case 'target_reactions':
                 $this->rules['targetType'] = new In(['post', 'comment', 'reply']);
                 $this->rules['targetId'] = new AllOf(new StringType(), new Not(new Blank()));
+                break;
+            case 'batch_target_reactions':
+                $this->rules['targets'] = new ArrayType();
                 break;
             default:
                 throw new \RuntimeException(sprintf('Unsupported reaction validator action: %s', $this->action));

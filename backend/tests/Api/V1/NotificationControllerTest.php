@@ -42,5 +42,22 @@ final class NotificationControllerTest extends ApiTestCase
 
         self::assertSame(0, $updatedPayload['unreadCount'] ?? 0);
     }
+
+    public function testNotificationsRequireAuthentication(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/v1/notifications');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
+    }
+
+    public function testMarkReadReturnsNotFoundForUnknownNotification(): void
+    {
+        [$client] = $this->createAuthenticatedClient('notification_missing');
+
+        $client->request('POST', '/api/v1/notifications/00000000-0000-0000-0000-000000000099/read');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
 }
 

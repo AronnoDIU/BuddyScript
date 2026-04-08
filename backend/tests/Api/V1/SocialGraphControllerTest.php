@@ -45,5 +45,39 @@ final class SocialGraphControllerTest extends ApiTestCase
         $updatedOverview = json_decode((string) $receiverClient->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
         self::assertCount(1, $updatedOverview['friends'] ?? []);
     }
+
+    public function testOverviewRequiresAuthentication(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/v1/social/overview');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
+    }
+
+    public function testRespondRequestRejectsInvalidPayload(): void
+    {
+        [$client] = $this->createAuthenticatedClient('social_invalid');
+
+        $client->request('POST', '/api/v1/social/requests/not-a-real-id/respond', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'status' => 'unknown-status',
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    public function testRespondRequestReturnsNotFoundForUnknownConnection(): void
+    {
+        [$client] = $this->createAuthenticatedClient('social_missing');
+
+        $client->request('POST', '/api/v1/social/requests/00000000-0000-0000-0000-000000000001/respond', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'status' => 'accepted',
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
 }
 

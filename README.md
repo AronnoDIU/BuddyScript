@@ -122,6 +122,7 @@ This command orchestrates the local stack and will:
 - `POST /api/v1/social/requests/{id}/respond`
 - `GET /api/v1/reactions/catalog`
 - `POST /api/v1/reactions/toggle`
+- `POST /api/v1/reactions/summaries`
 - `GET /api/v1/reactions?targetType={post|comment|reply}&targetId={uuid}`
 - `GET /api/v1/notifications`
 - `POST /api/v1/notifications/{id}/read`

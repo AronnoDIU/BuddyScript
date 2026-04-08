@@ -44,6 +44,44 @@ const REACTION_META = {
   care: { label: 'Care', emoji: '🤗' },
 };
 
+const getReactionLabel = (reactionType) => {
+  if (!reactionType) return 'Like';
+  return REACTION_META[reactionType]?.label || reactionType;
+};
+
+const reactionKey = (targetType, targetId) => `${targetType}:${targetId}`;
+
+const collectReactionTargets = (posts = []) => {
+  const targets = [];
+  const seen = new Set();
+
+  const addTarget = (targetType, targetId) => {
+    if (!targetId) return;
+    const key = `${targetType}:${targetId}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    targets.push({ targetType, targetId });
+  };
+
+  const walkComments = (comments = [], isReply = false) => {
+    comments.forEach((comment) => {
+      addTarget(isReply ? 'reply' : 'comment', comment.id);
+      if (comment.replies?.length) {
+        walkComments(comment.replies, true);
+      }
+    });
+  };
+
+  posts.forEach((post) => {
+    addTarget('post', post.id);
+    if (post.comments?.length) {
+      walkComments(post.comments, false);
+    }
+  });
+
+  return targets;
+};
+
 function ReactionPicker({ catalog = [], state = null, onPick }) {
   if (!catalog.length) return null;
 
@@ -132,7 +170,7 @@ function LikersModal({ viewer, onClose }) {
 }
 
 /* ─── Comment Item ─────────────────────────────────────────────────── */
-function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfile, onPickReaction, reactionStateFor, reactionCatalog = [], isReply = false }) {
+function CommentItem({ comment, onReply, onShowLikes, onOpenProfile, onPickReaction, reactionStateFor, reactionCatalog = [], isReply = false }) {
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
@@ -162,6 +200,11 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfil
       submitReply(event);
     }
   };
+
+  const targetType = isReply ? 'reply' : 'comment';
+  const reactionState = reactionStateFor?.(targetType, comment.id);
+  const activeReaction = reactionState?.myReaction || null;
+  const actionLabel = activeReaction ? `${getReactionLabel(activeReaction)}.` : 'Like.';
 
   return (
     <div className="_comment_main">
@@ -197,8 +240,8 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfil
           </div>
           <ReactionPicker
             catalog={reactionCatalog}
-            state={reactionStateFor?.(isReply ? 'reply' : 'comment', comment.id)}
-            onPick={(type) => onPickReaction?.(isReply ? 'reply' : 'comment', comment.id, type)}
+            state={reactionState}
+            onPick={(type) => onPickReaction?.(targetType, comment.id, type)}
           />
           <LikePreview
             likes={comment.likes || []}
@@ -213,10 +256,10 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfil
               <ul className="_comment_reply_list">
                 <li>
                   <span
-                    className={comment.likedByMe ? '_comment_reply_action _comment_reply_action_active' : '_comment_reply_action'}
-                    onClick={() => onToggleLike(comment.id)}
+                    className={activeReaction ? '_comment_reply_action _comment_reply_action_active' : '_comment_reply_action'}
+                    onClick={() => onPickReaction?.(targetType, comment.id, activeReaction || 'like')}
                   >
-                    {comment.likedByMe ? 'Unlike.' : 'Like.'}
+                    {actionLabel}
                   </span>
                 </li>
                 <li>
@@ -263,7 +306,6 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfil
           <div className="ms-4 mt-2" key={reply.id}>
             <CommentItem
               comment={reply}
-              onToggleLike={onToggleLike}
               onReply={onReply}
               onShowLikes={onShowLikes}
               onOpenProfile={onOpenProfile}
@@ -280,7 +322,7 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfil
 }
 
 /* ─── Post Item ─────────────────────────────────────────────────────── */
-function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onReply, onShowLikes, onOpenProfile, onPickReaction, reactionStateFor, reactionCatalog = [] }) {
+function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onPickReaction, reactionStateFor, reactionCatalog = [] }) {
   const [commentText, setCommentText] = useState('');
   const [commentError, setCommentError] = useState('');
   const [isCommenting, setIsCommenting] = useState(false);
@@ -309,6 +351,10 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
       submitComment();
     }
   };
+
+  const postReactionState = reactionStateFor?.('post', post.id);
+  const postActiveReaction = postReactionState?.myReaction || null;
+  const postActionLabel = postActiveReaction ? getReactionLabel(postActiveReaction) : 'Like';
 
   return (
     <div className="_feed_inner_timeline_post_area _b_radious6 _padd_b24 _padd_t24 _mar_b16">
@@ -406,7 +452,7 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
         />
         <ReactionPicker
           catalog={reactionCatalog}
-          state={reactionStateFor?.('post', post.id)}
+          state={postReactionState}
           onPick={(type) => onPickReaction?.('post', post.id, type)}
         />
 
@@ -414,11 +460,11 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
       <div className="_feed_inner_timeline_reaction">
         <button
           type="button"
-          className={`_feed_inner_timeline_reaction_emoji _feed_reaction${post.likedByMe ? ' _feed_reaction_active' : ''}`}
+          className={`_feed_inner_timeline_reaction_emoji _feed_reaction${postActiveReaction ? ' _feed_reaction_active' : ''}`}
           onClick={async () => {
             setIsLiking(true);
             try {
-              await onToggleLike(post.id);
+              await onPickReaction?.('post', post.id, postActiveReaction || 'like');
             } finally {
               setIsLiking(false);
             }
@@ -433,7 +479,7 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
                 <path fill="#fff" d="M4.75 11.611s1.583.528 4.75.528 4.75-.528 4.75-.528-1.056 2.111-4.75 2.111-4.75-2.11-4.75-2.11z" />
                 <path fill="#664500" d="M6.333 8.972c.729 0 1.32-.827 1.32-1.847s-.591-1.847-1.32-1.847c-.729 0-1.32.827-1.32 1.847s.591 1.847 1.32 1.847zM12.667 8.972c.729 0 1.32-.827 1.32-1.847s-.591-1.847-1.32-1.847c-.729 0-1.32.827-1.32 1.847s.591 1.847 1.32 1.847z" />
               </svg>
-              {post.likedByMe ? 'Liked' : 'Like'}
+              {postActionLabel}
             </span>
           </span>
         </button>
@@ -502,7 +548,6 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
             <CommentItem
               key={comment.id}
               comment={comment}
-              onToggleLike={onToggleCommentLike}
               onReply={onReply}
               onShowLikes={onShowLikes}
               onOpenProfile={onOpenProfile}
@@ -535,7 +580,6 @@ export default function FeedPage() {
   const [reactionCatalog, setReactionCatalog] = useState([]);
   const [reactionStateMap, setReactionStateMap] = useState({});
 
-  const reactionKey = (targetType, targetId) => `${targetType}:${targetId}`;
   const reactionStateFor = (targetType, targetId) => reactionStateMap[reactionKey(targetType, targetId)] || null;
 
   const upsertReactionState = (targetType, targetId, state) => {
@@ -643,15 +687,32 @@ export default function FeedPage() {
     return { nextPosts, changed };
   };
 
+  const hydrateReactionSummaries = useCallback(async (feedPosts = []) => {
+    const targets = collectReactionTargets(feedPosts).slice(0, 180);
+    if (targets.length === 0) {
+      setReactionStateMap({});
+      return;
+    }
+
+    try {
+      const response = await api.post('/v1/reactions/summaries', { targets });
+      setReactionStateMap(response.data?.summaries || {});
+    } catch {
+      setReactionStateMap({});
+    }
+  }, []);
+
   const loadData = useCallback(async (query = '') => {
     const normalizedQuery = query.trim();
     const [meResponse, feedResponse] = await Promise.all([
       api.get('/v1/me'),
       api.get('/v1/feed', { params: normalizedQuery ? { q: normalizedQuery } : {} }),
     ]);
+    const feedPosts = feedResponse.data.posts || [];
     setMe(meResponse.data.user);
-    setPosts(feedResponse.data.posts || []);
-  }, []);
+    setPosts(feedPosts);
+    await hydrateReactionSummaries(feedPosts);
+  }, [hydrateReactionSummaries]);
 
   useEffect(() => {
     loadData(searchQuery).catch((loadError) => {
@@ -720,49 +781,6 @@ export default function FeedPage() {
       setError(submitError.response?.data?.message || 'Failed to create post.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const togglePostLike = async (postId) => {
-    try {
-      const response = await api.post(`/v1/posts/${postId}/likes/toggle`);
-      const likes = response.data?.likes || [];
-      const liked = Boolean(response.data?.liked);
-
-      setPosts((prevPosts) => prevPosts.map((post) => (
-        post.id === postId
-          ? { ...post, likedByMe: liked, likes, likesCount: likes.length }
-          : post
-      )));
-    } catch (submitError) {
-      setError(submitError.response?.data?.message || 'Failed to toggle post like.');
-    }
-  };
-
-  const toggleCommentLike = async (commentId) => {
-    try {
-      const response = await api.post(`/v1/comments/${commentId}/likes/toggle`);
-      const likes = response.data?.likes || [];
-      const liked = Boolean(response.data?.liked);
-
-      let changed = false;
-      setPosts((prevPosts) => {
-        const result = updatePostsByCommentId(prevPosts, commentId, (comment) => ({
-          ...comment,
-          likedByMe: liked,
-          likes,
-          likesCount: likes.length,
-        }));
-
-        changed = result.changed;
-        return result.nextPosts;
-      });
-
-      if (!changed) {
-        await loadData();
-      }
-    } catch (submitError) {
-      setError(submitError.response?.data?.message || 'Failed to toggle comment like.');
     }
   };
 
@@ -1373,9 +1391,7 @@ export default function FeedPage() {
                       <PostItem
                         key={post.id}
                         post={post}
-                        onToggleLike={togglePostLike}
                         onAddComment={addComment}
-                        onToggleCommentLike={toggleCommentLike}
                         onReply={addReply}
                         onShowLikes={setLikesViewer}
                         onOpenProfile={goToProfile}
