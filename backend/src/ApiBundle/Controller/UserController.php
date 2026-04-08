@@ -16,9 +16,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * Class UserController
- */
 #[Route(path: '/user', name: 'api.user.')]
 class UserController extends BaseController
 {

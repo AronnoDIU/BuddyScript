@@ -34,6 +34,46 @@ const describeLikers = (likes = []) => {
   return `${names[0]}, ${names[1]} and ${remaining} other${remaining === 1 ? '' : 's'} liked this`;
 };
 
+const REACTION_META = {
+  like: { label: 'Like', emoji: '👍' },
+  love: { label: 'Love', emoji: '❤️' },
+  haha: { label: 'Haha', emoji: '😆' },
+  wow: { label: 'Wow', emoji: '😮' },
+  sad: { label: 'Sad', emoji: '😢' },
+  angry: { label: 'Angry', emoji: '😡' },
+  care: { label: 'Care', emoji: '🤗' },
+};
+
+function ReactionPicker({ catalog = [], state = null, onPick }) {
+  if (!catalog.length) return null;
+
+  return (
+    <div className="_reaction_picker">
+      <div className="_reaction_picker_list">
+        {catalog.map((type) => {
+          const meta = REACTION_META[type] || { label: type, emoji: '•' };
+          const active = state?.myReaction === type;
+          const count = state?.summary?.[type] || 0;
+
+          return (
+            <button
+              key={type}
+              type="button"
+              className={`_reaction_picker_btn${active ? ' _reaction_picker_btn_active' : ''}`}
+              onClick={() => onPick(type)}
+              title={meta.label}
+            >
+              <span>{meta.emoji}</span>
+              <span>{meta.label}</span>
+              <small>{count}</small>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function LikePreview({ likes = [], onClick, className = '' }) {
   if (!likes.length) {
     return null;
@@ -92,7 +132,7 @@ function LikersModal({ viewer, onClose }) {
 }
 
 /* ─── Comment Item ─────────────────────────────────────────────────── */
-function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfile }) {
+function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfile, onPickReaction, reactionStateFor, reactionCatalog = [], isReply = false }) {
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
@@ -155,6 +195,11 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfil
             </div>
             <span className="_total">{comment.likesCount || 0}</span>
           </div>
+          <ReactionPicker
+            catalog={reactionCatalog}
+            state={reactionStateFor?.(isReply ? 'reply' : 'comment', comment.id)}
+            onPick={(type) => onPickReaction?.(isReply ? 'reply' : 'comment', comment.id, type)}
+          />
           <LikePreview
             likes={comment.likes || []}
             onClick={() => onShowLikes?.({
@@ -216,7 +261,17 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfil
 
         {comment.replies?.map((reply) => (
           <div className="ms-4 mt-2" key={reply.id}>
-            <CommentItem comment={reply} onToggleLike={onToggleLike} onReply={onReply} onShowLikes={onShowLikes} onOpenProfile={onOpenProfile} />
+            <CommentItem
+              comment={reply}
+              onToggleLike={onToggleLike}
+              onReply={onReply}
+              onShowLikes={onShowLikes}
+              onOpenProfile={onOpenProfile}
+              onPickReaction={onPickReaction}
+              reactionStateFor={reactionStateFor}
+              reactionCatalog={reactionCatalog}
+              isReply
+            />
           </div>
         ))}
       </div>
@@ -225,7 +280,7 @@ function CommentItem({ comment, onToggleLike, onReply, onShowLikes, onOpenProfil
 }
 
 /* ─── Post Item ─────────────────────────────────────────────────────── */
-function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onReply, onShowLikes, onOpenProfile }) {
+function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onReply, onShowLikes, onOpenProfile, onPickReaction, reactionStateFor, reactionCatalog = [] }) {
   const [commentText, setCommentText] = useState('');
   const [commentError, setCommentError] = useState('');
   const [isCommenting, setIsCommenting] = useState(false);
@@ -349,6 +404,11 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
           })}
           className="_post_like_preview"
         />
+        <ReactionPicker
+          catalog={reactionCatalog}
+          state={reactionStateFor?.('post', post.id)}
+          onPick={(type) => onPickReaction?.('post', post.id, type)}
+        />
 
       {/* Reaction buttons */}
       <div className="_feed_inner_timeline_reaction">
@@ -446,6 +506,9 @@ function PostItem({ post, onToggleLike, onAddComment, onToggleCommentLike, onRep
               onReply={onReply}
               onShowLikes={onShowLikes}
               onOpenProfile={onOpenProfile}
+              onPickReaction={onPickReaction}
+              reactionStateFor={reactionStateFor}
+              reactionCatalog={reactionCatalog}
             />
           ))}
         </div>
@@ -469,6 +532,27 @@ export default function FeedPage() {
   const [likesViewer, setLikesViewer] = useState(null);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [reactionCatalog, setReactionCatalog] = useState([]);
+  const [reactionStateMap, setReactionStateMap] = useState({});
+
+  const reactionKey = (targetType, targetId) => `${targetType}:${targetId}`;
+  const reactionStateFor = (targetType, targetId) => reactionStateMap[reactionKey(targetType, targetId)] || null;
+
+  const upsertReactionState = (targetType, targetId, state) => {
+    setReactionStateMap((prev) => ({
+      ...prev,
+      [reactionKey(targetType, targetId)]: state,
+    }));
+  };
+
+  const pickReaction = async (targetType, targetId, type) => {
+    try {
+      const response = await api.post('/v1/reactions/toggle', { targetType, targetId, type });
+      upsertReactionState(targetType, targetId, response.data || null);
+    } catch (reactionError) {
+      setError(reactionError.response?.data?.message || 'Failed to update reaction.');
+    }
+  };
 
   const mapComments = (comments, targetId, applyUpdate) => {
     let changed = false;
@@ -581,6 +665,24 @@ export default function FeedPage() {
       setError(loadError?.response?.data?.message || 'Failed to load feed data.');
     });
   }, [loadData, navigate, searchQuery]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    api.get('/v1/reactions/catalog')
+      .then((response) => {
+        if (!mounted) return;
+        setReactionCatalog(response.data?.reactionTypes || []);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setReactionCatalog([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const onSearchSubmit = (event) => {
     event.preventDefault();
@@ -783,7 +885,7 @@ export default function FeedPage() {
                 </li>
                 {/* Friends */}
                 <li className="nav-item _header_nav_item">
-                  <a className="nav-link _header_nav_link" href="#0">
+                  <a className="nav-link _header_nav_link" href="/social">
                     <svg xmlns="http://www.w3.org/2000/svg" width="26" height="20" fill="none" viewBox="0 0 26 20">
                       <path fill="#000" fillOpacity=".6" fillRule="evenodd"
                         d="M12.79 12.15h.429c2.268.015 7.45.243 7.45 3.732 0 3.466-5.002 3.692-7.415 3.707h-.894c-2.268-.015-7.452-.243-7.452-3.727 0-3.47 5.184-3.697 7.452-3.711l.297-.001h.132zm0 1.75c-2.792 0-6.12.34-6.12 1.962 0 1.585 3.13 1.955 5.864 1.976l.255.002c2.792 0 6.118-.34 6.118-1.958 0-1.638-3.326-1.982-6.118-1.982zm9.343-2.224c2.846.424 3.444 1.751 3.444 2.79 0 .636-.251 1.794-1.931 2.43a.882.882 0 01-1.137-.506.873.873 0 01.51-1.13c.796-.3.796-.633.796-.793 0-.511-.654-.868-1.944-1.06a.878.878 0 01-.741-.996.886.886 0 011.003-.735zm-17.685.735a.878.878 0 01-.742.997c-1.29.19-1.944.548-1.944 1.059 0 .16 0 .491.798.793a.873.873 0 01-.314 1.693.897.897 0 01-.313-.057C.25 16.259 0 15.1 0 14.466c0-1.037.598-2.366 3.446-2.79.485-.06.929.257 1.002.735zM12.789 0c2.96 0 5.368 2.392 5.368 5.33 0 2.94-2.407 5.331-5.368 5.331h-.031a5.329 5.329 0 01-3.782-1.57 5.253 5.253 0 01-1.553-3.764C7.423 2.392 9.83 0 12.789 0zm0 1.75c-1.987 0-3.604 1.607-3.604 3.58a3.526 3.526 0 001.04 2.527 3.58 3.58 0 002.535 1.054l.03.875v-.875c1.987 0 3.605-1.605 3.605-3.58S14.777 1.75 12.789 1.75z"
@@ -852,7 +954,7 @@ export default function FeedPage() {
                 </li>
                 {/* Chat */}
                 <li className="nav-item _header_nav_item">
-                  <a className="nav-link _header_nav_link" href="#0">
+                  <a className="nav-link _header_nav_link" href="/reactions">
                     <svg xmlns="http://www.w3.org/2000/svg" width="23" height="22" fill="none" viewBox="0 0 23 22">
                       <path fill="#000" fillOpacity=".6" fillRule="evenodd"
                         d="M11.43 0c2.96 0 5.743 1.143 7.833 3.22 4.32 4.29 4.32 11.271 0 15.562C17.145 20.886 14.293 22 11.405 22c-1.575 0-3.16-.33-4.643-1.012-.437-.174-.847-.338-1.14-.338-.338.002-.793.158-1.232.308-.9.307-2.022.69-2.852-.131-.826-.822-.445-1.932-.138-2.826.152-.44.307-.895.307-1.239 0-.282-.137-.642-.347-1.161C-.57 11.46.322 6.47 3.596 3.22A11.04 11.04 0 0111.43 0z"
@@ -945,7 +1047,7 @@ export default function FeedPage() {
                       </a>
                     </li>
                     <li className="_mobile_navigation_bottom_item">
-                      <a href="#0" className="_mobile_navigation_bottom_link">
+                      <a href="/notifications" className="_mobile_navigation_bottom_link">
                         <svg xmlns="http://www.w3.org/2000/svg" width="25" height="27" fill="none" viewBox="0 0 25 27">
                           <path className="_dark_svg" fill="#000" fillOpacity=".6" fillRule="evenodd"
                             d="M10.17 23.46c.671.709 1.534 1.098 2.43 1.098.9 0 1.767-.39 2.44-1.099a.885.885 0 011.374.068.885.885 0 01.072 1.298c-1.049 1.101-2.428 1.708-3.886 1.708h-.003c-1.454-.001-2.831-.608-3.875-1.71a.885.885 0 01.072-1.298 1.01 1.01 0 011.374.068z"
@@ -955,7 +1057,7 @@ export default function FeedPage() {
                       </a>
                     </li>
                     <li className="_mobile_navigation_bottom_item">
-                      <a href="#0" className="_mobile_navigation_bottom_link">
+                      <a href="/social" className="_mobile_navigation_bottom_link">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                           <path className="_dark_svg" fill="#000" fillOpacity=".6" fillRule="evenodd"
                             d="M12.002 0c3.208 0 6.223 1.239 8.487 3.489 4.681 4.648 4.681 12.211 0 16.86-2.294 2.28-5.384 3.486-8.514 3.486-1.706 0-3.423-.358-5.03-1.097-.474-.188-.917-.366-1.235-.366-.366.003-.859.171-1.335.334-.976.333-2.19.748-3.09-.142-.895-.89-.482-2.093-.149-3.061.164-.477.333-.97.333-1.342 0-.306-.149-.697-.376-1.259C-1 12.417-.032 7.011 3.516 3.49A11.96 11.96 0 0112.002 0z"
@@ -995,7 +1097,7 @@ export default function FeedPage() {
                           <span className="_left_inner_area_explore_link_txt">New</span>
                         </li>
                         <li className="_left_inner_area_explore_item">
-                          <a href="#0" className="_left_inner_area_explore_link">
+                          <a href="/social" className="_left_inner_area_explore_link">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="24" fill="none" viewBox="0 0 22 24">
                               <path fill="#666" d="M14.96 2c3.101 0 5.159 2.417 5.159 5.893v8.214c0 3.476-2.058 5.893-5.16 5.893H6.989c-3.101 0-5.159-2.417-5.159-5.893V7.893C1.83 4.42 3.892 2 6.988 2h7.972z" />
                             </svg>
@@ -1030,7 +1132,7 @@ export default function FeedPage() {
                           </a>
                         </li>
                         <li className="_left_inner_area_explore_item _explore_item">
-                          <a href="#0" className="_left_inner_area_explore_link">
+                          <a href="/reactions" className="_left_inner_area_explore_link">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="24" fill="none" viewBox="0 0 22 24">
                               <path fill="#666" d="M7.625 2c.315-.015.642.306.645.69.003.309.234.558.515.558h.928c1.317 0 2.402 1.169 2.419 2.616v.24h2.604c2.911-.026 5.255 2.337 5.377 5.414.005.12.006.245.004.368v4.31c.062 3.108-2.21 5.704-5.064 5.773-.117.003-.228 0-.34-.005a199.325 199.325 0 01-7.516 0c-2.816.132-5.238-2.292-5.363-5.411a6.262 6.262 0 01-.004-.371V11.87c-.03-1.497.48-2.931 1.438-4.024.956-1.094 2.245-1.714 3.629-1.746z" />
                             </svg>
@@ -1039,7 +1141,7 @@ export default function FeedPage() {
                           <span className="_left_inner_area_explore_link_txt">New</span>
                         </li>
                         <li className="_left_inner_area_explore_item">
-                          <a href="#0" className="_left_inner_area_explore_link">
+                          <a href="/notifications" className="_left_inner_area_explore_link">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="24" fill="none" viewBox="0 0 22 24">
                               <path fill="#666" d="M22 9v-1a2 2 0 0 0-2-2h-1V4a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h1v1a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V11a2 2 0 0 0-2-2z" />
                             </svg>
@@ -1277,6 +1379,9 @@ export default function FeedPage() {
                         onReply={addReply}
                         onShowLikes={setLikesViewer}
                         onOpenProfile={goToProfile}
+                        onPickReaction={pickReaction}
+                        reactionStateFor={reactionStateFor}
+                        reactionCatalog={reactionCatalog}
                       />
                     ))}
                   </div>

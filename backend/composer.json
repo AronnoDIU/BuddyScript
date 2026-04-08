@@ -41,7 +41,11 @@
         "doctrine/doctrine-migrations-bundle": "^3.7",
         "lexik/jwt-authentication-bundle": "^3.2",
         "nelmio/cors-bundle": "^2.6",
+        "phpunit/phpunit": "^11.5",
+        "symfony/browser-kit": "7.4.*",
+        "symfony/css-selector": "7.4.*",
         "symfony/maker-bundle": "^1.67",
+        "symfony/phpunit-bridge": "7.4.*",
         "symfony/web-profiler-bundle": "7.4.*"
     },
     "config": {
@@ -81,6 +85,9 @@
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
         },
+        "test": [
+            "php -d variables_order=EGPCS vendor/bin/phpunit"
+        ],
         "post-install-cmd": [
             "@auto-scripts"
         ],

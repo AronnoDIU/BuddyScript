@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CoreBundle\Entity;
 
+use CoreBundle\Entity\SocialGraph\Connection;
 use CoreBundle\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -67,12 +68,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
     #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'author')]
     private Collection $comments;
 
+    #[ORM\OneToMany(targetEntity: Connection::class, mappedBy: 'requester')]
+    private Collection $connectionsSent;
+
+    #[ORM\OneToMany(targetEntity: Connection::class, mappedBy: 'addressee')]
+    private Collection $connectionsReceived;
+
+    #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'recipient')]
+    private Collection $notifications;
+
     public function __construct()
     {
         $this->id = Uuid::v7();
         $this->createdAt = new \DateTimeImmutable();
         $this->posts = new ArrayCollection();
         $this->comments = new ArrayCollection();
+        $this->connectionsSent = new ArrayCollection();
+        $this->connectionsReceived = new ArrayCollection();
+        $this->notifications = new ArrayCollection();
         $this->createdAt->getTimestamp();
         $this->posts->count();
         $this->comments->count();
@@ -237,6 +250,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
     public function getComments(): Collection
     {
         return $this->comments;
+    }
+
+    /** @return Collection<int, Connection> */
+    public function getConnectionsSent(): Collection
+    {
+        return $this->connectionsSent;
+    }
+
+    /** @return Collection<int, Connection> */
+    public function getConnectionsReceived(): Collection
+    {
+        return $this->connectionsReceived;
+    }
+
+    /** @return Collection<int, Notification> */
+    public function getNotifications(): Collection
+    {
+        return $this->notifications;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

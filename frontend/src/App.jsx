@@ -2,8 +2,11 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import FeedPage from './pages/FeedPage';
 import LoginPage from './pages/LoginPage';
+import NotificationsPage from './pages/NotificationsPage';
 import ProfilePage from './pages/ProfilePage';
+import ReactionsPage from './pages/ReactionsPage';
 import RegisterPage from './pages/RegisterPage';
+import SocialGraphPage from './pages/SocialGraphPage';
 import './App.css';
 
 export default function App() {
@@ -24,6 +27,30 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/social"
+        element={
+          <ProtectedRoute>
+            <SocialGraphPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reactions"
+        element={
+          <ProtectedRoute>
+            <ReactionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />

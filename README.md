@@ -49,7 +49,7 @@ Example (MySQL):
 
 ```bash
 cd backend
-php bin/console doctrine:database:creat
+php bin/console doctrine:database:create
 cd ..
 ```
 
@@ -117,6 +117,15 @@ This command orchestrates the local stack and will:
 - `POST /api/v1/comments/{id}/likes/toggle`
 - `GET /api/v1/comments/{id}/likes`
 - `GET /api/v1/profiles/{id}`
+- `GET /api/v1/social/overview`
+- `POST /api/v1/social/requests`
+- `POST /api/v1/social/requests/{id}/respond`
+- `GET /api/v1/reactions/catalog`
+- `POST /api/v1/reactions/toggle`
+- `GET /api/v1/reactions?targetType={post|comment|reply}&targetId={uuid}`
+- `GET /api/v1/notifications`
+- `POST /api/v1/notifications/{id}/read`
+- `POST /api/v1/notifications/read-all`
 
 ## Operational Notes
 
@@ -128,3 +137,33 @@ This command orchestrates the local stack and will:
 
 - If migrations fail with `could not find driver`, install the PHP MySQL extension for your CLI version (for example, `php8.5-mysql` on Debian/Ubuntu).
 - If backend requests fail with `Undefined constant "XML_PI_NODE"`, install the PHP XML extension for your CLI version (for example, `php8.5-xml` on Debian/Ubuntu).
+
+## Phase 1 Skeleton (New)
+
+This repository now includes initial social-graph, reactions, and notifications scaffolding using the project pattern (`Controller`, `Validator`, `Service`, `Repository`).
+
+- **Backend modules:** `SocialGraph`, `Reaction`, `Notification`
+- **Migration:** `backend/migrations/Version20260408120000.php`
+- **Frontend routes:** `/social`, `/reactions`, `/notifications`
+
+### Phase 1.1 Enhancements
+
+- `/social` now supports accept/reject actions for incoming friend requests.
+- `/feed` now includes a full reaction picker for posts, comments, and replies.
+- `/notifications` now includes unread badge and per-row mark-read action.
+
+### Integration Tests
+
+Backend integration tests were added for new API modules:
+
+- `tests/Api/V1/SocialGraphControllerTest.php`
+- `tests/Api/V1/ReactionControllerTest.php`
+- `tests/Api/V1/NotificationControllerTest.php`
+
+Run tests from `backend/`:
+
+```bash
+composer install
+composer test
+```
+
