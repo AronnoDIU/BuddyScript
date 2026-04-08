@@ -4,7 +4,7 @@ import { api, setToken } from '../api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ identifier: '', password: '' });
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,7 +18,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.post('/login_check', form);
+      const response = await api.post('/auth/login_check', form);
       setToken(response.data.token);
       navigate('/feed');
     } catch (submitError) {
@@ -79,12 +79,12 @@ export default function LoginPage() {
                   <div className="row">
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                       <div className="_social_login_form_input _mar_b14">
-                        <label className="_social_login_label _mar_b8">Email</label>
+                        <label className="_social_login_label _mar_b8">Email or Username</label>
                         <input
-                          type="email"
-                          name="email"
+                          type="text"
+                          name="identifier"
                           className="form-control _social_login_input"
-                          value={form.email}
+                          value={form.identifier}
                           onChange={onChange}
                           required
                         />

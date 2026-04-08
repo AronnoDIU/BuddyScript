@@ -62,7 +62,7 @@ This single command will:
 Public endpoints:
 
 - `POST /api/auth/register`
-- `POST /api/login_check`
+- `POST /api/auth/login_check`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 

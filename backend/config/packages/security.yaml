@@ -9,6 +9,8 @@ security:
             entity:
                 class: CoreBundle\Entity\User
                 property: username
+        app_user_provider:
+            id: CoreBundle\Security\EmailOrUsernameUserProvider
 
     firewalls:
         dev:
@@ -16,20 +18,23 @@ security:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
         login:
-            pattern: ^/api/v1/auth/login
+            pattern: ^/api/auth/login
             stateless: true
             login_throttling:
                 max_attempts: 3
                 interval: '1 minute'
+            provider: app_user_provider
             json_login:
-                check_path: /api/v1/auth/login_check
+                check_path: /api/auth/login_check
+                username_path: identifier
+                password_path: password
                 success_handler: ApiBundle\Security\AuthenticationSuccessHandler
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
         api:
             pattern: ^/api
             stateless: true
-            provider: core_user_provider
+            provider: app_user_provider
             jwt:
                 authenticator: api.security.authenticator
 

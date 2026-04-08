@@ -10,9 +10,6 @@
 api_login_check:
     path: /api/auth/login_check
 
-api_v1_login_check:
-    path: /api/v1/auth/login_check
-
 admin_controllers:
     resource: '../src/AdminBundle/Controller/'
     type: attribute

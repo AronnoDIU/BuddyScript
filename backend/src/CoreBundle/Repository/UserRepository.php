@@ -12,6 +12,21 @@ use Symfony\Component\Uid\Uuid;
 
 class UserRepository extends BaseRepository
 {
+    public function findOneByEmailOrUsername(string $identifier): ?User
+    {
+        $normalized = mb_strtolower(trim($identifier));
+        if ($normalized === '') {
+            return null;
+        }
+
+        return $this->createQueryBuilder('u')
+            ->andWhere('LOWER(u.email) = :identifier OR LOWER(u.username) = :identifier')
+            ->setParameter('identifier', $normalized)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function filter(Request $request): QueryBuilder
     {
         $qb = $this->createQueryBuilder('u');
