@@ -42,14 +42,6 @@ export default function CommunityNav() {
         </div>
       </div>
 
-      <div className="community-nav__actions">
-        <NavLink to="/notifications" className="community-nav__action" aria-label="Notifications">
-          <Bell size={20} />
-        </NavLink>
-        <NavLink to="/messenger" className="community-nav__action" aria-label="Messenger">
-          <MessageCircle size={20} />
-        </NavLink>
-      </div>
     </nav>
   );
 }
