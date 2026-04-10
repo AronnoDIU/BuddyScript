@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.php
+</IfModule>
+
+# Allow direct access to static files and uploads
+<FilesMatch "\.(jpg|jpeg|png|gif|css|js|svg|woff|woff2|ttf|eot|ico|webp)$">
+    Allow from all
+</FilesMatch>
+

@@ -151,7 +151,7 @@ ensure_backend_port_available
 echo "Starting backend on http://$BACKEND_HOST:$BACKEND_PORT"
 (
   cd "$BACKEND_DIR"
-  "$PHP_BIN" -S "$BACKEND_HOST:$BACKEND_PORT" -t public public/index.php
+  "$PHP_BIN" -S "$BACKEND_HOST:$BACKEND_PORT" -t public public/router.php
 ) &
 BACKEND_PID=$!
 
