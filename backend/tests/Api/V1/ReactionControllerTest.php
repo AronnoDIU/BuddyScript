@@ -116,6 +116,29 @@ final class ReactionControllerTest extends ApiTestCase
         self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
+    public function testBatchSummariesRejectsUnexpectedTargetFields(): void
+    {
+        [$client] = $this->createAuthenticatedClient('reaction_batch_shape');
+
+        $client->request('POST', '/api/v1/posts', [
+            'content' => 'Batch shape post',
+            'visibility' => 'public',
+        ]);
+        self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
+        $postPayload = json_decode((string) $client->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        $postId = (string) ($postPayload['post']['id'] ?? '');
+
+        $client->request('POST', '/api/v1/reactions/summaries', [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], json_encode([
+            'targets' => [
+                ['targetType' => 'post', 'targetId' => $postId, 'unexpected' => true],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
     public function testBatchSummariesRequireAuthentication(): void
     {
         $client = static::createClient();

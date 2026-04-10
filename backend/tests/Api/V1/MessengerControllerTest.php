@@ -93,6 +93,26 @@ final class MessengerControllerTest extends ApiTestCase
         }
     }
 
+    public function testSendMessageRejectsMalformedContentPayload(): void
+    {
+        $sender = $this->createUser('messenger_type_sender@example.test');
+        $receiver = $this->createUser('messenger_type_receiver@example.test');
+
+        $senderClient = $this->authClientForUser($sender);
+        try {
+            $senderClient->request('POST', '/api/v1/messenger/messages', [], [], [
+                'CONTENT_TYPE' => 'application/json',
+            ], json_encode([
+                'recipientId' => $receiver->getId()->toRfc4122(),
+                'content' => ['unexpected' => 'array'],
+            ], JSON_THROW_ON_ERROR));
+        } catch (\JsonException $e) {
+            self::fail('Test payload JSON is malformed: ' . $e->getMessage());
+        }
+
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
     public function testMessagesEndpointReturnsNotFoundForUnknownConversation(): void
     {
         [$client] = $this->createAuthenticatedClient('messenger_missing');
