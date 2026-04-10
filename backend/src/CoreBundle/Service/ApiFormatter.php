@@ -66,12 +66,33 @@ readonly class ApiFormatter
             'content' => $post->getContent(),
             'visibility' => $post->getVisibility(),
             'imageUrl' => $this->absoluteUrl($post->getImagePath()),
+            'hashtags' => $post->getHashtags(),
+            'topics' => $post->getTopics(),
             'createdAt' => $post->getCreatedAt()->format(DATE_ATOM),
             'author' => $this->user($post->getAuthor()),
             'likesCount' => count($likes),
             'likes' => $likes,
             'likedByMe' => $likedByMe,
             'comments' => $comments,
+        ];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function discoveryCard(Post $post, User $viewer, string $kind): array
+    {
+        $base = $this->post($post, $viewer);
+
+        return [
+            'kind' => $kind,
+            'post' => $base,
+            'preview' => [
+                'title' => $post->getAuthor()->getDisplayName(),
+                'subtitle' => $post->getCreatedAt()->format('M j, H:i'),
+                'mediaUrl' => $this->absoluteUrl($post->getImagePath()),
+                'score' => $base['likesCount'] + count($base['comments']) * 2,
+            ],
         ];
     }
 

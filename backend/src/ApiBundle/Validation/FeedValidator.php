@@ -6,7 +6,9 @@ use CoreBundle\Entity\Post;
 use Respect\Validation\Validators\AllOf;
 use Respect\Validation\Validators\Blank;
 use Respect\Validation\Validators\In;
+use Respect\Validation\Validators\IntVal;
 use Respect\Validation\Validators\Not;
+use Respect\Validation\Validators\Positive;
 use Respect\Validation\Validators\StringType;
 
 class FeedValidator extends AbstractValidator
@@ -34,6 +36,14 @@ class FeedValidator extends AbstractValidator
             case 'post_likes':
             case 'comment_likes':
                 $this->rules['id'] = new AllOf(new StringType(), new Not(new Blank()));
+                break;
+            case 'discovery':
+            case 'discovery_topics':
+                $this->rules['limit'] = new AllOf(new IntVal(), new Positive());
+                break;
+            case 'discovery_search':
+                $this->rules['q'] = new AllOf(new StringType(), new Not(new Blank()));
+                $this->rules['limit'] = new AllOf(new IntVal(), new Positive());
                 break;
             default:
                 throw new \RuntimeException(sprintf('Unsupported feed validator action: %s', $this->action));

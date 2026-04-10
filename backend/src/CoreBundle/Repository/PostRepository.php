@@ -108,6 +108,192 @@ class PostRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    /** @return list<Post> */
+    public function findDiscoveryStories(int $limit = 12): array
+    {
+        $safeLimit = max(3, min(24, $limit));
+        $since = (new \DateTimeImmutable('-2 days'));
+
+        $posts = $this->createQueryBuilder('p')
+            ->innerJoin('p.author', 'a')->addSelect('a')
+            ->leftJoin('p.likes', 'pl')->addSelect('pl')
+            ->leftJoin('pl.user', 'plu')->addSelect('plu')
+            ->leftJoin('p.comments', 'c')->addSelect('c')
+            ->leftJoin('c.author', 'ca')->addSelect('ca')
+            ->leftJoin('c.likes', 'cl')->addSelect('cl')
+            ->leftJoin('cl.user', 'clu')->addSelect('clu')
+            ->leftJoin('c.replies', 'r')->addSelect('r')
+            ->leftJoin('r.author', 'ra')->addSelect('ra')
+            ->leftJoin('r.likes', 'rl')->addSelect('rl')
+            ->leftJoin('rl.user', 'rlu')->addSelect('rlu')
+            ->where('p.visibility = :public')
+            ->andWhere('p.imagePath IS NOT NULL')
+            ->andWhere('p.createdAt >= :since')
+            ->setParameter('public', Post::VISIBILITY_PUBLIC)
+            ->setParameter('since', $since)
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults(150)
+            ->getQuery()
+            ->getResult();
+
+        $seenAuthors = [];
+        $picked = [];
+        foreach ($posts as $post) {
+            if (!$post instanceof Post) {
+                continue;
+            }
+
+            $authorId = $post->getAuthor()->getId()->toRfc4122();
+            if (isset($seenAuthors[$authorId])) {
+                continue;
+            }
+
+            $seenAuthors[$authorId] = true;
+            $picked[] = $post;
+            if (count($picked) >= $safeLimit) {
+                break;
+            }
+        }
+
+        return $picked;
+    }
+
+    /** @return list<Post> */
+    public function findDiscoveryReels(int $limit = 12): array
+    {
+        $safeLimit = max(3, min(24, $limit));
+
+        return $this->createQueryBuilder('p')
+            ->innerJoin('p.author', 'a')->addSelect('a')
+            ->leftJoin('p.likes', 'pl')->addSelect('pl')
+            ->leftJoin('pl.user', 'plu')->addSelect('plu')
+            ->leftJoin('p.comments', 'c')->addSelect('c')
+            ->leftJoin('c.author', 'ca')->addSelect('ca')
+            ->leftJoin('c.likes', 'cl')->addSelect('cl')
+            ->leftJoin('cl.user', 'clu')->addSelect('clu')
+            ->leftJoin('c.replies', 'r')->addSelect('r')
+            ->leftJoin('r.author', 'ra')->addSelect('ra')
+            ->leftJoin('r.likes', 'rl')->addSelect('rl')
+            ->leftJoin('rl.user', 'rlu')->addSelect('rlu')
+            ->where('p.visibility = :public')
+            ->andWhere('p.imagePath IS NOT NULL')
+            ->setParameter('public', Post::VISIBILITY_PUBLIC)
+            ->orderBy('SIZE(p.likes)', 'DESC')
+            ->addOrderBy('p.createdAt', 'DESC')
+            ->setMaxResults($safeLimit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<Post> */
+    public function findDiscoveryLive(int $limit = 12): array
+    {
+        $safeLimit = max(3, min(24, $limit));
+        $since = new \DateTimeImmutable('-90 minutes');
+
+        return $this->createQueryBuilder('p')
+            ->innerJoin('p.author', 'a')->addSelect('a')
+            ->leftJoin('p.likes', 'pl')->addSelect('pl')
+            ->leftJoin('pl.user', 'plu')->addSelect('plu')
+            ->leftJoin('p.comments', 'c')->addSelect('c')
+            ->leftJoin('c.author', 'ca')->addSelect('ca')
+            ->leftJoin('c.likes', 'cl')->addSelect('cl')
+            ->leftJoin('cl.user', 'clu')->addSelect('clu')
+            ->leftJoin('c.replies', 'r')->addSelect('r')
+            ->leftJoin('r.author', 'ra')->addSelect('ra')
+            ->leftJoin('r.likes', 'rl')->addSelect('rl')
+            ->leftJoin('rl.user', 'rlu')->addSelect('rlu')
+            ->where('p.visibility = :public')
+            ->andWhere('p.createdAt >= :since')
+            ->setParameter('public', Post::VISIBILITY_PUBLIC)
+            ->setParameter('since', $since)
+            ->orderBy('SIZE(p.comments)', 'DESC')
+            ->addOrderBy('p.createdAt', 'DESC')
+            ->setMaxResults($safeLimit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<Post> */
+    public function searchPublicPosts(string $query, int $limit = 20): array
+    {
+        $safeLimit = max(5, min(40, $limit));
+        $search = '%' . mb_strtolower(trim($query)) . '%';
+
+        return $this->createQueryBuilder('p')
+            ->innerJoin('p.author', 'a')->addSelect('a')
+            ->leftJoin('p.likes', 'pl')->addSelect('pl')
+            ->leftJoin('pl.user', 'plu')->addSelect('plu')
+            ->leftJoin('p.comments', 'c')->addSelect('c')
+            ->leftJoin('c.author', 'ca')->addSelect('ca')
+            ->leftJoin('c.likes', 'cl')->addSelect('cl')
+            ->leftJoin('cl.user', 'clu')->addSelect('clu')
+            ->leftJoin('c.replies', 'r')->addSelect('r')
+            ->leftJoin('r.author', 'ra')->addSelect('ra')
+            ->leftJoin('r.likes', 'rl')->addSelect('rl')
+            ->leftJoin('rl.user', 'rlu')->addSelect('rlu')
+            ->where('p.visibility = :public')
+            ->andWhere('LOWER(p.content) LIKE :search OR LOWER(CONCAT(CONCAT(a.firstName, :space), a.lastName)) LIKE :search OR LOWER(a.email) LIKE :search')
+            ->setParameter('public', Post::VISIBILITY_PUBLIC)
+            ->setParameter('search', $search)
+            ->setParameter('space', ' ')
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults($safeLimit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<User> */
+    public function searchPublicAuthors(string $query, int $limit = 20): array
+    {
+        $safeLimit = max(5, min(40, $limit));
+        $search = '%' . mb_strtolower(trim($query)) . '%';
+
+        return $this->createQueryBuilder('p')
+            ->select('DISTINCT a')
+            ->innerJoin('p.author', 'a')
+            ->where('p.visibility = :public')
+            ->andWhere('LOWER(CONCAT(CONCAT(a.firstName, :space), a.lastName)) LIKE :search OR LOWER(a.email) LIKE :search')
+            ->setParameter('public', Post::VISIBILITY_PUBLIC)
+            ->setParameter('space', ' ')
+            ->setParameter('search', $search)
+            ->setMaxResults($safeLimit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<string> */
+    public function searchHashtags(string $query, int $limit = 15): array
+    {
+        $needle = mb_strtolower(ltrim(trim($query), '#'));
+        if ($needle === '') {
+            return [];
+        }
+
+        $hashtags = [];
+        foreach ($this->findRecentPublicPostsForIndexing(250) as $post) {
+            foreach ($post->getHashtags() as $hashtag) {
+                if (str_contains($hashtag, $needle)) {
+                    $hashtags['#' . $hashtag] = true;
+                }
+            }
+        }
+
+        return array_slice(array_keys($hashtags), 0, max(5, min(30, $limit)));
+    }
+
+    /** @return list<Post> */
+    public function findRecentPublicPostsForIndexing(int $limit = 250): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.visibility = :public')
+            ->setParameter('public', Post::VISIBILITY_PUBLIC)
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults(max(20, min(500, $limit)))
+            ->getQuery()
+            ->getResult();
+    }
+
     /**
      * @return list<Post>
      */

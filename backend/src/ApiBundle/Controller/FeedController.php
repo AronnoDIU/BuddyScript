@@ -206,4 +206,62 @@ class FeedController extends BaseController
 
         return $this->json($result);
     }
+
+    #[Route('/discover', name: 'api_discovery', methods: ['GET'])]
+    public function discovery(Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if ($user === null) {
+            return $this->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $limit = max(3, min(24, (int) $request->query->get('limit', 12)));
+
+        try {
+            $this->feedValidator->setAction('discovery')->validate(['limit' => $limit]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        return $this->json($this->feedService->discovery($user, $limit));
+    }
+
+    #[Route('/discover/search', name: 'api_discovery_search', methods: ['GET'])]
+    public function discoverySearch(Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if ($user === null) {
+            return $this->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $query = (string) $request->query->get('q', '');
+        $limit = max(5, min(40, (int) $request->query->get('limit', 20)));
+
+        try {
+            $this->feedValidator->setAction('discovery_search')->validate([
+                'q' => $query,
+                'limit' => $limit,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        return $this->json($this->feedService->discoverySearch($user, $query, $limit));
+    }
+
+    #[Route('/discover/topics', name: 'api_discovery_topics', methods: ['GET'])]
+    public function discoveryTopics(Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if ($user === null) {
+            return $this->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        $limit = max(5, min(50, (int) $request->query->get('limit', 12)));
+
+        try {
+            $this->feedValidator->setAction('discovery_topics')->validate(['limit' => $limit]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        return $this->json($this->feedService->trendingTopics($limit));
+    }
 }

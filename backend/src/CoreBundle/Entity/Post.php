@@ -37,6 +37,14 @@ class Post
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $imagePath = null;
 
+    /** @var list<string> */
+    #[ORM\Column(type: 'json')]
+    private array $hashtags = [];
+
+    /** @var list<string> */
+    #[ORM\Column(type: 'json')]
+    private array $topics = [];
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -123,6 +131,42 @@ class Post
     public function setImagePath(?string $imagePath): self
     {
         $this->imagePath = $imagePath;
+
+        return $this;
+    }
+
+    /** @return list<string> */
+    public function getHashtags(): array
+    {
+        return $this->hashtags;
+    }
+
+    /** @param list<string> $hashtags */
+    public function setHashtags(array $hashtags): self
+    {
+        $normalized = array_values(array_unique(array_filter(array_map(
+            static fn (string $value): string => mb_strtolower(trim($value)),
+            $hashtags
+        ))));
+        $this->hashtags = $normalized;
+
+        return $this;
+    }
+
+    /** @return list<string> */
+    public function getTopics(): array
+    {
+        return $this->topics;
+    }
+
+    /** @param list<string> $topics */
+    public function setTopics(array $topics): self
+    {
+        $normalized = array_values(array_unique(array_filter(array_map(
+            static fn (string $value): string => mb_strtolower(trim($value)),
+            $topics
+        ))));
+        $this->topics = $normalized;
 
         return $this;
     }

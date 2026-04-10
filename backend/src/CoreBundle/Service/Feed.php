@@ -55,11 +55,16 @@ class Feed
      */
     public function createPost(User $user, string $content, string $visibility, ?UploadedFile $image): array
     {
+        $normalizedContent = trim($content);
+        $indexed = $this->extractDiscoveryTokens($normalizedContent);
+
         $post = new Post();
         $post
             ->setAuthor($user)
-            ->setContent(trim($content))
-            ->setVisibility($visibility);
+            ->setContent($normalizedContent)
+            ->setVisibility($visibility)
+            ->setHashtags($indexed['hashtags'])
+            ->setTopics($indexed['topics']);
 
         if ($image instanceof UploadedFile) {
             $path = $this->storePostImage($image);
@@ -74,6 +79,84 @@ class Feed
         $this->entityManager->flush();
 
         return ['post' => $this->formatter->post($post, $user)];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function discovery(User $viewer, int $limit = 12): array
+    {
+        $safeLimit = max(3, min(24, $limit));
+
+        $stories = $this->getPostRepository()->findDiscoveryStories($safeLimit);
+        $reels = $this->getPostRepository()->findDiscoveryReels($safeLimit);
+        $live = $this->getPostRepository()->findDiscoveryLive($safeLimit);
+
+        return [
+            'stories' => array_map(fn (Post $post): array => $this->formatter->discoveryCard($post, $viewer, 'story'), $stories),
+            'reels' => array_map(fn (Post $post): array => $this->formatter->discoveryCard($post, $viewer, 'reel'), $reels),
+            'live' => array_map(fn (Post $post): array => $this->formatter->discoveryCard($post, $viewer, 'live'), $live),
+            'trendingTopics' => $this->trendingTopics(12)['topics'],
+        ];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function discoverySearch(User $viewer, string $query, int $limit = 20): array
+    {
+        $normalized = trim($query);
+        if ($normalized === '') {
+            return [
+                'query' => '',
+                'users' => [],
+                'posts' => [],
+                'hashtags' => [],
+            ];
+        }
+
+        $safeLimit = max(5, min(40, $limit));
+        $posts = $this->getPostRepository()->searchPublicPosts($normalized, $safeLimit);
+        $users = $this->getPostRepository()->searchPublicAuthors($normalized, $safeLimit);
+        $hashtags = $this->getPostRepository()->searchHashtags($normalized, 15);
+
+        return [
+            'query' => $normalized,
+            'users' => array_map(fn (User $user): array => $this->formatter->user($user), $users),
+            'posts' => array_map(fn (Post $post): array => $this->formatter->post($post, $viewer), $posts),
+            'hashtags' => $hashtags,
+        ];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function trendingTopics(int $limit = 12): array
+    {
+        $safeLimit = max(5, min(50, $limit));
+        $tokens = [];
+
+        foreach ($this->getPostRepository()->findRecentPublicPostsForIndexing(250) as $post) {
+            foreach ($post->getHashtags() as $hashtag) {
+                $key = '#' . $hashtag;
+                $tokens[$key] = ($tokens[$key] ?? 0) + 3;
+            }
+
+            foreach ($post->getTopics() as $topic) {
+                $tokens[$topic] = ($tokens[$topic] ?? 0) + 1;
+            }
+        }
+
+        arsort($tokens);
+        $topicRows = [];
+        foreach (array_slice($tokens, 0, $safeLimit, true) as $topic => $score) {
+            $topicRows[] = [
+                'topic' => $topic,
+                'score' => $score,
+            ];
+        }
+
+        return ['topics' => $topicRows];
     }
 
     /**
@@ -307,5 +390,43 @@ class Feed
         }
 
         return $repository;
+    }
+
+    /**
+     * @return array{hashtags:list<string>,topics:list<string>}
+     */
+    private function extractDiscoveryTokens(string $content): array
+    {
+        preg_match_all('/#([\p{L}\p{N}_]{2,50})/u', $content, $hashtagMatches);
+        $hashtags = array_values(array_unique(array_map(
+            static fn (string $tag): string => mb_strtolower($tag),
+            $hashtagMatches[1] ?? []
+        )));
+
+        $normalized = preg_replace('/#[\p{L}\p{N}_]+/u', ' ', mb_strtolower($content));
+        $normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', (string) $normalized);
+        $parts = preg_split('/\s+/u', trim((string) $normalized)) ?: [];
+
+        $stopWords = [
+            'the', 'and', 'for', 'are', 'this', 'that', 'with', 'from', 'your', 'you', 'have', 'has', 'was', 'were',
+            'will', 'would', 'about', 'into', 'than', 'then', 'they', 'them', 'just', 'like', 'post', 'today',
+        ];
+
+        $topics = [];
+        foreach ($parts as $part) {
+            if (mb_strlen($part) < 3 || in_array($part, $stopWords, true)) {
+                continue;
+            }
+
+            $topics[] = $part;
+            if (count($topics) >= 24) {
+                break;
+            }
+        }
+
+        return [
+            'hashtags' => $hashtags,
+            'topics' => array_values(array_unique($topics)),
+        ];
     }
 }

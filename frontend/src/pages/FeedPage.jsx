@@ -577,6 +577,9 @@ export default function FeedPage() {
   const [likesViewer, setLikesViewer] = useState(null);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [discoveryData, setDiscoveryData] = useState({ stories: [], reels: [], live: [], trendingTopics: [] });
+  const [discoveryResults, setDiscoveryResults] = useState({ users: [], posts: [], hashtags: [], query: '' });
+  const [discovering, setDiscovering] = useState(false);
   const [reactionCatalog, setReactionCatalog] = useState([]);
   const [reactionStateMap, setReactionStateMap] = useState({});
 
@@ -663,15 +666,56 @@ export default function FeedPage() {
 
   const loadData = useCallback(async (query = '') => {
     const normalizedQuery = query.trim();
-    const [meResponse, feedResponse] = await Promise.all([
+    const [meResponse, feedResponse, discoveryResponse, topicResponse] = await Promise.all([
       api.get('/v1/me'),
       api.get('/v1/feed', { params: normalizedQuery ? { q: normalizedQuery } : {} }),
+      api.get('/v1/discover', { params: { limit: 12 } }),
+      api.get('/v1/discover/topics', { params: { limit: 12 } }),
     ]);
     const feedPosts = feedResponse.data.posts || [];
     setMe(meResponse.data.user);
     setPosts(feedPosts);
+    setDiscoveryData({
+      stories: discoveryResponse.data?.stories || [],
+      reels: discoveryResponse.data?.reels || [],
+      live: discoveryResponse.data?.live || [],
+      trendingTopics: topicResponse.data?.topics || discoveryResponse.data?.trendingTopics || [],
+    });
     await hydrateReactionSummaries(feedPosts);
   }, [hydrateReactionSummaries]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      setDiscoveryResults({ users: [], posts: [], hashtags: [], query: '' });
+      return;
+    }
+
+    let mounted = true;
+    setDiscovering(true);
+
+    api.get('/v1/discover/search', { params: { q: searchQuery, limit: 20 } })
+      .then((response) => {
+        if (!mounted) return;
+        setDiscoveryResults({
+          users: response.data?.users || [],
+          posts: response.data?.posts || [],
+          hashtags: response.data?.hashtags || [],
+          query: response.data?.query || searchQuery,
+        });
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setDiscoveryResults({ users: [], posts: [], hashtags: [], query: searchQuery });
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setDiscovering(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [searchQuery]);
 
   useEffect(() => {
     loadData(searchQuery).catch((loadError) => {
@@ -712,6 +756,7 @@ export default function FeedPage() {
   const onSearchReset = () => {
     setSearchInput('');
     setSearchQuery('');
+    setDiscoveryResults({ users: [], posts: [], hashtags: [], query: '' });
   };
 
   const onCreatePost = async (event) => {
@@ -1206,7 +1251,7 @@ export default function FeedPage() {
                 <div className="_layout_middle_wrap">
                   <div className="_layout_middle_inner">
 
-                    {/* Story Cards */}
+                    {/* Discovery Stories */}
                     <div className="_feed_inner_ppl_card _mar_b16">
                       <div className="_feed_inner_story_arrow">
                         <button type="button" className="_feed_inner_story_arrow_btn">
@@ -1233,25 +1278,74 @@ export default function FeedPage() {
                             </div>
                           </div>
                         </div>
-                        {[
-                          { img: 'card_ppl2.png', name: 'Steve' },
-                          { img: 'card_ppl3.png', name: 'Ryan' },
-                          { img: 'card_ppl4.png', name: 'Dylan' },
-                        ].map((story) => (
-                          <div className="col-xl-3 col-lg-3 col-md-4 col-sm-4 col" key={story.name}>
+                        {(discoveryData.stories || []).slice(0, 3).map((storyCard, index) => (
+                          <div className="col-xl-3 col-lg-3 col-md-4 col-sm-4 col" key={storyCard.post?.id || index}>
                             <div className="_feed_inner_public_story _b_radious6">
                               <div className="_feed_inner_public_story_image">
-                                <img src={`/assets/images/${story.img}`} alt="Image" className="_public_story_img" />
+                                <img
+                                  src={storyCard.preview?.mediaUrl ? resolveMediaUrl(storyCard.preview.mediaUrl) : '/assets/images/card_ppl2.png'}
+                                  alt="Story"
+                                  className="_public_story_img"
+                                />
                                 <div className="_feed_inner_public_mini">
                                   <img src="/assets/images/mini_pic.png" alt="" className="_public_mini_img" />
                                 </div>
                               </div>
                               <div className="_feed_inner_pulic_story_txt">
-                                <p className="_feed_inner_pulic_story_para">{story.name}</p>
+                                <p className="_feed_inner_pulic_story_para">{storyCard.preview?.title || 'Story'}</p>
                               </div>
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* Discovery Modules */}
+                    <div className="_feed_inner_text_area _b_radious6 _padd_b24 _padd_t24 _padd_r24 _padd_l24 _mar_b16">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h4 className="_feed_inner_timeline_post_title m-0">Discover</h4>
+                        {discovering && <span className="text-muted small">Searching...</span>}
+                      </div>
+
+                      {!!discoveryResults.query && (
+                        <div className="mb-3">
+                          <p className="mb-1"><strong>Search:</strong> {discoveryResults.query}</p>
+                          {discoveryResults.hashtags.length > 0 && (
+                            <div className="d-flex flex-wrap gap-2 mb-2">
+                              {discoveryResults.hashtags.map((tag) => <span key={tag} className="badge bg-light text-dark">{tag}</span>)}
+                            </div>
+                          )}
+                          {discoveryResults.users.length > 0 && (
+                            <div className="small text-muted">People: {discoveryResults.users.map((u) => u.displayName).join(', ')}</div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="row">
+                        <div className="col-md-4 mb-3">
+                          <h6>Reels</h6>
+                          {(discoveryData.reels || []).slice(0, 3).map((item) => (
+                            <div key={item.post?.id} className="mb-2">
+                              <small>{item.preview?.title}</small>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="col-md-4 mb-3">
+                          <h6>Live</h6>
+                          {(discoveryData.live || []).slice(0, 3).map((item) => (
+                            <div key={item.post?.id} className="mb-2">
+                              <small>{item.preview?.title} • Live</small>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="col-md-4 mb-3">
+                          <h6>Trending</h6>
+                          {(discoveryData.trendingTopics || []).slice(0, 5).map((topic) => (
+                            <div key={topic.topic} className="mb-2">
+                              <small>{topic.topic} ({topic.score})</small>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
