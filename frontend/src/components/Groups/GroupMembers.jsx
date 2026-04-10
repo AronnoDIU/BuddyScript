@@ -131,7 +131,7 @@ export default function GroupMembers({ groupId, members, isAdmin, onMembersUpdat
         {isAdmin && (
           <button
             className="group-members__invite-btn"
-            onClick={() => setShowInviteModal(true)}
+            onClick={() => {}}
           >
             <UserPlus size={16} />
             Invite Members

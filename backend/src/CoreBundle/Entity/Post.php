@@ -60,6 +60,8 @@ class Post
     {
         $this->id = Uuid::v7();
         $this->createdAt = new \DateTimeImmutable();
+        $this->hashtags = [];
+        $this->topics = [];
         $this->comments = new ArrayCollection();
         $this->likes = new ArrayCollection();
     }
@@ -138,7 +140,7 @@ class Post
     /** @return list<string> */
     public function getHashtags(): array
     {
-        return $this->hashtags;
+        return isset($this->hashtags) ? $this->hashtags : [];
     }
 
     /** @param list<string> $hashtags */
@@ -156,7 +158,7 @@ class Post
     /** @return list<string> */
     public function getTopics(): array
     {
-        return $this->topics;
+        return isset($this->topics) ? $this->topics : [];
     }
 
     /** @param list<string> $topics */

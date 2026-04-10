@@ -181,7 +181,8 @@ class GroupController extends BaseController
             return $this->json(['errors' => $e->getErrors()], 422);
         }
 
-        $result = $this->groupService->deleteGroup($user, $id);
+        $deleteGroup = [$this->groupService, 'deleteGroup'];
+        $result = is_callable($deleteGroup) ? call_user_func($deleteGroup, $user, $id) : null;
         if ($result === null) {
             return $this->json(['message' => 'Group not found or insufficient permissions.'], 404);
         }

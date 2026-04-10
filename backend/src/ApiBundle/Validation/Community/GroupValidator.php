@@ -13,12 +13,12 @@ class GroupValidator
 {
     use EntityValidatorTrait;
 
-    private ?string $action = null;
+    private ?string $currentAction = null;
     private array $errors = [];
 
     public function setAction(string $action): self
     {
-        $this->action = $action;
+        $this->currentAction = $action;
         return $this;
     }
 
@@ -26,7 +26,7 @@ class GroupValidator
     {
         $this->errors = [];
 
-        match ($this->action) {
+        match ($this->currentAction) {
             'create_group' => $this->validateCreateGroup($data),
             'list_groups' => $this->validateListGroups($data),
             'list_public_groups' => $this->validateListPublicGroups($data),

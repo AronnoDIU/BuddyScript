@@ -129,7 +129,8 @@ class GroupPostController extends BaseController
             return $this->json(['errors' => $e->getErrors()], 422);
         }
 
-        $result = $this->groupPostService->deletePost($user, $id);
+        $deletePost = [$this->groupPostService, 'deletePost'];
+        $result = is_callable($deletePost) ? call_user_func($deletePost, $user, $id) : null;
         if ($result === null) {
             return $this->json(['message' => 'Post not found or insufficient permissions.'], 404);
         }

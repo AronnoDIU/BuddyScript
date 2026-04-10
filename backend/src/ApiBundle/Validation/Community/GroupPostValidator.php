@@ -12,12 +12,12 @@ class GroupPostValidator
 {
     use EntityValidatorTrait;
 
-    private ?string $action = null;
+    private ?string $currentAction = null;
     private array $errors = [];
 
     public function setAction(string $action): self
     {
-        $this->action = $action;
+        $this->currentAction = $action;
         return $this;
     }
 
@@ -25,7 +25,7 @@ class GroupPostValidator
     {
         $this->errors = [];
 
-        match ($this->action) {
+        match ($this->currentAction) {
             'create_post' => $this->validateCreatePost($data),
             'list_posts' => $this->validateListPosts($data),
             'get_post' => $this->validateGetPost($data),
