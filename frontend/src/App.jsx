@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import AppShell from './components/Navigation/AppShell';
 import FeedPage from './pages/FeedPage';
 import LoginPage from './pages/LoginPage';
 import MessengerPage from './pages/MessengerPage';
@@ -17,61 +18,20 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route
-        path="/feed"
         element={
           <ProtectedRoute>
-            <FeedPage />
+            <AppShell />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/profile/:userId"
-        element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/social"
-        element={
-          <ProtectedRoute>
-            <SocialGraphPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reactions"
-        element={
-          <ProtectedRoute>
-            <ReactionsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/notifications"
-        element={
-          <ProtectedRoute>
-            <NotificationsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/messenger"
-        element={
-          <ProtectedRoute>
-            <MessengerPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/groups"
-        element={
-          <ProtectedRoute>
-            <GroupsPage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path="/feed" element={<FeedPage />} />
+        <Route path="/profile/:userId" element={<ProfilePage />} />
+        <Route path="/social" element={<SocialGraphPage />} />
+        <Route path="/reactions" element={<ReactionsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/messenger" element={<MessengerPage />} />
+        <Route path="/groups" element={<GroupsPage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/feed" replace />} />
     </Routes>
   );

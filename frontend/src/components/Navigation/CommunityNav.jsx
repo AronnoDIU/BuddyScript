@@ -1,16 +1,15 @@
-import React from 'react';
-import { Home, Users, Calendar, Settings, Search, Bell } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Home, Users, MessageCircle, Bell, Heart, Network, Search } from 'lucide-react';
+import { Link, NavLink } from 'react-router-dom';
 import './CommunityNav.css';
 
 export default function CommunityNav() {
-  const location = useLocation();
-
   const navItems = [
     { path: '/feed', icon: <Home size={20} />, label: 'Feed' },
     { path: '/groups', icon: <Users size={20} />, label: 'Groups' },
-    { path: '/pages', icon: <Users size={20} />, label: 'Pages' },
-    { path: '/events', icon: <Calendar size={20} />, label: 'Events' },
+    { path: '/messenger', icon: <MessageCircle size={20} />, label: 'Messenger' },
+    { path: '/notifications', icon: <Bell size={20} />, label: 'Notifications' },
+    { path: '/social', icon: <Network size={20} />, label: 'Social' },
+    { path: '/reactions', icon: <Heart size={20} />, label: 'Reactions' },
   ];
 
   return (
@@ -31,27 +30,25 @@ export default function CommunityNav() {
 
         <div className="community-nav__links">
           {navItems.map((item) => (
-            <Link
+            <NavLink
               key={item.path}
               to={item.path}
-              className={`community-nav__link ${
-                location.pathname === item.path ? 'active' : ''
-              }`}
+              className={({ isActive }) => `community-nav__link${isActive ? ' active' : ''}`}
             >
               {item.icon}
               <span>{item.label}</span>
-            </Link>
+            </NavLink>
           ))}
         </div>
       </div>
 
       <div className="community-nav__actions">
-        <button className="community-nav__action">
+        <NavLink to="/notifications" className="community-nav__action" aria-label="Notifications">
           <Bell size={20} />
-        </button>
-        <button className="community-nav__action">
-          <Settings size={20} />
-        </button>
+        </NavLink>
+        <NavLink to="/messenger" className="community-nav__action" aria-label="Messenger">
+          <MessageCircle size={20} />
+        </NavLink>
       </div>
     </nav>
   );
