@@ -8,6 +8,8 @@ use CoreBundle\Entity\Messenger\Conversation;
 use CoreBundle\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<Conversation>
@@ -24,18 +26,17 @@ class ConversationRepository extends ServiceEntityRepository
      */
     public function findForUser(User $user, string $query = '', int $limit = 50, int $offset = 0, bool $includeArchived = false): array
     {
+        $viewerId = $user->getId();
+
         $qb = $this->createQueryBuilder('conversation')
-            ->innerJoin('conversation.participants', 'mine', 'WITH', 'mine.user = :viewer')->addSelect('mine')
+            ->innerJoin('conversation.participants', 'mine')->addSelect('mine')
             ->innerJoin('conversation.participants', 'participant')->addSelect('participant')
             ->innerJoin('participant.user', 'participantUser')->addSelect('participantUser')
             ->leftJoin('conversation.messages', 'message')->addSelect('message')
             ->leftJoin('message.sender', 'sender')->addSelect('sender')
             ->leftJoin('message.attachments', 'attachment')->addSelect('attachment')
-            ->where('EXISTS (
-                SELECT 1 FROM CoreBundle\\Entity\\Messenger\\ConversationParticipant mine
-                WHERE mine.conversation = conversation AND mine.user = :viewer
-            )')
-            ->setParameter('viewer', $user)
+            ->where('IDENTITY(mine.user) = :viewerId')
+            ->setParameter('viewerId', $viewerId, UuidType::NAME)
             ->addOrderBy('mine.isPinned', 'DESC')
             ->addOrderBy('conversation.lastMessageAt', 'DESC')
             ->addOrderBy('conversation.updatedAt', 'DESC')
@@ -50,7 +51,7 @@ class ConversationRepository extends ServiceEntityRepository
         if ($normalizedQuery !== '') {
             $search = '%' . mb_strtolower($normalizedQuery) . '%';
             $qb
-                ->andWhere('participantUser != :viewer')
+                ->andWhere('IDENTITY(participant.user) != :viewerId')
                 ->andWhere('LOWER(participantUser.email) LIKE :search OR LOWER(CONCAT(CONCAT(participantUser.firstName, :space), participantUser.lastName)) LIKE :search')
                 ->setParameter('search', $search)
                 ->setParameter('space', ' ');
@@ -61,16 +62,20 @@ class ConversationRepository extends ServiceEntityRepository
 
     public function findForUserById(User $user, string $conversationId): ?Conversation
     {
+        try {
+            $conversationUuid = Uuid::fromString($conversationId);
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
+
         return $this->createQueryBuilder('conversation')
+            ->innerJoin('conversation.participants', 'mine')->addSelect('mine')
             ->innerJoin('conversation.participants', 'participant')->addSelect('participant')
             ->innerJoin('participant.user', 'participantUser')->addSelect('participantUser')
             ->where('conversation.id = :conversationId')
-            ->andWhere('EXISTS (
-                SELECT 1 FROM CoreBundle\\Entity\\Messenger\\ConversationParticipant mine
-                WHERE mine.conversation = conversation AND mine.user = :viewer
-            )')
-            ->setParameter('conversationId', $conversationId)
-            ->setParameter('viewer', $user)
+            ->andWhere('IDENTITY(mine.user) = :viewerId')
+            ->setParameter('conversationId', $conversationUuid, UuidType::NAME)
+            ->setParameter('viewerId', $user->getId(), UuidType::NAME)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

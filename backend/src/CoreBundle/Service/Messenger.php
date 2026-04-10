@@ -42,10 +42,24 @@ class Messenger
     /** @return array<string,mixed> */
     public function conversations(User $viewer, string $query = '', int $offset = 0, int $limit = 40, bool $includeArchived = false): array
     {
+        $viewer = $this->resolveManagedUser($viewer);
         $safeLimit = max(1, min(100, $limit));
         $safeOffset = max(0, $offset);
 
-        $conversations = $this->getConversationRepository()->findForUser($viewer, $query, $safeLimit + 1, $safeOffset, $includeArchived);
+        $conversations = $this->getConversationRepository()->findForUser($viewer, '', $safeLimit + $safeOffset + 10, 0, $includeArchived);
+        $normalizedQuery = trim($query);
+        if ($normalizedQuery !== '') {
+            $conversations = array_values(array_filter(
+                $conversations,
+                fn (Conversation $conversation): bool => $this->conversationMatchesQuery($conversation, $viewer, $normalizedQuery)
+            ));
+        }
+
+        if ($safeOffset > 0) {
+            $conversations = array_slice($conversations, $safeOffset);
+        }
+
+        $conversations = array_slice($conversations, 0, $safeLimit + 1);
         $hasMore = count($conversations) > $safeLimit;
         if ($hasMore) {
             array_pop($conversations);
@@ -58,7 +72,7 @@ class Messenger
                 'limit' => $safeLimit,
                 'hasMore' => $hasMore,
                 'nextOffset' => $safeOffset + count($conversations),
-                'query' => trim($query),
+                'query' => $normalizedQuery,
                 'includeArchived' => $includeArchived,
             ],
         ];
@@ -67,6 +81,7 @@ class Messenger
     /** @return array<string,mixed>|null */
     public function messages(User $viewer, string $conversationId, ?string $beforeIso = null, int $limit = 80): ?array
     {
+        $viewer = $this->resolveManagedUser($viewer);
         $conversation = $this->getConversationRepository()->findForUserById($viewer, $conversationId);
         if (!$conversation instanceof Conversation) {
             return null;
@@ -113,6 +128,7 @@ class Messenger
         ?string $content,
         ?UploadedFile $attachment,
     ): array {
+        $sender = $this->resolveManagedUser($sender);
         $conversation = $this->resolveConversation($sender, $conversationId, $recipientId);
 
         $trimmedContent = trim((string) $content);
@@ -162,7 +178,8 @@ class Messenger
     /** @return array<string,mixed>|null */
     public function markRead(User $viewer, string $conversationId): ?array
     {
-        $conversation = $this->getConversationRepository()->findForUserById($viewer, $conversationId);
+        $viewer = $this->resolveManagedUser($viewer);
+        $conversation = $this->resolveConversationForViewer($viewer, $conversationId);
         if (!$conversation instanceof Conversation) {
             return null;
         }
@@ -189,6 +206,7 @@ class Messenger
     /** @return array<string,mixed> */
     public function updates(User $viewer, ?string $sinceIso): array
     {
+        $viewer = $this->resolveManagedUser($viewer);
         $since = null;
         if ($sinceIso !== null && trim($sinceIso) !== '') {
             try {
@@ -229,7 +247,8 @@ class Messenger
     /** @return array<string,mixed>|null */
     public function pinConversation(User $viewer, string $conversationId, bool $pinned): ?array
     {
-        $conversation = $this->getConversationRepository()->findForUserById($viewer, $conversationId);
+        $viewer = $this->resolveManagedUser($viewer);
+        $conversation = $this->resolveConversationForViewer($viewer, $conversationId);
         if (!$conversation instanceof Conversation) {
             return null;
         }
@@ -246,7 +265,8 @@ class Messenger
     /** @return array<string,mixed>|null */
     public function muteConversation(User $viewer, string $conversationId, int $minutes): ?array
     {
-        $conversation = $this->getConversationRepository()->findForUserById($viewer, $conversationId);
+        $viewer = $this->resolveManagedUser($viewer);
+        $conversation = $this->resolveConversationForViewer($viewer, $conversationId);
         if (!$conversation instanceof Conversation) {
             return null;
         }
@@ -263,7 +283,8 @@ class Messenger
     /** @return array<string,mixed>|null */
     public function archiveConversation(User $viewer, string $conversationId, bool $archived): ?array
     {
-        $conversation = $this->getConversationRepository()->findForUserById($viewer, $conversationId);
+        $viewer = $this->resolveManagedUser($viewer);
+        $conversation = $this->resolveConversationForViewer($viewer, $conversationId);
         if (!$conversation instanceof Conversation) {
             return null;
         }
@@ -280,7 +301,7 @@ class Messenger
     private function resolveConversation(User $sender, ?string $conversationId, ?string $recipientId): Conversation
     {
         if ($conversationId !== null && trim($conversationId) !== '') {
-            $conversation = $this->getConversationRepository()->findForUserById($sender, $conversationId);
+            $conversation = $this->resolveConversationForViewer($sender, $conversationId);
             if (!$conversation instanceof Conversation) {
                 throw new \InvalidArgumentException('Conversation not found.');
             }
@@ -310,9 +331,11 @@ class Messenger
 
         $senderParticipant = new ConversationParticipant();
         $senderParticipant->setConversation($conversation)->setUser($sender)->markRead();
+        $conversation->getParticipants()->add($senderParticipant);
 
         $recipientParticipant = new ConversationParticipant();
         $recipientParticipant->setConversation($conversation)->setUser($recipient);
+        $conversation->getParticipants()->add($recipientParticipant);
 
         $this->entityManager->persist($conversation);
         $this->entityManager->persist($senderParticipant);
@@ -382,12 +405,12 @@ class Messenger
             $counterparts[] = $this->formatter->user($participant->getUser());
         }
 
+        if (!$me instanceof ConversationParticipant) {
+            $me = $this->getParticipantRepository()->findOneByConversationAndUser($conversation, $viewer);
+        }
+
         $latestMessage = $this->getMessageRepository()->findLatestForConversation($conversation);
-        $unreadCount = $this->getMessageRepository()->countUnreadForUser(
-            $conversation,
-            $viewer,
-            $me instanceof ConversationParticipant ? $me->getLastReadAt() : null,
-        );
+        $unreadCount = $this->getReceiptRepository()->countUnreadForConversationAndUser($conversation, $viewer);
 
         return [
             'id' => $conversation->getId()->toRfc4122(),
@@ -562,6 +585,70 @@ class Messenger
         }
 
         return $repository;
+    }
+
+    private function resolveManagedUser(User $user): User
+    {
+        $resolved = $this->getUserRepository()->findOneById($user->getId()->toRfc4122());
+
+        return $resolved instanceof User ? $resolved : $user;
+    }
+
+    private function conversationMatchesQuery(Conversation $conversation, User $viewer, string $query): bool
+    {
+        $needle = mb_strtolower($query);
+        foreach ($conversation->getParticipants() as $participant) {
+            if (!$participant instanceof ConversationParticipant) {
+                continue;
+            }
+
+            $counterparty = $participant->getUser();
+            if ($counterparty->getId()->equals($viewer->getId())) {
+                continue;
+            }
+
+            $haystacks = [
+                mb_strtolower($counterparty->getEmail()),
+                mb_strtolower($counterparty->getDisplayName()),
+                mb_strtolower($counterparty->getFirstName() . ' ' . $counterparty->getLastName()),
+                mb_strtolower($counterparty->getUsername() ?? ''),
+            ];
+
+            foreach ($haystacks as $haystack) {
+                if ($haystack !== '' && str_contains($haystack, $needle)) {
+                    return true;
+                }
+            }
+        }
+
+        $latestMessage = $this->getMessageRepository()->findLatestForConversation($conversation);
+        if ($latestMessage instanceof Message) {
+            return str_contains(mb_strtolower((string) $latestMessage->getContent()), $needle);
+        }
+
+        return false;
+    }
+
+    private function resolveConversationForViewer(User $viewer, string $conversationId): ?Conversation
+    {
+        try {
+            $uuid = Uuid::fromString($conversationId);
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
+
+        $conversation = $this->entityManager->getRepository(Conversation::class)->find($uuid);
+        if (!$conversation instanceof Conversation) {
+            return null;
+        }
+
+        foreach ($conversation->getParticipants() as $participant) {
+            if ($participant instanceof ConversationParticipant && $participant->getUser()->getId()->equals($viewer->getId())) {
+                return $conversation;
+            }
+        }
+
+        return null;
     }
 }
 

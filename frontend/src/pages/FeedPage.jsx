@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, clearToken, resolveMediaUrl } from '../api';
+import StatePanel from '../components/StatePanel';
 
 const getDisplayName = (user) => user?.displayName || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Unknown user';
 
@@ -14,6 +15,15 @@ const getInitials = (user) => {
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join('') || '?';
+};
+
+const truncateText = (value, maxLength = 96) => {
+  const normalized = (value || '').replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength).trim()}…`;
 };
 
 const describeLikers = (likes = []) => {
@@ -209,17 +219,17 @@ function CommentItem({ comment, onReply, onShowLikes, onOpenProfile, onPickReact
   return (
     <div className="_comment_main">
       <div className="_comment_image">
-        <a href="#0" className="_comment_image_link">
+        <button type="button" className="_comment_image_link">
           <img src="/assets/images/comment_img.png" alt="" className="_comment_img1" />
-        </a>
+        </button>
       </div>
       <div className="_comment_area">
         <div className="_comment_details">
           <div className="_comment_details_top">
             <div className="_comment_name">
-              <a href="#0" onClick={(event) => { event.preventDefault(); onOpenProfile?.(comment.author?.id); }}>
+              <button type="button" onClick={() => onOpenProfile?.(comment.author?.id)}>
                 <h4 className="_comment_name_title">{comment.author?.displayName}</h4>
-              </a>
+              </button>
             </div>
           </div>
           <div className="_comment_status">
@@ -367,12 +377,12 @@ function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onP
             </div>
             <div className="_feed_inner_timeline_post_box_txt">
               <h4 className="_feed_inner_timeline_post_box_title">
-                <a href="#0" onClick={(event) => { event.preventDefault(); onOpenProfile?.(post.author?.id); }}>
+                <button type="button" onClick={() => onOpenProfile?.(post.author?.id)}>
                   {post.author?.displayName}
-                </a>
+                </button>
               </h4>
               <p className="_feed_inner_timeline_post_box_para">
-                Just now . <a href="#0">{post.visibility}</a>
+                Just now . <span>{post.visibility}</span>
               </p>
             </div>
           </div>
@@ -390,10 +400,10 @@ function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onP
               </button>
             </div>
             {showDropdown && (
-              <div className="_feed_timeline_dropdown _timeline_dropdown" style={{ display: 'block', opacity: 1, visibility: 'visible', transform: 'none' }}>
+              <div className="_feed_timeline_dropdown _timeline_dropdown _timeline_dropdown_open">
                 <ul className="_feed_timeline_dropdown_list">
                   <li className="_feed_timeline_dropdown_item">
-                    <a href="#0" className="_feed_timeline_dropdown_link">
+                    <button type="button" className="_feed_timeline_dropdown_link">
                       <span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18">
                           <path stroke="#1890FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2"
@@ -401,10 +411,10 @@ function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onP
                         </svg>
                       </span>
                       Save Post
-                    </a>
+                    </button>
                   </li>
                   <li className="_feed_timeline_dropdown_item">
-                    <a href="#0" className="_feed_timeline_dropdown_link">
+                    <button type="button" className="_feed_timeline_dropdown_link">
                       <span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18">
                           <path stroke="#1890FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2"
@@ -412,7 +422,7 @@ function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onP
                         </svg>
                       </span>
                       Hide
-                    </a>
+                    </button>
                   </li>
                 </ul>
               </div>
@@ -438,7 +448,7 @@ function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onP
         </div>
         <div className="_feed_inner_timeline_total_reacts_txt">
           <p className="_feed_inner_timeline_total_reacts_para1">
-            <a href="#0"><span>{post.comments?.length || 0}</span> Comment</a>
+            <span><span>{post.comments?.length || 0}</span> Comment</span>
           </p>
         </div>
       </div>
@@ -933,8 +943,7 @@ export default function FeedPage() {
                     {/* Notification Dropdown */}
                     <div
                       id="_notify_drop"
-                      className="_notification_dropdown"
-                      style={notifyDropOpen ? { opacity: 1, visibility: 'visible', transform: 'translateY(0)' } : {}}
+                      className={notifyDropOpen ? '_notification_dropdown _notification_dropdown_open' : '_notification_dropdown'}
                     >
                       <div className="_notifications_content">
                         <h4 className="_notifications_content_title">Notifications</h4>
@@ -1004,24 +1013,23 @@ export default function FeedPage() {
                   </button>
                 </div>
                 {profileDropOpen && (
-                  <div className="_nav_profile_dropdown _profile_dropdown" style={{ display: 'block', opacity: 1, visibility: 'visible' }}>
+                  <div className="_nav_profile_dropdown _profile_dropdown _nav_profile_dropdown_open">
                     <div className="_nav_profile_dropdown_info">
                       <div className="_nav_profile_dropdown_image">
                         <img src="/assets/images/profile.png" alt="Image" className="_nav_drop_img" />
                       </div>
                       <div className="_nav_profile_dropdown_info_txt">
                         <h4 className="_nav_dropdown_title">{me?.displayName || 'User'}</h4>
-                        <a
-                          href="#0"
+                        <button
+                          type="button"
                           className="_nav_drop_profile"
-                          onClick={(event) => {
-                            event.preventDefault();
+                          onClick={() => {
                             setProfileDropOpen(false);
                             goToProfile(me?.id);
                           }}
                         >
                           View Profile
-                        </a>
+                        </button>
                       </div>
                     </div>
                     <hr />
@@ -1110,12 +1118,12 @@ export default function FeedPage() {
                       <h4 className="_left_inner_area_explore_title _title5 _mar_b24">Explore</h4>
                       <ul className="_left_inner_area_explore_list">
                         <li className="_left_inner_area_explore_item _explore_item">
-                          <a href="#0" className="_left_inner_area_explore_link">
+                          <button type="button" className="_left_inner_area_explore_link">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 20 20">
                               <path fill="#666" d="M10 0c5.523 0 10 4.477 10 10s-4.477 10-10 10S0 15.523 0 10 4.477 0 10 0zm0 1.395a8.605 8.605 0 100 17.21 8.605 8.605 0 000-17.21zm-1.233 4.65l.104.01c.188.028.443.113.668.203 1.026.398 3.033 1.746 3.8 2.563l.223.239.08.092a1.16 1.16 0 01.025 1.405c-.04.053-.086.105-.19.215l-.269.28c-.812.794-2.57 1.971-3.569 2.391-.277.117-.675.25-.865.253a1.167 1.167 0 01-1.07-.629c-.053-.104-.12-.353-.171-.586l-.051-.262c-.093-.57-.143-1.437-.142-2.347l.001-.288c.01-.858.063-1.64.157-2.147.037-.207.12-.563.167-.678.104-.25.291-.45.523-.575a1.15 1.15 0 01.58-.14z" />
                             </svg>
                             Learning
-                          </a>
+                          </button>
                           <span className="_left_inner_area_explore_link_txt">New</span>
                         </li>
                         <li className="_left_inner_area_explore_item">
@@ -1127,23 +1135,23 @@ export default function FeedPage() {
                           </a>
                         </li>
                         <li className="_left_inner_area_explore_item">
-                          <a href="#0" className="_left_inner_area_explore_link">
+                          <button type="button" className="_left_inner_area_explore_link">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="24" fill="none" viewBox="0 0 22 24">
                               <path fill="#666" d="M9.032 14.456l.297.002c4.404.041 6.907 1.03 6.907 3.678 0 2.586-2.383 3.573-6.615 3.654l-.589.005c-4.588 0-7.203-.972-7.203-3.68 0-2.704 2.604-3.659 7.203-3.659z" />
                             </svg>
                             Find friends
-                          </a>
+                          </button>
                         </li>
                         <li className="_left_inner_area_explore_item">
-                          <a href="#0" className="_left_inner_area_explore_link">
+                          <button type="button" className="_left_inner_area_explore_link">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="24" fill="none" viewBox="0 0 22 24">
                               <path fill="#666" d="M13.704 2c2.8 0 4.585 1.435 4.585 4.258V20.33c0 .443-.157.867-.436 1.18-.279.313-.658.489-1.063.489a1.456 1.456 0 01-.708-.203l-5.132-3.134-5.112 3.14c-.615.36-1.361.194-1.829-.405l-.09-.126-.085-.155a1.913 1.913 0 01-.176-.786V6.434C3.658 3.5 5.404 2 8.243 2h5.46z" />
                             </svg>
                             Bookmarks
-                          </a>
+                          </button>
                         </li>
                         <li className="_left_inner_area_explore_item">
-                          <a href="#0" className="_left_inner_area_explore_link">
+                          <button type="button" className="_left_inner_area_explore_link">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                               <circle cx="9" cy="7" r="4" />
@@ -1151,7 +1159,7 @@ export default function FeedPage() {
                               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                             </svg>
                             Group
-                          </a>
+                          </button>
                         </li>
                         <li className="_left_inner_area_explore_item _explore_item">
                           <a href="/reactions" className="_left_inner_area_explore_link">
@@ -1180,7 +1188,7 @@ export default function FeedPage() {
                       <div className="_left_inner_area_suggest_content _mar_b24">
                         <h4 className="_left_inner_area_suggest_content_title _title5">Suggested People</h4>
                         <span className="_left_inner_area_suggest_content_txt">
-                          <a className="_left_inner_area_suggest_content_txt_link" href="#0">See All</a>
+                          <button type="button" className="_left_inner_area_suggest_content_txt_link">See All</button>
                         </span>
                       </div>
                       {[
@@ -1191,19 +1199,19 @@ export default function FeedPage() {
                         <div className="_left_inner_area_suggest_info" key={person.name}>
                           <div className="_left_inner_area_suggest_info_box">
                             <div className="_left_inner_area_suggest_info_image">
-                              <a href="#0">
+                              <button type="button">
                                 <img src={`/assets/images/${person.img}`} alt="Image" className="_info_img1" />
-                              </a>
+                              </button>
                             </div>
                             <div className="_left_inner_area_suggest_info_txt">
-                              <a href="#0">
+                              <button type="button">
                                 <h4 className="_left_inner_area_suggest_info_title">{person.name}</h4>
-                              </a>
+                              </button>
                               <p className="_left_inner_area_suggest_info_para">{person.role}</p>
                             </div>
                           </div>
                           <div className="_left_inner_area_suggest_info_link">
-                            <a href="#0" className="_info_link">Connect</a>
+                            <button type="button" className="_info_link">Connect</button>
                           </div>
                         </div>
                       ))}
@@ -1215,10 +1223,10 @@ export default function FeedPage() {
                     <div className="_left_inner_area_event _padd_t24 _padd_b6 _padd_r24 _padd_l24 _b_radious6 _feed_inner_area">
                       <div className="_left_inner_event_content">
                         <h4 className="_left_inner_event_title _title5">Events</h4>
-                        <a href="#0" className="_left_inner_event_link">See all</a>
+                        <button type="button" className="_left_inner_event_link">See all</button>
                       </div>
                       {[1, 2].map((i) => (
-                        <a className="_left_inner_event_card_link" href="#0" key={i}>
+                        <div className="_left_inner_event_card_link" key={i}>
                           <div className="_left_inner_event_card">
                             <div className="_left_inner_event_card_iamge">
                               <img src="/assets/images/feed_event1.png" alt="Image" className="_card_img" />
@@ -1235,10 +1243,10 @@ export default function FeedPage() {
                             <hr className="_underline" />
                             <div className="_left_inner_event_bottom">
                               <p className="_left_iner_event_bottom">17 People Going</p>
-                              <a href="#0" className="_left_iner_event_bottom_link">Going</a>
+                              <button type="button" className="_left_iner_event_bottom_link">Going</button>
                             </div>
                           </div>
-                        </a>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -1301,51 +1309,122 @@ export default function FeedPage() {
                     </div>
 
                     {/* Discovery Modules */}
-                    <div className="_feed_inner_text_area _b_radious6 _padd_b24 _padd_t24 _padd_r24 _padd_l24 _mar_b16">
-                      <div className="d-flex justify-content-between align-items-center mb-3">
+                    <div className="_feed_discovery_panel _b_radious6 _padd_b24 _padd_t24 _padd_r24 _padd_l24 _mar_b16">
+                      <div className="_feed_discovery_panel_head">
                         <h4 className="_feed_inner_timeline_post_title m-0">Discover</h4>
-                        {discovering && <span className="text-muted small">Searching...</span>}
+                        {discovering && <span className="_feed_discovery_loading">Searching...</span>}
                       </div>
 
                       {!!discoveryResults.query && (
-                        <div className="mb-3">
-                          <p className="mb-1"><strong>Search:</strong> {discoveryResults.query}</p>
+                        <div className="_feed_discovery_search_result">
+                          <p className="_feed_discovery_search_txt"><strong>Search:</strong> {discoveryResults.query}</p>
+                          {discoveryResults.posts.length > 0 && (
+                            <div className="_feed_discovery_posts">
+                              <h6 className="_feed_discovery_col_title">Posts</h6>
+                              <div className="_feed_discovery_post_list">
+                                {discoveryResults.posts.slice(0, 3).map((post) => (
+                                  <button
+                                    key={post.id}
+                                    type="button"
+                                    className="_feed_discovery_post"
+                                    onClick={() => goToProfile(post.author?.id)}
+                                  >
+                                    <img
+                                      src={post.imageUrl ? resolveMediaUrl(post.imageUrl) : '/assets/images/post_img.png'}
+                                      alt="Search result"
+                                      className="_feed_discovery_post_image"
+                                    />
+                                    <div className="_feed_discovery_post_txt">
+                                      <strong>{post.author?.displayName || 'Unknown user'}</strong>
+                                      <small>{truncateText(post.content)}</small>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           {discoveryResults.hashtags.length > 0 && (
-                            <div className="d-flex flex-wrap gap-2 mb-2">
-                              {discoveryResults.hashtags.map((tag) => <span key={tag} className="badge bg-light text-dark">{tag}</span>)}
+                            <div className="_feed_discovery_chip_row">
+                              {discoveryResults.hashtags.map((tag) => (
+                                <button
+                                  key={tag}
+                                  type="button"
+                                  className="_feed_discovery_chip"
+                                  onClick={() => {
+                                    const next = tag.replace(/^#/, '');
+                                    setSearchInput(next);
+                                    setSearchQuery(next);
+                                  }}
+                                >
+                                  {tag}
+                                </button>
+                              ))}
                             </div>
                           )}
                           {discoveryResults.users.length > 0 && (
-                            <div className="small text-muted">People: {discoveryResults.users.map((u) => u.displayName).join(', ')}</div>
+                            <div className="_feed_discovery_people">People: {discoveryResults.users.slice(0, 4).map((u) => u.displayName).join(', ')}</div>
+                          )}
+                          {discoveryResults.posts.length === 0 && discoveryResults.users.length === 0 && discoveryResults.hashtags.length === 0 && (
+                            <div className="_feed_discovery_empty">No posts, people, or hashtags matched your search.</div>
                           )}
                         </div>
                       )}
 
-                      <div className="row">
-                        <div className="col-md-4 mb-3">
-                          <h6>Reels</h6>
+                      <div className="_feed_discovery_grid">
+                        <section className="_feed_discovery_col">
+                          <h6 className="_feed_discovery_col_title">Reels</h6>
                           {(discoveryData.reels || []).slice(0, 3).map((item) => (
-                            <div key={item.post?.id} className="mb-2">
-                              <small>{item.preview?.title}</small>
-                            </div>
+                            <article key={item.post?.id} className="_feed_discovery_card">
+                              <img
+                                src={item.preview?.mediaUrl ? resolveMediaUrl(item.preview.mediaUrl) : '/assets/images/post_img.png'}
+                                alt="Reel"
+                                className="_feed_discovery_card_image"
+                              />
+                              <div className="_feed_discovery_card_txt">
+                                <strong>{item.preview?.title}</strong>
+                                <small>{item.preview?.subtitle}</small>
+                              </div>
+                            </article>
                           ))}
-                        </div>
-                        <div className="col-md-4 mb-3">
-                          <h6>Live</h6>
+                        </section>
+
+                        <section className="_feed_discovery_col">
+                          <h6 className="_feed_discovery_col_title">Live</h6>
                           {(discoveryData.live || []).slice(0, 3).map((item) => (
-                            <div key={item.post?.id} className="mb-2">
-                              <small>{item.preview?.title} • Live</small>
-                            </div>
+                            <article key={item.post?.id} className="_feed_discovery_card _feed_discovery_card_live">
+                              <img
+                                src={item.preview?.mediaUrl ? resolveMediaUrl(item.preview.mediaUrl) : '/assets/images/post_img.png'}
+                                alt="Live"
+                                className="_feed_discovery_card_image"
+                              />
+                              <div className="_feed_discovery_card_txt">
+                                <strong>{item.preview?.title}</strong>
+                                <small>Live now</small>
+                              </div>
+                            </article>
                           ))}
-                        </div>
-                        <div className="col-md-4 mb-3">
-                          <h6>Trending</h6>
-                          {(discoveryData.trendingTopics || []).slice(0, 5).map((topic) => (
-                            <div key={topic.topic} className="mb-2">
-                              <small>{topic.topic} ({topic.score})</small>
-                            </div>
-                          ))}
-                        </div>
+                        </section>
+
+                        <section className="_feed_discovery_col">
+                          <h6 className="_feed_discovery_col_title">Trending Topics</h6>
+                          <div className="_feed_discovery_topic_list">
+                            {(discoveryData.trendingTopics || []).slice(0, 6).map((topic) => (
+                              <button
+                                key={topic.topic}
+                                type="button"
+                                className="_feed_discovery_topic"
+                                onClick={() => {
+                                  const next = topic.topic.replace(/^#/, '');
+                                  setSearchInput(next);
+                                  setSearchQuery(next);
+                                }}
+                              >
+                                <span>{topic.topic}</span>
+                                <small>{topic.score}</small>
+                              </button>
+                            ))}
+                          </div>
+                        </section>
                       </div>
                     </div>
 
@@ -1369,7 +1448,7 @@ export default function FeedPage() {
                         </div>
                       </div>
 
-                      {error && <div className="alert alert-danger mt-2">{error}</div>}
+                      {error && <StatePanel variant="error" title="Could not publish post" message={error} className="mt-2" compact />}
 
                       {/* Desktop bottom bar */}
                       <div className="_feed_inner_text_area_bottom">
@@ -1467,21 +1546,21 @@ export default function FeedPage() {
                       <div className="_right_inner_area_info_content _mar_b24">
                         <h4 className="_right_inner_area_info_content_title _title5">You Might Like</h4>
                         <span className="_right_inner_area_info_content_txt">
-                          <a className="_right_inner_area_info_content_txt_link" href="#0">See All</a>
+                          <button type="button" className="_right_inner_area_info_content_txt_link">See All</button>
                         </span>
                       </div>
                       <hr className="_underline" />
                       <div className="_right_inner_area_info_ppl">
                         <div className="_right_inner_area_info_box">
                           <div className="_right_inner_area_info_box_image">
-                            <a href="#0">
+                            <button type="button">
                               <img src="/assets/images/Avatar.png" alt="Image" className="_ppl_img" />
-                            </a>
+                            </button>
                           </div>
                           <div className="_right_inner_area_info_box_txt">
-                            <a href="#0">
+                            <button type="button">
                               <h4 className="_right_inner_area_info_box_title">Radovan SkillArena</h4>
-                            </a>
+                            </button>
                             <p className="_right_inner_area_info_box_para">Founder &amp; CEO at Trophy</p>
                           </div>
                         </div>
@@ -1500,7 +1579,7 @@ export default function FeedPage() {
                         <div className="_feed_right_inner_area_card_content _mar_b24">
                           <h4 className="_feed_right_inner_area_card_content_title _title5">Your Friends</h4>
                           <span className="_feed_right_inner_area_card_content_txt">
-                            <a className="_feed_right_inner_area_card_content_txt_link" href="#0">See All</a>
+                            <button type="button" className="_feed_right_inner_area_card_content_txt_link">See All</button>
                           </span>
                         </div>
                         <form className="_feed_right_inner_area_card_form">
@@ -1527,14 +1606,14 @@ export default function FeedPage() {
                           >
                             <div className="_feed_right_inner_area_card_ppl_box">
                               <div className="_feed_right_inner_area_card_ppl_image">
-                                <a href="#0">
+                                <span>
                                   <img src={`/assets/images/${friend.img}`} alt="" className="_box_ppl_img" />
-                                </a>
+                                </span>
                               </div>
                               <div className="_feed_right_inner_area_card_ppl_txt">
-                                <a href="#0">
+                                <span>
                                   <h4 className="_feed_right_inner_area_card_ppl_title">{friend.name}</h4>
-                                </a>
+                                </span>
                                 <p className="_feed_right_inner_area_card_ppl_para">{friend.role}</p>
                               </div>
                             </div>

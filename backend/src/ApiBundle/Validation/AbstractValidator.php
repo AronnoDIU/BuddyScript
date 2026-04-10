@@ -46,7 +46,7 @@ abstract class AbstractValidator
 
         foreach ($data as $key => $inputs) {
             try {
-                $this->validate([$inputs]);
+                $this->validate(\is_array($inputs) ? $inputs : [$inputs]);
             } catch (ValidationException $exception) {
                 $this->errors = [];
                 $errors[$key] = $exception->getErrors();
@@ -60,6 +60,7 @@ abstract class AbstractValidator
 
     public function validate(array $inputs): true
     {
+        $this->errors = [];
         $this->setCurrentInputs($inputs);
 
         foreach ($this->getValidationRules() as $rule => $validator) {
@@ -68,13 +69,10 @@ abstract class AbstractValidator
 
             if ($isDependent) {
                 $dependencyValue = $inputs[$validator['dependency']] ?? null;
-                $dependencyValue = \is_string($dependencyValue) ? \sprintf('\'%s\'', $dependencyValue)
-                    : $dependencyValue;
-                $expectedValue = \is_string($validator['value']) ? \sprintf('\'%s\'', $validator['value'])
-                    : $validator['value'];
-                $expr = \sprintf('return %s %s %s;', $dependencyValue, $validator['operator'], $expectedValue);
+                $expectedValue = $validator['value'] ?? null;
+                $operator = (string) ($validator['operator'] ?? self::OPERATOR_EQ);
 
-                if ($dependencyValue && eval($expr)) {
+                if ($this->shouldApplyDependentRules($dependencyValue, $expectedValue, $operator)) {
                     foreach ($validator['rules'] as $childRuleName => $childValidator) {
                         $childRuleParts = explode('.', (string) $childRuleName);
                         $childRuleKey = $childRuleParts[array_key_last($childRuleParts)];
@@ -102,12 +100,7 @@ abstract class AbstractValidator
         $errors = $this->getValidationErrors();
 
         if (\count($errors) > 0) {
-            try {
-                $this->throwValidationException($errors);
-            } catch (ValidationException $e) {
-                $this->errors = $e->getErrors();
-                return false;
-            }
+            $this->throwValidationException($errors);
         }
 
         return true;
@@ -135,6 +128,19 @@ abstract class AbstractValidator
         $message = self::VALIDATION_FAILED;
 
         throw new ValidationException($message, $errors);
+    }
+
+    private function shouldApplyDependentRules(mixed $dependencyValue, mixed $expectedValue, string $operator): bool
+    {
+        if ($dependencyValue === null || $dependencyValue === '') {
+            return false;
+        }
+
+        return match ($operator) {
+            self::OPERATOR_EQ => $dependencyValue == $expectedValue,
+            self::OPERATOR_NOT_EQ => $dependencyValue != $expectedValue,
+            default => false,
+        };
     }
 
 }

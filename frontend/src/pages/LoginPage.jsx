@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, setToken } from '../api';
+import StatePanel from '../components/StatePanel';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -108,7 +109,7 @@ export default function LoginPage() {
                   {error && (
                     <div className="row">
                       <div className="col-12">
-                        <p className="text-danger small mb-2">{error}</p>
+                        <StatePanel variant="error" title="Login failed" message={error} compact />
                       </div>
                     </div>
                   )}

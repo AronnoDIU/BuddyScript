@@ -8,6 +8,7 @@ use CoreBundle\Entity\SocialGraph\Connection;
 use CoreBundle\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 
 /**
  * @extends ServiceEntityRepository<Connection>
@@ -37,9 +38,9 @@ class ConnectionRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('connection')
             ->innerJoin('connection.requester', 'requester')->addSelect('requester')
-            ->where('connection.addressee = :user')
+            ->where('IDENTITY(connection.addressee) = :userId')
             ->andWhere('connection.status = :status')
-            ->setParameter('user', $user)
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
             ->setParameter('status', Connection::STATUS_PENDING)
             ->orderBy('connection.createdAt', 'DESC')
             ->getQuery()
@@ -53,9 +54,9 @@ class ConnectionRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('connection')
             ->innerJoin('connection.addressee', 'addressee')->addSelect('addressee')
-            ->where('connection.requester = :user')
+            ->where('IDENTITY(connection.requester) = :userId')
             ->andWhere('connection.status = :status')
-            ->setParameter('user', $user)
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
             ->setParameter('status', Connection::STATUS_PENDING)
             ->orderBy('connection.createdAt', 'DESC')
             ->getQuery()
@@ -70,9 +71,9 @@ class ConnectionRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('connection')
             ->innerJoin('connection.requester', 'requester')->addSelect('requester')
             ->innerJoin('connection.addressee', 'addressee')->addSelect('addressee')
-            ->where('(connection.requester = :user OR connection.addressee = :user)')
+            ->where('(IDENTITY(connection.requester) = :userId OR IDENTITY(connection.addressee) = :userId)')
             ->andWhere('connection.status = :status')
-            ->setParameter('user', $user)
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
             ->setParameter('status', Connection::STATUS_ACCEPTED)
             ->orderBy('connection.updatedAt', 'DESC')
             ->getQuery()

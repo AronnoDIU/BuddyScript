@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
+import { SkeletonCardRows, SkeletonLine } from '../components/Skeleton';
+import StatePanel from '../components/StatePanel';
 
 export default function NotificationsPage() {
   const [data, setData] = useState({ notifications: [], unreadCount: 0 });
@@ -82,14 +84,19 @@ export default function NotificationsPage() {
         </div>
       </header>
 
-      {loading && <div className="phase1_notice">Loading notifications...</div>}
-      {error && <div className="phase1_notice phase1_notice_error">{error}</div>}
+      {loading && (
+        <div className="phase1_notice" aria-hidden="true">
+          <SkeletonLine width="34%" />
+          <SkeletonCardRows rows={4} />
+        </div>
+      )}
+      {error && <StatePanel variant="error" title="Could not load notifications" message={error} className="phase1_notice" />}
 
       {!loading && !error && (
         <section className="phase1_card">
           <h3>Inbox ({data.unreadCount} unread)</h3>
           {data.notifications.length === 0 ? (
-            <p>No notifications found.</p>
+            <StatePanel variant="empty" title="All caught up" message="You have no notifications right now." compact />
           ) : (
             data.notifications.map((item) => (
               <div className="phase1_card_item" key={item.id}>

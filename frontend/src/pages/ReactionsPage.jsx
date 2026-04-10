@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
+import { SkeletonCardRows, SkeletonLine } from '../components/Skeleton';
+import StatePanel from '../components/StatePanel';
 
 export default function ReactionsPage() {
   const [catalog, setCatalog] = useState({ targetTypes: [], reactionTypes: [] });
@@ -40,23 +42,36 @@ export default function ReactionsPage() {
         <Link to="/feed" className="phase1_back_link">Back to Feed</Link>
       </header>
 
-      {loading && <div className="phase1_notice">Loading reactions config...</div>}
-      {error && <div className="phase1_notice phase1_notice_error">{error}</div>}
+      {loading && (
+        <div className="phase1_notice" aria-hidden="true">
+          <SkeletonLine width="42%" />
+          <SkeletonCardRows rows={3} />
+        </div>
+      )}
+      {error && <StatePanel variant="error" title="Could not load reactions" message={error} className="phase1_notice" />}
 
       {!loading && !error && (
         <div className="phase1_grid">
           <section className="phase1_card">
             <h3>Target Types</h3>
-            <div className="phase1_chip_row">
-              {catalog.targetTypes.map((item) => <span key={item} className="phase1_chip">{item}</span>)}
-            </div>
+            {catalog.targetTypes.length === 0 ? (
+              <StatePanel variant="empty" title="No target types" compact />
+            ) : (
+              <div className="phase1_chip_row">
+                {catalog.targetTypes.map((item) => <span key={item} className="phase1_chip">{item}</span>)}
+              </div>
+            )}
           </section>
 
           <section className="phase1_card">
             <h3>Reaction Types</h3>
-            <div className="phase1_chip_row">
-              {catalog.reactionTypes.map((item) => <span key={item} className="phase1_chip">{item}</span>)}
-            </div>
+            {catalog.reactionTypes.length === 0 ? (
+              <StatePanel variant="empty" title="No reaction types" compact />
+            ) : (
+              <div className="phase1_chip_row">
+                {catalog.reactionTypes.map((item) => <span key={item} className="phase1_chip">{item}</span>)}
+              </div>
+            )}
           </section>
         </div>
       )}

@@ -84,7 +84,7 @@ readonly class RefreshTokenManager
             ->withHttpOnly(true)
             ->withSecure($isSecureRequest)
             ->withSameSite(Cookie::SAMESITE_LAX)
-            ->withPath('/api/auth')
+            ->withPath('/api')
             ->withExpires((new \DateTimeImmutable())->modify(sprintf('+%d seconds', $this->refreshTokenTtl)));
     }
 
@@ -95,7 +95,7 @@ readonly class RefreshTokenManager
             ->withHttpOnly(true)
             ->withSecure($isSecureRequest)
             ->withSameSite(Cookie::SAMESITE_LAX)
-            ->withPath('/api/auth')
+            ->withPath('/api')
             ->withExpires(new \DateTimeImmutable('-1 day'));
     }
 

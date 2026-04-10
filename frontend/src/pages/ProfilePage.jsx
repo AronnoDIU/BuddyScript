@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, clearToken, resolveMediaUrl } from '../api';
+import Skeleton, { SkeletonCardRows, SkeletonLine } from '../components/Skeleton';
+import StatePanel from '../components/StatePanel';
 
 const formatDate = (value) => {
   if (!value) return 'Unknown date';
@@ -112,10 +114,25 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {loading && <div className="profile_page_state">Loading profile...</div>}
+      {loading && (
+        <div className="profile_loading_skeleton" aria-hidden="true">
+          <Skeleton className="profile_loading_hero" />
+          <div className="profile_loading_grid">
+            <div className="profile_loading_card">
+              <SkeletonLine width="45%" />
+              <SkeletonLine width="70%" />
+              <SkeletonCardRows rows={3} />
+            </div>
+            <div className="profile_loading_card">
+              <SkeletonLine width="35%" />
+              <SkeletonCardRows rows={4} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {!loading && error && (
-        <div className="profile_page_state profile_page_state_error">{error}</div>
+        <StatePanel variant="error" title="Could not load profile" message={error} className="profile_page_state" />
       )}
 
       {!loading && !error && profile && (
@@ -183,7 +200,7 @@ export default function ProfilePage() {
               </div>
 
               {filteredPosts.length === 0 ? (
-                <div className="profile_page_state">No posts in this section yet.</div>
+                <StatePanel variant="empty" title="No posts yet" message="No posts in this section yet." className="profile_page_state" />
               ) : (
                 filteredPosts.map((post) => (
                   <article className="profile_post_card" key={post.id}>

@@ -9,6 +9,7 @@ use CoreBundle\Entity\Messenger\Message;
 use CoreBundle\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 
 /**
  * @extends ServiceEntityRepository<Message>
@@ -25,11 +26,11 @@ class MessageRepository extends ServiceEntityRepository
      */
     public function findForConversation(Conversation $conversation, int $limit = 100, ?\DateTimeImmutable $before = null): array
     {
+        $conversationId = $conversation->getId();
+
         $qb = $this->createQueryBuilder('message')
-            ->leftJoin('message.sender', 'sender')->addSelect('sender')
-            ->leftJoin('message.attachments', 'attachment')->addSelect('attachment')
-            ->where('message.conversation = :conversation')
-            ->setParameter('conversation', $conversation)
+            ->where('IDENTITY(message.conversation) = :conversationId')
+            ->setParameter('conversationId', $conversationId, UuidType::NAME)
             ->setMaxResults($limit);
 
         if ($before instanceof \DateTimeImmutable) {
@@ -51,9 +52,9 @@ class MessageRepository extends ServiceEntityRepository
     {
         return (int) $this->createQueryBuilder('message')
             ->select('COUNT(message.id)')
-            ->where('message.conversation = :conversation')
+            ->where('IDENTITY(message.conversation) = :conversationId')
             ->andWhere('message.createdAt < :before')
-            ->setParameter('conversation', $conversation)
+            ->setParameter('conversationId', $conversation->getId(), UuidType::NAME)
             ->setParameter('before', $before)
             ->getQuery()
             ->getSingleScalarResult();
@@ -62,10 +63,8 @@ class MessageRepository extends ServiceEntityRepository
     public function findLatestForConversation(Conversation $conversation): ?Message
     {
         return $this->createQueryBuilder('message')
-            ->leftJoin('message.sender', 'sender')->addSelect('sender')
-            ->leftJoin('message.attachments', 'attachment')->addSelect('attachment')
-            ->where('message.conversation = :conversation')
-            ->setParameter('conversation', $conversation)
+            ->where('IDENTITY(message.conversation) = :conversationId')
+            ->setParameter('conversationId', $conversation->getId(), UuidType::NAME)
             ->orderBy('message.createdAt', 'DESC')
             ->setMaxResults(1)
             ->getQuery()
@@ -76,9 +75,9 @@ class MessageRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('message')
             ->select('COUNT(message.id)')
-            ->where('message.conversation = :conversation')
+            ->where('IDENTITY(message.conversation) = :conversationId')
             ->andWhere('message.sender != :viewer')
-            ->setParameter('conversation', $conversation)
+            ->setParameter('conversationId', $conversation->getId(), UuidType::NAME)
             ->setParameter('viewer', $viewer);
 
         if ($lastReadAt instanceof \DateTimeImmutable) {
@@ -96,8 +95,6 @@ class MessageRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('message')
             ->innerJoin('message.conversation', 'conversation')
             ->innerJoin('conversation.participants', 'participant')
-            ->leftJoin('message.sender', 'sender')->addSelect('sender')
-            ->leftJoin('message.attachments', 'attachment')->addSelect('attachment')
             ->where('participant.user = :viewer')
             ->setParameter('viewer', $viewer)
             ->orderBy('message.createdAt', 'DESC')

@@ -97,7 +97,7 @@ ensure_backend_port_available() {
 
   cmd="$(ps -p "$pid" -o cmd= 2>/dev/null || true)"
 
-  if [[ "$cmd" == *"-S $BACKEND_HOST:$BACKEND_PORT"* && "$cmd" == *"public/index.php"* ]]; then
+  if [[ "$cmd" == *"-S $BACKEND_HOST:$BACKEND_PORT"* && "$cmd" == *"public/router.php"* ]]; then
     echo "Found stale BuddyScript backend process on $BACKEND_HOST:$BACKEND_PORT (PID $pid). Stopping it..."
     kill "$pid" 2>/dev/null || true
     sleep 1

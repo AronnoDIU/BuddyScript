@@ -28,8 +28,8 @@ class NotificationRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('notification')
             ->leftJoin('notification.actor', 'actor')->addSelect('actor')
-            ->where('notification.recipient = :recipient')
-            ->setParameter('recipient', $user)
+            ->where('IDENTITY(notification.recipient) = :recipientId')
+            ->setParameter('recipientId', $user->getId(), UuidType::NAME)
             ->orderBy('notification.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
@@ -46,9 +46,9 @@ class NotificationRepository extends ServiceEntityRepository
 
         return $this->createQueryBuilder('notification')
             ->where('notification.id = :id')
-            ->andWhere('notification.recipient = :recipient')
+            ->andWhere('IDENTITY(notification.recipient) = :recipientId')
             ->setParameter('id', $uuid, UuidType::NAME)
-            ->setParameter('recipient', $user)
+            ->setParameter('recipientId', $user->getId(), UuidType::NAME)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

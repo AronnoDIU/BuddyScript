@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL, api, resolveMediaUrl } from '../api';
+import { SkeletonCardRows } from '../components/Skeleton';
+import StatePanel from '../components/StatePanel';
 
 const formatTime = (value) => {
   if (!value) return '';
@@ -362,7 +364,7 @@ export default function MessengerPage() {
         </div>
       </header>
 
-      {error && <div className="phase1_notice phase1_notice_error">{error}</div>}
+      {error && <StatePanel variant="error" title="Messenger error" message={error} className="phase1_notice" />}
 
       <div className="messenger_layout">
         <aside className="messenger_sidebar">
@@ -380,8 +382,10 @@ export default function MessengerPage() {
               {includeArchived ? 'Hide Archived' : 'Show Archived'}
             </button>
           </div>
-          {loading && <p>Loading...</p>}
-          {!loading && conversations.length === 0 && <p>No conversations yet.</p>}
+          {loading && (
+            <SkeletonCardRows rows={3} className="messenger_skeleton_list" />
+          )}
+          {!loading && conversations.length === 0 && <StatePanel variant="empty" title="No conversations" message="Start by sending a message to someone." compact />}
           {!loading && conversations.map((conversation) => (
             <button
               key={conversation.id}

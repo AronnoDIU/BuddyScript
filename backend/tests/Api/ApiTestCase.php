@@ -13,15 +13,26 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 abstract class ApiTestCase extends WebTestCase
 {
+    public static function createClient(array $options = [], array $server = []): KernelBrowser
+    {
+        $server['HTTP_ACCEPT'] = $server['HTTP_ACCEPT'] ?? 'application/json';
+
+        return parent::createClient($options, $server);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->resetDatabase();
+        static::ensureKernelShutdown();
     }
 
     protected function createAuthenticatedClient(string $emailPrefix = 'user'): array
     {
         $client = static::createClient();
+        $client->setServerParameters([
+            'HTTP_ACCEPT' => 'application/json',
+        ]);
         $container = static::getContainer();
 
         /** @var EntityManagerInterface $entityManager */
@@ -41,6 +52,7 @@ abstract class ApiTestCase extends WebTestCase
         $token = $jwtManager->create($user);
 
         $client->setServerParameters([
+            'HTTP_ACCEPT' => 'application/json',
             'HTTP_Authorization' => 'Bearer ' . $token,
         ]);
 
@@ -65,10 +77,12 @@ abstract class ApiTestCase extends WebTestCase
 
     protected function authClientForUser(User $user): KernelBrowser
     {
+        static::ensureKernelShutdown();
         $client = static::createClient();
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
         $token = $jwtManager->create($user);
         $client->setServerParameters([
+            'HTTP_ACCEPT' => 'application/json',
             'HTTP_Authorization' => 'Bearer ' . $token,
         ]);
 

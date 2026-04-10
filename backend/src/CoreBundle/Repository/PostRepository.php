@@ -249,9 +249,10 @@ class PostRepository extends ServiceEntityRepository
         $safeLimit = max(5, min(40, $limit));
         $search = '%' . mb_strtolower(trim($query)) . '%';
 
-        return $this->createQueryBuilder('p')
+        return $this->getEntityManager()->createQueryBuilder()
             ->select('DISTINCT a')
-            ->innerJoin('p.author', 'a')
+            ->from(User::class, 'a')
+            ->innerJoin(Post::class, 'p', 'WITH', 'p.author = a')
             ->where('p.visibility = :public')
             ->andWhere('LOWER(CONCAT(CONCAT(a.firstName, :space), a.lastName)) LIKE :search OR LOWER(a.email) LIKE :search')
             ->setParameter('public', Post::VISIBILITY_PUBLIC)
@@ -265,16 +266,26 @@ class PostRepository extends ServiceEntityRepository
     /** @return list<string> */
     public function searchHashtags(string $query, int $limit = 15): array
     {
-        $needle = mb_strtolower(ltrim(trim($query), '#'));
-        if ($needle === '') {
+        $normalized = trim($query);
+        if ($normalized === '') {
             return [];
         }
 
         $hashtags = [];
-        foreach ($this->findRecentPublicPostsForIndexing(250) as $post) {
+        foreach ($this->searchPublicPosts($normalized, max(20, min(80, $limit * 4))) as $post) {
             foreach ($post->getHashtags() as $hashtag) {
-                if (str_contains($hashtag, $needle)) {
-                    $hashtags['#' . $hashtag] = true;
+                $hashtags['#' . $hashtag] = true;
+            }
+        }
+
+        // Fallback: if no post matched, keep fuzzy hashtag lookup on recent public posts.
+        if ($hashtags === []) {
+            $needle = mb_strtolower(ltrim($normalized, '#'));
+            foreach ($this->findRecentPublicPostsForIndexing(250) as $post) {
+                foreach ($post->getHashtags() as $hashtag) {
+                    if (str_contains($hashtag, $needle)) {
+                        $hashtags['#' . $hashtag] = true;
+                    }
                 }
             }
         }

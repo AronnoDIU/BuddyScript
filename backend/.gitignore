@@ -23,3 +23,8 @@
 /public/uploads/posts/*
 !/public/uploads/posts/.gitkeep
 
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###

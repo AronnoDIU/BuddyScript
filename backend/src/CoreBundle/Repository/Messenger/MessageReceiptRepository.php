@@ -10,6 +10,7 @@ use CoreBundle\Entity\Messenger\MessageReceipt;
 use CoreBundle\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 
 /**
  * @extends ServiceEntityRepository<MessageReceipt>
@@ -42,11 +43,11 @@ class MessageReceiptRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('receipt')
             ->innerJoin('receipt.message', 'message')->addSelect('message')
-            ->where('message.conversation = :conversation')
-            ->andWhere('receipt.recipient = :user')
+            ->where('IDENTITY(message.conversation) = :conversationId')
+            ->andWhere('IDENTITY(receipt.recipient) = :userId')
             ->andWhere('receipt.deliveredAt IS NULL')
-            ->setParameter('conversation', $conversation)
-            ->setParameter('user', $user)
+            ->setParameter('conversationId', $conversation->getId(), UuidType::NAME)
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
             ->getQuery()
             ->getResult();
     }
@@ -58,13 +59,27 @@ class MessageReceiptRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('receipt')
             ->innerJoin('receipt.message', 'message')->addSelect('message')
-            ->where('message.conversation = :conversation')
-            ->andWhere('receipt.recipient = :user')
+            ->where('IDENTITY(message.conversation) = :conversationId')
+            ->andWhere('IDENTITY(receipt.recipient) = :userId')
             ->andWhere('receipt.readAt IS NULL')
-            ->setParameter('conversation', $conversation)
-            ->setParameter('user', $user)
+            ->setParameter('conversationId', $conversation->getId(), UuidType::NAME)
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
             ->getQuery()
             ->getResult();
+    }
+
+    public function countUnreadForConversationAndUser(Conversation $conversation, User $user): int
+    {
+        return (int) $this->createQueryBuilder('receipt')
+            ->select('COUNT(receipt.id)')
+            ->innerJoin('receipt.message', 'message')
+            ->where('IDENTITY(message.conversation) = :conversationId')
+            ->andWhere('IDENTITY(receipt.recipient) = :userId')
+            ->andWhere('receipt.readAt IS NULL')
+            ->setParameter('conversationId', $conversation->getId(), UuidType::NAME)
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }
 

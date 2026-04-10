@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import StatePanel from '../components/StatePanel';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -175,7 +176,7 @@ export default function RegisterPage() {
                   {error && (
                     <div className="row">
                       <div className="col-12">
-                        <p className="text-danger small mb-2">{error}</p>
+                        <StatePanel variant="error" title="Registration failed" message={error} compact />
                       </div>
                     </div>
                   )}

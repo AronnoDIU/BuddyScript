@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
+import { SkeletonCardRows, SkeletonLine } from '../components/Skeleton';
+import StatePanel from '../components/StatePanel';
 
 function ConnectionCard({ item }) {
   const user = item.counterparty || {};
@@ -78,14 +80,19 @@ export default function SocialGraphPage() {
         <Link to="/feed" className="phase1_back_link">Back to Feed</Link>
       </header>
 
-      {loading && <div className="phase1_notice">Loading social graph...</div>}
-      {error && <div className="phase1_notice phase1_notice_error">{error}</div>}
+      {loading && (
+        <div className="phase1_notice" aria-hidden="true">
+          <SkeletonLine width="38%" />
+          <SkeletonCardRows rows={5} />
+        </div>
+      )}
+      {error && <StatePanel variant="error" title="Could not load social graph" message={error} className="phase1_notice" />}
 
       {!loading && !error && (
         <div className="phase1_grid">
           <section className="phase1_card">
             <h3>Incoming Requests ({data.incomingRequests.length})</h3>
-            {data.incomingRequests.length === 0 ? <p>No incoming requests.</p> : data.incomingRequests.map((item) => (
+            {data.incomingRequests.length === 0 ? <StatePanel variant="empty" title="No incoming requests" compact /> : data.incomingRequests.map((item) => (
               <div key={item.id} className="phase1_social_request_row">
                 <ConnectionCard item={item} />
                 <div className="phase1_social_request_actions">
@@ -112,12 +119,12 @@ export default function SocialGraphPage() {
 
           <section className="phase1_card">
             <h3>Outgoing Requests ({data.outgoingRequests.length})</h3>
-            {data.outgoingRequests.length === 0 ? <p>No outgoing requests.</p> : data.outgoingRequests.map((item) => <ConnectionCard key={item.id} item={item} />)}
+            {data.outgoingRequests.length === 0 ? <StatePanel variant="empty" title="No outgoing requests" compact /> : data.outgoingRequests.map((item) => <ConnectionCard key={item.id} item={item} />)}
           </section>
 
           <section className="phase1_card">
             <h3>Friends ({data.friends.length})</h3>
-            {data.friends.length === 0 ? <p>No accepted friends yet.</p> : data.friends.map((item) => <ConnectionCard key={item.id} item={item} />)}
+            {data.friends.length === 0 ? <StatePanel variant="empty" title="No friends yet" compact /> : data.friends.map((item) => <ConnectionCard key={item.id} item={item} />)}
           </section>
         </div>
       )}
