@@ -96,6 +96,13 @@ This command orchestrates the local stack and will:
 - "Who liked" support for posts, comments, and replies
 - Profile page with visibility-aware stats and recent timeline posts
 - Messenger conversations with near real-time updates, attachments, and read states
+- **Phase 4 Community Features:**
+  - Groups with role-based permissions (admin, moderator, member)
+  - Pages with admin/editor/member roles
+  - Events with organizer/coorganizer/speaker/attendee roles
+  - Group posts with comments and likes
+  - Community moderation and member management
+  - Group visibility settings (public, private, secret)
 
 ## API Overview
 
@@ -139,9 +146,33 @@ This command orchestrates the local stack and will:
 - `GET /api/v1/messenger/updates`
 - `GET /api/v1/messenger/stream`
 
+### Community endpoints (Groups)
+
+- `POST /api/v1/groups` - Create a new group
+- `GET /api/v1/groups` - List user's groups (with search)
+- `GET /api/v1/groups/public` - List public groups
+- `GET /api/v1/groups/{id}` - Get group details
+- `PUT /api/v1/groups/{id}` - Update group (admin only)
+- `POST /api/v1/groups/{id}/join` - Join a group
+- `POST /api/v1/groups/{id}/leave` - Leave a group
+- `GET /api/v1/groups/{id}/members` - List group members
+- `PUT /api/v1/groups/{id}/members/{userId}` - Update member role (admin only)
+- `DELETE /api/v1/groups/{id}/members/{userId}` - Remove member (admin only)
+
+### Group Posts endpoints
+
+- `POST /api/v1/groups/{id}/posts` - Create group post
+- `GET /api/v1/groups/{id}/posts` - List group posts (with search)
+- `GET /api/v1/group-posts/{id}` - Get group post details
+- `POST /api/v1/group-posts/{id}/likes/toggle` - Toggle like on group post
+- `POST /api/v1/group-posts/{id}/comments` - Add comment to group post
+- `POST /api/v1/group-post-comments/{id}/likes/toggle` - Toggle like on comment
+
 ## Operational Notes
 
 - Uploaded post images are stored in `backend/public/uploads/posts`.
+- Group avatars are stored in `backend/public/uploads/groups`.
+- Group post images are stored in `backend/public/uploads/group-posts`.
 - Existing BuddyScript design assets are reused from `frontend/public/assets`.
 - Access JWTs are auto-refreshed via HttpOnly refresh-token cookies when the API responds with `401 Expired JWT Token`.
 

@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage';
 import ReactionsPage from './pages/ReactionsPage';
 import RegisterPage from './pages/RegisterPage';
 import SocialGraphPage from './pages/SocialGraphPage';
+import GroupsPage from './pages/GroupsPage';
 import './App.css';
 
 export default function App() {
@@ -60,6 +61,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <MessengerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/groups"
+        element={
+          <ProtectedRoute>
+            <GroupsPage />
           </ProtectedRoute>
         }
       />
