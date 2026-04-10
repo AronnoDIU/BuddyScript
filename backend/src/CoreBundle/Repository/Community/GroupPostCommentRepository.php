@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CoreBundle\Repository\Community;
 
+use CoreBundle\Entity\Community\Group;
 use CoreBundle\Entity\Community\GroupPost;
 use CoreBundle\Entity\Community\GroupPostComment;
 use CoreBundle\Entity\User;
@@ -32,11 +33,11 @@ class GroupPostCommentRepository extends ServiceEntityRepository
 
         return $this->createQueryBuilder('comment')
             ->innerJoin('comment.post', 'post')
-            ->innerJoin('post.group', 'group')
+            ->innerJoin('post.group', 'grp')
             ->where('comment.id = :id')
-            ->andWhere('group.visibility = :public OR group.creator = :user OR EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm 
-                WHERE gm.group = group.id AND gm.user = :user
+            ->andWhere('grp.visibility = :public OR grp.creator = :user OR EXISTS (
+                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm
+                WHERE gm.group = grp.id AND gm.user = :user
             )')
             ->setParameter('id', $uuid, UuidType::NAME)
             ->setParameter('public', Group::VISIBILITY_PUBLIC)
@@ -83,15 +84,15 @@ class GroupPostCommentRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('comment')
             ->innerJoin('comment.post', 'post')
             ->addSelect('post')
-            ->innerJoin('post.group', 'group')
-            ->addSelect('group')
+            ->innerJoin('post.group', 'grp')
+            ->addSelect('grp')
             ->innerJoin('comment.author', 'author')
             ->addSelect('author')
             ->where('comment.author = :user')
             ->andWhere('EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm 
-                WHERE gm.group = group.id AND gm.user = :user
-            ) OR group.creator = :user')
+                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm
+                WHERE gm.group = grp.id AND gm.user = :user
+            ) OR grp.creator = :user')
             ->setParameter('user', $user)
             ->orderBy('comment.createdAt', 'DESC')
             ->setMaxResults($limit)

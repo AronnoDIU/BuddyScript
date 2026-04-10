@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, Image, Hash, Clock, Users } from 'lucide-react';
+import { useState } from 'react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
-import PostComment from './PostComment';
+import PostComment from './PostComment.jsx';
 import './GroupPost.css';
 
-export default function GroupPost({ post, group, permissions, onPostUpdated, onPostDeleted }) {
+export default function GroupPost({ post, group, permissions, onPostDeleted }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);

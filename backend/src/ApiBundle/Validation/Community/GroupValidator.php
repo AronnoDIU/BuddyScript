@@ -13,6 +13,7 @@ class GroupValidator
 {
     use EntityValidatorTrait;
 
+    private ?string $action = null;
     private array $errors = [];
 
     public function setAction(string $action): self
@@ -31,6 +32,7 @@ class GroupValidator
             'list_public_groups' => $this->validateListPublicGroups($data),
             'get_group' => $this->validateGetGroup($data),
             'update_group' => $this->validateUpdateGroup($data),
+            'delete_group' => $this->validateDeleteGroup($data),
             'join_group' => $this->validateJoinGroup($data),
             'leave_group' => $this->validateLeaveGroup($data),
             'get_members' => $this->validateGetMembers($data),
@@ -40,7 +42,7 @@ class GroupValidator
         };
 
         if (!empty($this->errors)) {
-            throw new \ApiBundle\Exception\ValidationException($this->errors);
+            throw new \ApiBundle\Exception\ValidationException('Validation failed.', $this->errors);
         }
     }
 
@@ -62,21 +64,21 @@ class GroupValidator
                     'maxMessage' => 'Group name cannot be longer than {{ limit }} characters.',
                 ]),
             ],
-            'description' => [
+            'description' => new Assert\Optional([
                 new Assert\Length([
                     'max' => 1000,
                     'maxMessage' => 'Description cannot be longer than {{ limit }} characters.',
                 ]),
-            ],
-            'visibility' => [
+            ]),
+            'visibility' => new Assert\Optional([
                 new Assert\Choice([
                     'choices' => [Group::VISIBILITY_PUBLIC, Group::VISIBILITY_PRIVATE, Group::VISIBILITY_SECRET],
                     'message' => 'Invalid visibility option.',
                 ]),
-            ],
-            'settings' => [
+            ]),
+            'settings' => new Assert\Optional([
                 new Assert\Type(['type' => 'array', 'message' => 'Settings must be an array.']),
-            ],
+            ]),
         ]);
 
         $violations = $validator->validate($data, $constraints);
@@ -99,17 +101,16 @@ class GroupValidator
                 new Assert\Range([
                     'min' => 5,
                     'max' => 50,
-                    'minMessage' => 'Limit must be at least {{ limit }}.',
-                    'maxMessage' => 'Limit cannot be more than {{ limit }}.',
+                    'notInRangeMessage' => 'Limit must be between {{ min }} and {{ max }}.',
                 ]),
             ],
-            'q' => [
+            'q' => new Assert\Optional([
                 new Assert\Type(['type' => 'string', 'message' => 'Query must be a string.']),
                 new Assert\Length([
                     'max' => 100,
                     'maxMessage' => 'Query cannot be longer than {{ limit }} characters.',
                 ]),
-            ],
+            ]),
         ]);
 
         $violations = $validator->validate($data, $constraints);
@@ -128,8 +129,7 @@ class GroupValidator
                 new Assert\Range([
                     'min' => 5,
                     'max' => 50,
-                    'minMessage' => 'Limit must be at least {{ limit }}.',
-                    'maxMessage' => 'Limit cannot be more than {{ limit }}.',
+                    'notInRangeMessage' => 'Limit must be between {{ min }} and {{ max }}.',
                 ]),
             ],
         ]);
@@ -154,29 +154,29 @@ class GroupValidator
                 new Assert\NotBlank(['message' => 'Group ID is required.']),
                 new Assert\Uuid(['message' => 'Invalid group ID format.']),
             ],
-            'name' => [
+            'name' => new Assert\Optional([
                 new Assert\Length([
                     'min' => 3,
                     'max' => 100,
                     'minMessage' => 'Group name must be at least {{ limit }} characters long.',
                     'maxMessage' => 'Group name cannot be longer than {{ limit }} characters.',
                 ]),
-            ],
-            'description' => [
+            ]),
+            'description' => new Assert\Optional([
                 new Assert\Length([
                     'max' => 1000,
                     'maxMessage' => 'Description cannot be longer than {{ limit }} characters.',
                 ]),
-            ],
-            'visibility' => [
+            ]),
+            'visibility' => new Assert\Optional([
                 new Assert\Choice([
                     'choices' => [Group::VISIBILITY_PUBLIC, Group::VISIBILITY_PRIVATE, Group::VISIBILITY_SECRET],
                     'message' => 'Invalid visibility option.',
                 ]),
-            ],
-            'settings' => [
+            ]),
+            'settings' => new Assert\Optional([
                 new Assert\Type(['type' => 'array', 'message' => 'Settings must be an array.']),
-            ],
+            ]),
         ]);
 
         $violations = $validator->validate($data, $constraints);
@@ -191,6 +191,11 @@ class GroupValidator
     }
 
     private function validateJoinGroup(array $data): void
+    {
+        $this->validateUuid($data, 'id');
+    }
+
+    private function validateDeleteGroup(array $data): void
     {
         $this->validateUuid($data, 'id');
     }
@@ -213,16 +218,15 @@ class GroupValidator
                 new Assert\Range([
                     'min' => 5,
                     'max' => 50,
-                    'minMessage' => 'Limit must be at least {{ limit }}.',
-                    'maxMessage' => 'Limit cannot be more than {{ limit }}.',
+                    'notInRangeMessage' => 'Limit must be between {{ min }} and {{ max }}.',
                 ]),
             ],
-            'role' => [
+            'role' => new Assert\Optional([
                 new Assert\Choice([
                     'choices' => [Group::ROLE_ADMIN, Group::ROLE_MODERATOR, Group::ROLE_MEMBER, ''],
                     'message' => 'Invalid role option.',
                 ]),
-            ],
+            ]),
         ]);
 
         $violations = $validator->validate($data, $constraints);

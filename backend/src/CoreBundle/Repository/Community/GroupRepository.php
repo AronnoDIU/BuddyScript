@@ -29,15 +29,15 @@ class GroupRepository extends ServiceEntityRepository
             return null;
         }
 
-        return $this->createQueryBuilder('group')
-            ->where('group.id = :id')
-            ->andWhere('group.visibility = :publicVisibility OR group.creator = :user OR EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm 
-                WHERE gm.group = group.id AND gm.user = :user
+        return $this->createQueryBuilder('grp')
+            ->where('grp.id = :id')
+            ->andWhere('grp.visibility = :publicVisibility OR IDENTITY(grp.creator) = :viewerId OR EXISTS (
+                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm
+                WHERE gm.group = grp.id AND IDENTITY(gm.user) = :viewerId
             )')
             ->setParameter('id', $uuid, UuidType::NAME)
             ->setParameter('publicVisibility', Group::VISIBILITY_PUBLIC)
-            ->setParameter('user', $user)
+            ->setParameter('viewerId', $user->getId(), UuidType::NAME)
             ->getQuery()
             ->getOneOrNullResult();
     }
@@ -47,10 +47,10 @@ class GroupRepository extends ServiceEntityRepository
      */
     public function findGroupsForUser(User $user, int $limit = 20): array
     {
-        return $this->createQueryBuilder('group')
-            ->innerJoin('group.memberships', 'membership')
-            ->where('membership.user = :user')
-            ->setParameter('user', $user)
+        return $this->createQueryBuilder('grp')
+            ->innerJoin('grp.memberships', 'membership')
+            ->where('IDENTITY(membership.user) = :userId')
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
             ->orderBy('membership.joinedAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
@@ -62,10 +62,10 @@ class GroupRepository extends ServiceEntityRepository
      */
     public function findPublicGroups(int $limit = 50): array
     {
-        return $this->createQueryBuilder('group')
-            ->where('group.visibility = :public')
+        return $this->createQueryBuilder('grp')
+            ->where('grp.visibility = :public')
             ->setParameter('public', Group::VISIBILITY_PUBLIC)
-            ->orderBy('group.createdAt', 'DESC')
+            ->orderBy('grp.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -78,17 +78,16 @@ class GroupRepository extends ServiceEntityRepository
     {
         $search = '%' . mb_strtolower(trim($query)) . '%';
 
-        return $this->createQueryBuilder('group')
-            ->where('LOWER(group.name) LIKE :search OR LOWER(group.description) LIKE :search')
-            ->andWhere('group.visibility = :public OR group.creator = :user OR EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm 
-                WHERE gm.group = group.id AND gm.user = :user
+        return $this->createQueryBuilder('grp')
+            ->where('LOWER(grp.name) LIKE :search OR LOWER(grp.description) LIKE :search')
+            ->andWhere('grp.visibility = :public OR IDENTITY(grp.creator) = :viewerId OR EXISTS (
+                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm
+                WHERE gm.group = grp.id AND IDENTITY(gm.user) = :viewerId
             )')
             ->setParameter('search', $search)
             ->setParameter('public', Group::VISIBILITY_PUBLIC)
-            ->setParameter('user', $user)
-            ->orderBy('group.memberCount', 'DESC')
-            ->addOrderBy('group.createdAt', 'DESC')
+            ->setParameter('viewerId', $user->getId(), UuidType::NAME)
+            ->orderBy('grp.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -99,10 +98,10 @@ class GroupRepository extends ServiceEntityRepository
      */
     public function findGroupsByCreator(User $creator, int $limit = 20): array
     {
-        return $this->createQueryBuilder('group')
-            ->where('group.creator = :creator')
-            ->setParameter('creator', $creator)
-            ->orderBy('group.createdAt', 'DESC')
+        return $this->createQueryBuilder('grp')
+            ->where('IDENTITY(grp.creator) = :creatorId')
+            ->setParameter('creatorId', $creator->getId(), UuidType::NAME)
+            ->orderBy('grp.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -117,14 +116,14 @@ class GroupRepository extends ServiceEntityRepository
             ->select('COUNT(g.id)')
             ->from(Group::class, 'g')
             ->innerJoin('g.memberships', 'gm')
-            ->where('gm.user = :user')
-            ->setParameter('user', $user);
+            ->where('IDENTITY(gm.user) = :userId')
+            ->setParameter('userId', $user->getId(), UuidType::NAME);
 
         $createdQb = $this->getEntityManager()->createQueryBuilder()
             ->select('COUNT(g.id)')
             ->from(Group::class, 'g')
-            ->where('g.creator = :user')
-            ->setParameter('user', $user);
+            ->where('IDENTITY(g.creator) = :userId')
+            ->setParameter('userId', $user->getId(), UuidType::NAME);
 
         $publicQb = $this->getEntityManager()->createQueryBuilder()
             ->select('COUNT(g.id)')

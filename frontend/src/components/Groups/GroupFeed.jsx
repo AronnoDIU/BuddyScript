@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send, Image, Hash } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { MessageCircle } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
 import CreateGroupPost from './CreateGroupPost';
 import GroupPost from './GroupPost';
@@ -12,7 +12,6 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
   const [hasMore, setHasMore] = useState(true);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const observerRef = useRef(null);
   const lastPostRef = useRef(null);
 
   useEffect(() => {
@@ -99,27 +98,6 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
     setPosts(posts.filter(post => post.id !== postId));
   };
 
-  const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    fetchPosts(query);
-  };
-
-  const handlePostCreated = (newPost) => {
-    setPosts([newPost.post, ...posts]);
-    setShowCreatePost(false);
-    onPostCreated();
-  };
-
-  const handlePostUpdated = (updatedPost) => {
-    setPosts(posts.map(post => 
-      post.id === updatedPost.id ? updatedPost : post
-    ));
-  };
-
-  const handlePostDeleted = (postId) => {
-    setPosts(posts.filter(post => post.id !== postId));
-  };
 
   return (
     <div className="group-feed">
@@ -147,7 +125,7 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
               </div>
             </div>
             <div className="group-feed__create-post-input">
-              What's on your mind, {group.name.split(' ')[0]}?
+              What&apos;s on your mind, {group.name.split(' ')[0]}?
             </div>
           </button>
         </div>
@@ -200,7 +178,7 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
             
             {!hasMore && posts.length > 0 && (
               <div className="group-feed__end">
-                <p>You've seen all posts in this group</p>
+                <p>You&apos;ve seen all posts in this group</p>
               </div>
             )}
           </>

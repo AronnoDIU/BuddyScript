@@ -25,10 +25,10 @@ class GroupMembershipRepository extends ServiceEntityRepository
     public function findByUserAndGroup(User $user, Group $group): ?GroupMembership
     {
         return $this->createQueryBuilder('membership')
-            ->where('membership.user = :user')
-            ->andWhere('membership.group = :group')
-            ->setParameter('user', $user)
-            ->setParameter('group', $group)
+            ->where('IDENTITY(membership.user) = :userId')
+            ->andWhere('IDENTITY(membership.group) = :groupId')
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
+            ->setParameter('groupId', $group->getId(), UuidType::NAME)
             ->getQuery()
             ->getOneOrNullResult();
     }
@@ -39,10 +39,10 @@ class GroupMembershipRepository extends ServiceEntityRepository
     public function findByUser(User $user, int $limit = 50): array
     {
         return $this->createQueryBuilder('membership')
-            ->innerJoin('membership.group', 'group')
-            ->addSelect('group')
-            ->where('membership.user = :user')
-            ->setParameter('user', $user)
+            ->innerJoin('membership.group', 'grp')
+            ->addSelect('grp')
+            ->where('IDENTITY(membership.user) = :userId')
+            ->setParameter('userId', $user->getId(), UuidType::NAME)
             ->orderBy('membership.joinedAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
@@ -57,8 +57,8 @@ class GroupMembershipRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('membership')
             ->innerJoin('membership.user', 'user')
             ->addSelect('user')
-            ->where('membership.group = :group')
-            ->setParameter('group', $group)
+            ->where('IDENTITY(membership.group) = :groupId')
+            ->setParameter('groupId', $group->getId(), UuidType::NAME)
             ->orderBy('membership.role', 'ASC')
             ->addOrderBy('membership.joinedAt', 'ASC')
             ->setMaxResults($limit)
@@ -74,9 +74,9 @@ class GroupMembershipRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('membership')
             ->innerJoin('membership.user', 'user')
             ->addSelect('user')
-            ->where('membership.group = :group')
+            ->where('IDENTITY(membership.group) = :groupId')
             ->andWhere('membership.role = :role')
-            ->setParameter('group', $group)
+            ->setParameter('groupId', $group->getId(), UuidType::NAME)
             ->setParameter('role', $role)
             ->orderBy('membership.joinedAt', 'ASC')
             ->setMaxResults($limit)
@@ -87,12 +87,12 @@ class GroupMembershipRepository extends ServiceEntityRepository
     /**
      * @return list<User>
      */
-    public function findGroupMembers(Group $group, string $role = null, int $limit = 50): array
+    public function findGroupMembers(Group $group, ?string $role = null, int $limit = 50): array
     {
         $qb = $this->createQueryBuilder('membership')
             ->innerJoin('membership.user', 'user')
-            ->where('membership.group = :group')
-            ->setParameter('group', $group);
+            ->where('IDENTITY(membership.group) = :groupId')
+            ->setParameter('groupId', $group->getId(), UuidType::NAME);
 
         if ($role !== null) {
             $qb->andWhere('membership.role = :role')
@@ -110,9 +110,9 @@ class GroupMembershipRepository extends ServiceEntityRepository
     {
         return (int) $this->createQueryBuilder('membership')
             ->select('COUNT(membership.id)')
-            ->where('membership.group = :group')
+            ->where('IDENTITY(membership.group) = :groupId')
             ->andWhere('membership.role = :role')
-            ->setParameter('group', $group)
+            ->setParameter('groupId', $group->getId(), UuidType::NAME)
             ->setParameter('role', $role)
             ->getQuery()
             ->getSingleScalarResult();
@@ -125,8 +125,8 @@ class GroupMembershipRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('membership')
             ->select('membership.role, COUNT(membership.id) as count')
-            ->where('membership.group = :group')
-            ->setParameter('group', $group)
+            ->where('IDENTITY(membership.group) = :groupId')
+            ->setParameter('groupId', $group->getId(), UuidType::NAME)
             ->groupBy('membership.role');
 
         $results = $qb->getQuery()->getResult();

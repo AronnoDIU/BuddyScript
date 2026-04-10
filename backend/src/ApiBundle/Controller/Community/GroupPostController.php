@@ -116,6 +116,27 @@ class GroupPostController extends BaseController
         return $this->json(['post' => $this->formatter->groupPost($post, $user)]);
     }
 
+    #[Route('/group-posts/{id}', name: 'api_group_post_delete', methods: ['DELETE'])]
+    public function deletePost(string $id, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if ($user === null) {
+            return $this->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        try {
+            $this->groupPostValidator->setAction('delete_post')->validate(['id' => $id]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        $result = $this->groupPostService->deletePost($user, $id);
+        if ($result === null) {
+            return $this->json(['message' => 'Post not found or insufficient permissions.'], 404);
+        }
+
+        return $this->json($result);
+    }
+
     #[Route('/group-posts/{id}/likes/toggle', name: 'api_group_post_like_toggle', methods: ['POST'])]
     public function toggleLike(string $id, #[CurrentUser] ?User $user): JsonResponse
     {

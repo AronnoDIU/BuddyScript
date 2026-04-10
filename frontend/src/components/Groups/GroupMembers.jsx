@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Users, Shield, UserCheck, MoreHorizontal, UserPlus, UserMinus, Crown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Users, Shield, UserCheck, UserPlus, UserMinus, Crown } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
 import './GroupMembers.css';
 
@@ -8,7 +8,6 @@ export default function GroupMembers({ groupId, members, isAdmin, onMembersUpdat
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
-  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     setMemberList(members);

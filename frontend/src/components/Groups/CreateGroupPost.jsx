@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { X, Image, Send, Hash } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
 import './CreateGroupPost.css';

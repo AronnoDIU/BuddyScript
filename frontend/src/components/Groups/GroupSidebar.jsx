@@ -1,17 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { X, Users, Settings, Globe, Lock, EyeOff, Search, MoreHorizontal, UserPlus, UserMinus, Shield, UserCheck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Users, Settings, Globe, Lock, EyeOff, UserPlus, UserMinus, Shield, UserCheck } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
-import GroupFeed from './GroupFeed';
-import GroupMembers from './GroupMembers';
-import GroupSettings from './GroupSettings';
+import GroupFeed from './GroupFeed.jsx';
+import GroupMembers from './GroupMembers.jsx';
+import GroupSettings from './GroupSettings.jsx';
 import './GroupSidebar.css';
 
 export default function GroupSidebar({ group, onClose, onGroupUpdated }) {
   const [activeTab, setActiveTab] = useState('posts');
   const [groupDetails, setGroupDetails] = useState(group);
   const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showMemberMenu, setShowMemberMenu] = useState(false);
 
   useEffect(() => {
     if (group) {
@@ -24,13 +22,10 @@ export default function GroupSidebar({ group, onClose, onGroupUpdated }) {
     if (!group) return;
     
     try {
-      setLoading(true);
       const response = await groupsApi.getGroupMembers(group.id, { limit: 20 });
       setMembers(response.data.members || []);
     } catch (error) {
       console.error('Failed to fetch members:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -260,7 +255,7 @@ export default function GroupSidebar({ group, onClose, onGroupUpdated }) {
                 <li>Be respectful and kind to all members</li>
                 <li>Stay on topic and keep discussions relevant</li>
                 <li>No spam or promotional content</li>
-                <li>Protect everyone's privacy and personal information</li>
+                <li>Protect everyone&apos;s privacy and personal information</li>
               </ul>
             </div>
           </div>

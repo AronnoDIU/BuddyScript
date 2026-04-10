@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Users, Settings, Globe, Lock, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, Users, Settings } from 'lucide-react';
 import { groupsApi } from '../api/groups';
 import CreateGroupModal from '../components/Groups/CreateGroupModal';
 import GroupCard from '../components/Groups/GroupCard';
@@ -52,7 +52,7 @@ export default function GroupsPage() {
     setShowCreateModal(false);
   };
 
-  const handleGroupJoined = (groupId) => {
+  const handleGroupJoined = () => {
     fetchGroups();
   };
 
@@ -60,19 +60,6 @@ export default function GroupsPage() {
     setGroups(groups.filter(g => g.id !== groupId));
     if (selectedGroup?.id === groupId) {
       setSelectedGroup(null);
-    }
-  };
-
-  const getVisibilityIcon = (visibility) => {
-    switch (visibility) {
-      case 'public':
-        return <Globe size={16} />;
-      case 'private':
-        return <Users size={16} />;
-      case 'secret':
-        return <Lock size={16} />;
-      default:
-        return <EyeOff size={16} />;
     }
   };
 
@@ -190,7 +177,7 @@ export default function GroupsPage() {
             <div className="groups-page__empty">
               <Settings size={48} className="groups-page__empty-icon" />
               <h3>No Pending Invites</h3>
-              <p>You don't have any group invitations right now</p>
+              <p>You don&apos;t have any group invitations right now</p>
             </div>
           )}
         </div>

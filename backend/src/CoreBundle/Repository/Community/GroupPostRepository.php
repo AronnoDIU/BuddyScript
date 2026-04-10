@@ -31,11 +31,11 @@ class GroupPostRepository extends ServiceEntityRepository
         }
 
         return $this->createQueryBuilder('post')
-            ->innerJoin('post.group', 'group')
+            ->innerJoin('post.group', 'grp')
             ->where('post.id = :id')
-            ->andWhere('group.visibility = :public OR group.creator = :user OR EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm 
-                WHERE gm.group = group.id AND gm.user = :user
+            ->andWhere('grp.visibility = :public OR grp.creator = :user OR EXISTS (
+                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm
+                WHERE gm.group = grp.id AND gm.user = :user
             )')
             ->setParameter('id', $uuid, UuidType::NAME)
             ->setParameter('public', Group::VISIBILITY_PUBLIC)
@@ -83,15 +83,15 @@ class GroupPostRepository extends ServiceEntityRepository
     public function findByUser(User $user, int $limit = 20): array
     {
         return $this->createQueryBuilder('post')
-            ->innerJoin('post.group', 'group')
-            ->addSelect('group')
+            ->innerJoin('post.group', 'grp')
+            ->addSelect('grp')
             ->innerJoin('post.author', 'author')
             ->addSelect('author')
             ->where('post.author = :user')
             ->andWhere('EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm 
-                WHERE gm.group = group.id AND gm.user = :user
-            ) OR group.creator = :user')
+                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm
+                WHERE gm.group = grp.id AND gm.user = :user
+            ) OR grp.creator = :user')
             ->setParameter('user', $user)
             ->orderBy('post.createdAt', 'DESC')
             ->setMaxResults($limit)
@@ -143,13 +143,13 @@ class GroupPostRepository extends ServiceEntityRepository
     public function findRecentPostsForUser(User $user, int $limit = 10): array
     {
         return $this->createQueryBuilder('post')
-            ->innerJoin('post.group', 'group')
-            ->addSelect('group')
+            ->innerJoin('post.group', 'grp')
+            ->addSelect('grp')
             ->innerJoin('post.author', 'author')
             ->addSelect('author')
             ->where('EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm 
-                WHERE gm.group = group.id AND gm.user = :user
+                SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm
+                WHERE gm.group = grp.id AND gm.user = :user
             )')
             ->setParameter('user', $user)
             ->orderBy('post.createdAt', 'DESC')

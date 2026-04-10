@@ -39,7 +39,7 @@ class ReactionValidator extends AbstractValidator
                     new Each(
                         new KeySet(
                             new Key('targetType', new In(['post', 'comment', 'reply'])),
-                            new Key('targetId', new AllOf(new StringType(), new Regex('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-0-9a-f]{12}$/i'))),
+                            new Key('targetId', new AllOf(new StringType(), new Regex('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i'))),
                         )
                     )
                 );

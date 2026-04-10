@@ -153,13 +153,15 @@ class MessengerController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
+        $payload = $this->extractPayload($request);
+        $payload['id'] = $id;
+
         try {
-            $this->messengerValidator->setAction('pin')->validate(['id' => $id]);
+            $this->messengerValidator->setAction('pin')->validate($payload);
         } catch (ValidationException $e) {
             return $this->json(['errors' => $e->getErrors()], 422);
         }
 
-        $payload = $this->extractPayload($request);
         $pinned = filter_var((string) ($payload['pinned'] ?? '1'), FILTER_VALIDATE_BOOLEAN);
 
         $result = $this->messengerService->pinConversation($user, $id, $pinned);
@@ -177,13 +179,15 @@ class MessengerController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
+        $payload = $this->extractPayload($request);
+        $payload['id'] = $id;
+
         try {
-            $this->messengerValidator->setAction('mute')->validate(['id' => $id]);
+            $this->messengerValidator->setAction('mute')->validate($payload);
         } catch (ValidationException $e) {
             return $this->json(['errors' => $e->getErrors()], 422);
         }
 
-        $payload = $this->extractPayload($request);
         $minutes = max(0, min(10080, (int) ($payload['minutes'] ?? 60)));
 
         $result = $this->messengerService->muteConversation($user, $id, $minutes);
@@ -201,13 +205,15 @@ class MessengerController extends BaseController
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
+        $payload = $this->extractPayload($request);
+        $payload['id'] = $id;
+
         try {
-            $this->messengerValidator->setAction('archive')->validate(['id' => $id]);
+            $this->messengerValidator->setAction('archive')->validate($payload);
         } catch (ValidationException $e) {
             return $this->json(['errors' => $e->getErrors()], 422);
         }
 
-        $payload = $this->extractPayload($request);
         $archived = filter_var((string) ($payload['archived'] ?? '1'), FILTER_VALIDATE_BOOLEAN);
 
         $result = $this->messengerService->archiveConversation($user, $id, $archived);

@@ -1,4 +1,4 @@
-import api from './api';
+import { api } from '../api';
 
 export const groupsApi = {
   // Group Management
@@ -10,21 +10,21 @@ export const groupsApi = {
     if (groupData.avatar) formData.append('avatar', groupData.avatar);
     if (groupData.settings) formData.append('settings', JSON.stringify(groupData.settings));
 
-    return api.post('/groups', formData, {
+    return api.post('/v1/groups', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
 
   getGroups: async (params = {}) => {
-    return api.get('/groups', { params });
+    return api.get('/v1/groups', { params });
   },
 
   getPublicGroups: async (params = {}) => {
-    return api.get('/groups/public', { params });
+    return api.get('/v1/groups/public', { params });
   },
 
   getGroup: async (groupId) => {
-    return api.get(`/groups/${groupId}`);
+    return api.get(`/v1/groups/${groupId}`);
   },
 
   updateGroup: async (groupId, groupData) => {
@@ -35,30 +35,34 @@ export const groupsApi = {
     if (groupData.avatar) formData.append('avatar', groupData.avatar);
     if (groupData.settings) formData.append('settings', JSON.stringify(groupData.settings));
 
-    return api.put(`/groups/${groupId}`, formData, {
+    return api.put(`/v1/groups/${groupId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
 
+  deleteGroup: async (groupId) => {
+    return api.delete(`/v1/groups/${groupId}`);
+  },
+
   joinGroup: async (groupId) => {
-    return api.post(`/groups/${groupId}/join`);
+    return api.post(`/v1/groups/${groupId}/join`);
   },
 
   leaveGroup: async (groupId) => {
-    return api.post(`/groups/${groupId}/leave`);
+    return api.post(`/v1/groups/${groupId}/leave`);
   },
 
   // Member Management
   getGroupMembers: async (groupId, params = {}) => {
-    return api.get(`/groups/${groupId}/members`, { params });
+    return api.get(`/v1/groups/${groupId}/members`, { params });
   },
 
   updateMemberRole: async (groupId, userId, role) => {
-    return api.put(`/groups/${groupId}/members/${userId}`, { role });
+    return api.put(`/v1/groups/${groupId}/members/${userId}`, { role });
   },
 
   removeMember: async (groupId, userId) => {
-    return api.delete(`/groups/${groupId}/members/${userId}`);
+    return api.delete(`/v1/groups/${groupId}/members/${userId}`);
   },
 
   // Group Posts
@@ -67,29 +71,33 @@ export const groupsApi = {
     formData.append('content', postData.content);
     if (postData.image) formData.append('image', postData.image);
 
-    return api.post(`/groups/${groupId}/posts`, formData, {
+    return api.post(`/v1/groups/${groupId}/posts`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
 
   getGroupPosts: async (groupId, params = {}) => {
-    return api.get(`/groups/${groupId}/posts`, { params });
+    return api.get(`/v1/groups/${groupId}/posts`, { params });
   },
 
   getGroupPost: async (postId) => {
-    return api.get(`/group-posts/${postId}`);
+    return api.get(`/v1/group-posts/${postId}`);
+  },
+
+  deletePost: async (postId) => {
+    return api.delete(`/v1/group-posts/${postId}`);
   },
 
   // Post Interactions
   togglePostLike: async (postId) => {
-    return api.post(`/group-posts/${postId}/likes/toggle`);
+    return api.post(`/v1/group-posts/${postId}/likes/toggle`);
   },
 
   addPostComment: async (postId, content) => {
-    return api.post(`/group-posts/${postId}/comments`, { content });
+    return api.post(`/v1/group-posts/${postId}/comments`, { content });
   },
 
   toggleCommentLike: async (commentId) => {
-    return api.post(`/group-post-comments/${commentId}/likes/toggle`);
+    return api.post(`/v1/group-post-comments/${commentId}/likes/toggle`);
   }
 };

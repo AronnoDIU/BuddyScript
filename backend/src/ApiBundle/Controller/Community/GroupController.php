@@ -71,7 +71,7 @@ class GroupController extends BaseController
         $query = (string) $request->query->get('q', '');
 
         try {
-            $this->groupValidator->setAction('list_groups')->validate(['limit' => $limit]);
+            $this->groupValidator->setAction('list_groups')->validate(['limit' => $limit, 'q' => $query]);
         } catch (ValidationException $e) {
             return $this->json(['errors' => $e->getErrors()], 422);
         }
@@ -161,6 +161,27 @@ class GroupController extends BaseController
             return $this->json(['message' => $e->getMessage()], 422);
         }
 
+        if ($result === null) {
+            return $this->json(['message' => 'Group not found or insufficient permissions.'], 404);
+        }
+
+        return $this->json($result);
+    }
+
+    #[Route('/groups/{id}', name: 'api_group_delete', methods: ['DELETE'])]
+    public function deleteGroup(string $id, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if ($user === null) {
+            return $this->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        try {
+            $this->groupValidator->setAction('delete_group')->validate(['id' => $id]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        $result = $this->groupService->deleteGroup($user, $id);
         if ($result === null) {
             return $this->json(['message' => 'Group not found or insufficient permissions.'], 404);
         }

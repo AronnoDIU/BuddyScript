@@ -12,6 +12,7 @@ class GroupPostValidator
 {
     use EntityValidatorTrait;
 
+    private ?string $action = null;
     private array $errors = [];
 
     public function setAction(string $action): self
@@ -28,6 +29,7 @@ class GroupPostValidator
             'create_post' => $this->validateCreatePost($data),
             'list_posts' => $this->validateListPosts($data),
             'get_post' => $this->validateGetPost($data),
+            'delete_post' => $this->validateDeletePost($data),
             'toggle_like' => $this->validateToggleLike($data),
             'add_comment' => $this->validateAddComment($data),
             'toggle_comment_like' => $this->validateToggleCommentLike($data),
@@ -35,7 +37,7 @@ class GroupPostValidator
         };
 
         if (!empty($this->errors)) {
-            throw new \ApiBundle\Exception\ValidationException($this->errors);
+            throw new \ApiBundle\Exception\ValidationException('Validation failed.', $this->errors);
         }
     }
 
@@ -83,8 +85,7 @@ class GroupPostValidator
                 new Assert\Range([
                     'min' => 5,
                     'max' => 50,
-                    'minMessage' => 'Limit must be at least {{ limit }}.',
-                    'maxMessage' => 'Limit cannot be more than {{ limit }}.',
+                    'notInRangeMessage' => 'Limit must be between {{ min }} and {{ max }}.',
                 ]),
             ],
             'query' => [
@@ -109,6 +110,11 @@ class GroupPostValidator
     }
 
     private function validateToggleLike(array $data): void
+    {
+        $this->validateUuid($data, 'id');
+    }
+
+    private function validateDeletePost(array $data): void
     {
         $this->validateUuid($data, 'id');
     }

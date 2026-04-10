@@ -13,6 +13,7 @@ use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: GroupRepository::class)]
+#[ORM\Table(name: 'community_group')]
 #[ORM\Index(name: 'idx_group_created_at', columns: ['created_at'])]
 #[ORM\Index(name: 'idx_group_visibility', columns: ['visibility'])]
 #[ORM\Index(name: 'idx_group_name', columns: ['name'])]
@@ -171,11 +172,7 @@ class Group
 
     public function removeMembership(GroupMembership $membership): self
     {
-        if ($this->memberships->removeElement($membership)) {
-            if ($membership->getGroup() === $this) {
-                $membership->setGroup(null);
-            }
-        }
+        $this->memberships->removeElement($membership);
         return $this;
     }
 
@@ -198,11 +195,7 @@ class Group
 
     public function removePost(GroupPost $post): self
     {
-        if ($this->posts->removeElement($post)) {
-            if ($post->getGroup() === $this) {
-                $post->setGroup(null);
-            }
-        }
+        $this->posts->removeElement($post);
         return $this;
     }
 
@@ -239,14 +232,14 @@ class Group
     public function hasPermission(User $user, string $permission): bool
     {
         $role = $this->getMembershipRole($user);
-        
+
         if ($role === null) {
             return false;
         }
 
         return match ($permission) {
             'view' => $this->visibility !== self::VISIBILITY_SECRET || $role !== null,
-            'post' => $this->settings['allow_member_posts'] ?? true && in_array($role, [self::ROLE_ADMIN, self::ROLE_MODERATOR, self::ROLE_MEMBER], true),
+            'post' => ($this->settings['allow_member_posts'] ?? true) && in_array($role, [self::ROLE_ADMIN, self::ROLE_MODERATOR, self::ROLE_MEMBER], true),
             'moderate' => in_array($role, [self::ROLE_ADMIN, self::ROLE_MODERATOR], true),
             'admin' => $role === self::ROLE_ADMIN,
             default => false,

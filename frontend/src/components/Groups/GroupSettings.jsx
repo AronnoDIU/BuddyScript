@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { X, Upload, Globe, Users, Lock, Camera, Save, Trash2 } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
 import './GroupSettings.css';

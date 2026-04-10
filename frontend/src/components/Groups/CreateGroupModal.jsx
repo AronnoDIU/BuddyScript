@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { X, Upload, Globe, Users, Lock, EyeOff, Camera } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { X, Upload, Globe, Users, Lock, Camera } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
 import './CreateGroupModal.css';
 

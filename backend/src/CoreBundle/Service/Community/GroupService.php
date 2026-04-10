@@ -142,6 +142,24 @@ class GroupService
         return ['group' => $this->formatGroup($group, $user)];
     }
 
+    /** @return array<string,mixed>|null */
+    public function deleteGroup(User $user, string $id): ?array
+    {
+        $group = $this->getGroupRepository()->findAccessibleForUser($id, $user);
+        if (!$group instanceof Group) {
+            return null;
+        }
+
+        if (!$group->hasPermission($user, 'admin')) {
+            return null;
+        }
+
+        $this->entityManager->remove($group);
+        $this->entityManager->flush();
+
+        return ['message' => 'Group deleted successfully.'];
+    }
+
     /**
      * @return array<string,mixed>|null
      */

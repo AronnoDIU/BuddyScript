@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Heart, MoreHorizontal, Clock } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
 import './PostComment.css';

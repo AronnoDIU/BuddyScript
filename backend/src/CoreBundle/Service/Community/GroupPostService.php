@@ -100,6 +100,27 @@ class GroupPostService
         return $this->getGroupPostRepository()->findAccessibleForUser($id, $user);
     }
 
+    /** @return array<string,mixed>|null */
+    public function deletePost(User $user, string $postId): ?array
+    {
+        $post = $this->getGroupPostRepository()->findAccessibleForUser($postId, $user);
+        if (!$post instanceof GroupPost) {
+            return null;
+        }
+
+        $group = $post->getGroup();
+        $isAuthor = $post->getAuthor()->getId()->equals($user->getId());
+        $canModerate = $group->hasPermission($user, 'moderate') || $group->hasPermission($user, 'admin');
+        if (!$isAuthor && !$canModerate) {
+            return null;
+        }
+
+        $this->entityManager->remove($post);
+        $this->entityManager->flush();
+
+        return ['message' => 'Post deleted successfully.'];
+    }
+
     /**
      * @return array<string,mixed>|null
      */
