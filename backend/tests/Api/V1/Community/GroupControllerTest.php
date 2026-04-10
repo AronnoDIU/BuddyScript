@@ -53,6 +53,27 @@ final class GroupControllerTest extends ApiTestCase
         $this->assertSameValue(Response::HTTP_UNAUTHORIZED, $client->getResponse()->getStatusCode(), 'Group creation should require authentication.');
     }
 
+    public function testCreateGroupAcceptsSettingsJsonStringFromFormPayload(): void
+    {
+        $creator = $this->createUser('creator-form@example.test');
+
+        /** @var mixed $client */
+        $client = $this->authClientForUser($creator);
+
+        $client->request('POST', '/api/v1/groups', [
+            'name' => 'Multipart Group',
+            'description' => 'Created via form payload',
+            'visibility' => Group::VISIBILITY_PUBLIC,
+            'settings' => json_encode([
+                'allow_member_posts' => true,
+                'require_approval' => false,
+                'enable_discussion' => true,
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $this->assertSameValue(Response::HTTP_CREATED, $client->getResponse()->getStatusCode(), 'Group creation should accept JSON string settings from form payload.');
+    }
+
     public function testListGroupsWithUser(): void
     {
         $user = $this->createUser('user@example.test');

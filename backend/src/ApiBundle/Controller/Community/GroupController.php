@@ -37,6 +37,7 @@ class GroupController extends BaseController
         }
 
         $payload = $this->combineRequestData($request);
+        $payload = $this->normalizeSettingsPayload($payload);
 
         try {
             $this->groupValidator->setAction('create_group')->validate($payload);
@@ -139,6 +140,7 @@ class GroupController extends BaseController
         }
 
         $payload = $this->combineRequestData($request);
+        $payload = $this->normalizeSettingsPayload($payload);
         $payload['id'] = $id;
 
         try {
@@ -324,5 +326,23 @@ class GroupController extends BaseController
         }
 
         return $this->json($result);
+    }
+
+    private function normalizeSettingsPayload(array $payload): array
+    {
+        if (!isset($payload['settings']) || is_array($payload['settings'])) {
+            return $payload;
+        }
+
+        if (!is_string($payload['settings'])) {
+            return $payload;
+        }
+
+        $decoded = json_decode($payload['settings'], true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $payload['settings'] = $decoded;
+        }
+
+        return $payload;
     }
 }
