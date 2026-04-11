@@ -60,11 +60,11 @@ class Page
     private User $creator;
 
     /** @var Collection<int, PageMembership> */
-    #[ORM\OneToMany(mappedBy: 'page', targetEntity: PageMembership::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PageMembership::class, mappedBy: 'page', cascade: ['persist', 'remove'])]
     private Collection $memberships;
 
     /** @var Collection<int, PagePost> */
-    #[ORM\OneToMany(mappedBy: 'page', targetEntity: PagePost::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PagePost::class, mappedBy: 'page', cascade: ['persist', 'remove'])]
     private Collection $posts;
 
     public function __construct()
@@ -146,11 +146,11 @@ class Page
             self::CATEGORY_CAUSE,
             self::CATEGORY_OTHER,
         ];
-        
+
         if (!in_array($category, $validCategories, true)) {
             throw new \InvalidArgumentException('Invalid page category');
         }
-        
+
         $this->category = $category;
         return $this;
     }
@@ -201,10 +201,8 @@ class Page
 
     public function removeMembership(PageMembership $membership): self
     {
-        if ($this->memberships->removeElement($membership)) {
-            if ($membership->getPage() === $this) {
-                $membership->setPage(null);
-            }
+        if ($this->memberships->removeElement($membership) && $membership->getPage() === $this) {
+            $membership->setPage(null);
         }
         return $this;
     }
@@ -228,10 +226,8 @@ class Page
 
     public function removePost(PagePost $post): self
     {
-        if ($this->posts->removeElement($post)) {
-            if ($post->getPage() === $this) {
-                $post->setPage(null);
-            }
+        if ($this->posts->removeElement($post) && $post->getPage() === $this) {
+            $post->setPage(null);
         }
         return $this;
     }
@@ -269,7 +265,7 @@ class Page
     public function hasPermission(User $user, string $permission): bool
     {
         $role = $this->getMembershipRole($user);
-        
+
         if ($role === null) {
             return false;
         }

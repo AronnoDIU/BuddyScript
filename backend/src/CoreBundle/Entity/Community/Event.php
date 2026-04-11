@@ -77,11 +77,11 @@ class Event
     private User $creator;
 
     /** @var Collection<int, EventMembership> */
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: EventMembership::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: EventMembership::class, mappedBy: 'event', cascade: ['persist', 'remove'])]
     private Collection $memberships;
 
     /** @var Collection<int, EventPost> */
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: EventPost::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: EventPost::class, mappedBy: 'event', cascade: ['persist', 'remove'])]
     private Collection $posts;
 
     public function __construct()
@@ -292,10 +292,8 @@ class Event
 
     public function removePost(EventPost $post): self
     {
-        if ($this->posts->removeElement($post)) {
-            if ($post->getEvent() === $this) {
-                $post->setEvent(null);
-            }
+        if ($this->posts->removeElement($post) && $post->getEvent() === $this) {
+            $post->setEvent(null);
         }
         return $this;
     }
@@ -339,7 +337,7 @@ class Event
     public function hasPermission(User $user, string $permission): bool
     {
         $role = $this->getMembershipRole($user);
-        
+
         if ($role === null) {
             return false;
         }

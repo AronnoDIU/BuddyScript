@@ -112,4 +112,3 @@ class MessageAttachment
         return $this->createdAt;
     }
 }
-

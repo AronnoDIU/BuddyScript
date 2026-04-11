@@ -15,13 +15,13 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Index(name: 'idx_reaction_target', columns: ['target_type', 'target_id'])]
 class Reaction
 {
-    public const TYPE_LIKE = 'like';
-    public const TYPE_LOVE = 'love';
-    public const TYPE_HAHA = 'haha';
-    public const TYPE_WOW = 'wow';
-    public const TYPE_SAD = 'sad';
-    public const TYPE_ANGRY = 'angry';
-    public const TYPE_CARE = 'care';
+    public const string TYPE_LIKE = 'like';
+    public const string TYPE_LOVE = 'love';
+    public const string TYPE_HAHA = 'haha';
+    public const string TYPE_WOW = 'wow';
+    public const string TYPE_SAD = 'sad';
+    public const string TYPE_ANGRY = 'angry';
+    public const string TYPE_CARE = 'care';
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]

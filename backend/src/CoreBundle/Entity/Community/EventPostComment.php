@@ -37,11 +37,11 @@ class EventPostComment
     private ?self $parent = null;
 
     /** @var Collection<int, self> */
-    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class)]
+    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent')]
     private Collection $replies;
 
     /** @var Collection<int, EventPostCommentLike> */
-    #[ORM\OneToMany(mappedBy: 'comment', targetEntity: EventPostCommentLike::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: EventPostCommentLike::class, mappedBy: 'comment', cascade: ['persist', 'remove'])]
     private Collection $likes;
 
     #[ORM\Column]
@@ -127,10 +127,8 @@ class EventPostComment
 
     public function removeReply(self $reply): self
     {
-        if ($this->replies->removeElement($reply)) {
-            if ($reply->getParent() === $this) {
-                $reply->setParent(null);
-            }
+        if ($this->replies->removeElement($reply) && $reply->getParent() === $this) {
+            $reply->setParent(null);
         }
         return $this;
     }

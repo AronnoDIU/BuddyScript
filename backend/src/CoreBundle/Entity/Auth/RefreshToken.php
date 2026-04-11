@@ -90,4 +90,3 @@ class RefreshToken
         return $this;
     }
 }
-

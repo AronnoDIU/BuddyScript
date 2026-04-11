@@ -88,4 +88,3 @@ class Conversation
         return $this->messages;
     }
 }
-

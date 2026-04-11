@@ -140,16 +140,19 @@ class Post
     /** @return list<string> */
     public function getHashtags(): array
     {
-        return isset($this->hashtags) ? $this->hashtags : [];
+        return $this->hashtags ?? [];
     }
 
     /** @param list<string> $hashtags */
     public function setHashtags(array $hashtags): self
     {
-        $normalized = array_values(array_unique(array_filter(array_map(
-            static fn (string $value): string => mb_strtolower(trim($value)),
-            $hashtags
-        ))));
+        $normalized = array_map(
+                static fn(string $value): string => mb_strtolower(trim($value)),
+                $hashtags
+            )
+                |> array_filter(...)
+                |> array_unique(...)
+                |> array_values(...);
         $this->hashtags = $normalized;
 
         return $this;
@@ -158,16 +161,19 @@ class Post
     /** @return list<string> */
     public function getTopics(): array
     {
-        return isset($this->topics) ? $this->topics : [];
+        return $this->topics ?? [];
     }
 
     /** @param list<string> $topics */
     public function setTopics(array $topics): self
     {
-        $normalized = array_values(array_unique(array_filter(array_map(
-            static fn (string $value): string => mb_strtolower(trim($value)),
-            $topics
-        ))));
+        $normalized = array_map(
+                static fn(string $value): string => mb_strtolower(trim($value)),
+                $topics
+            )
+                |> array_filter(...)
+                |> array_unique(...)
+                |> array_values(...);
         $this->topics = $normalized;
 
         return $this;

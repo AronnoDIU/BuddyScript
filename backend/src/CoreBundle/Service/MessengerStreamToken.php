@@ -7,9 +7,9 @@ namespace CoreBundle\Service;
 use CoreBundle\Entity\User;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-class MessengerStreamToken
+readonly class MessengerStreamToken
 {
-    private readonly string $secret;
+    private string $secret;
 
     public function __construct(#[Autowire('%kernel.secret%')] string $appSecret)
     {
@@ -26,13 +26,23 @@ class MessengerStreamToken
             'scope' => 'messenger_stream',
         ];
 
-        $encodedPayload = $this->base64UrlEncode((string) json_encode($payload, JSON_THROW_ON_ERROR));
+        try {
+            $encodedPayload = $this->base64UrlEncode((string)json_encode($payload, JSON_THROW_ON_ERROR));
+        } catch (\JsonException $e) {
+            // This should never happen since the payload is always valid, but just in case...
+            throw new \RuntimeException('Failed to encode token payload', 0, $e);
+        }
         $signature = $this->sign($encodedPayload);
 
-        return [
-            'token' => $encodedPayload . '.' . $signature,
-            'expiresAt' => (new \DateTimeImmutable('@' . $expiresAt))->setTimezone(new \DateTimeZone('UTC'))->format(DATE_ATOM),
-        ];
+        try {
+            return [
+                'token' => $encodedPayload . '.' . $signature,
+                'expiresAt' => new \DateTimeImmutable('@' . $expiresAt)->setTimezone(new \DateTimeZone('UTC'))->format(DATE_ATOM),
+            ];
+        } catch (\DateMalformedStringException $e) {
+            // This should never happen since the timestamp is always valid, but just in case...
+            throw new \RuntimeException('Failed to generate token expiration time', 0, $e);
+        }
     }
 
     public function resolveUserId(string $token): ?string
@@ -52,7 +62,11 @@ class MessengerStreamToken
             return null;
         }
 
-        $payload = json_decode($decoded, true);
+        try {
+            $payload = json_decode($decoded, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            return null;
+        }
         if (!is_array($payload)) {
             return null;
         }
@@ -83,7 +97,10 @@ class MessengerStreamToken
 
     private function base64UrlEncode(string $value): string
     {
-        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+        return $value
+                |> base64_encode(...)
+                |> (static fn($x) => strtr($x, '+/', '-_'))
+                |> (static fn($x) => rtrim($x, '='));
     }
 
     private function base64UrlDecode(string $value): ?string

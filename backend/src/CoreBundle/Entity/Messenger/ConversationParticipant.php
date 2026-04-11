@@ -153,4 +153,3 @@ class ConversationParticipant
         return $this->archivedAt instanceof \DateTimeImmutable;
     }
 }
-

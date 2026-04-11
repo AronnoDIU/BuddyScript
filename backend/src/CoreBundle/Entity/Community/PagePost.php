@@ -45,11 +45,11 @@ class PagePost
     private ?\DateTimeImmutable $updatedAt = null;
 
     /** @var Collection<int, PagePostLike> */
-    #[ORM\OneToMany(mappedBy: 'post', targetEntity: PagePostLike::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PagePostLike::class, mappedBy: 'post', cascade: ['persist', 'remove'])]
     private Collection $likes;
 
     /** @var Collection<int, PagePostComment> */
-    #[ORM\OneToMany(mappedBy: 'post', targetEntity: PagePostComment::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PagePostComment::class, mappedBy: 'post', cascade: ['persist', 'remove'])]
     private Collection $comments;
 
     public function __construct()
@@ -152,10 +152,8 @@ class PagePost
 
     public function removeLike(PagePostLike $like): self
     {
-        if ($this->likes->removeElement($like)) {
-            if ($like->getPost() === $this) {
-                $like->setPost(null);
-            }
+        if ($this->likes->removeElement($like) && $like->getPost() === $this) {
+            $like->setPost(null);
         }
         return $this;
     }
@@ -179,10 +177,8 @@ class PagePost
 
     public function removeComment(PagePostComment $comment): self
     {
-        if ($this->comments->removeElement($comment)) {
-            if ($comment->getPost() === $this) {
-                $comment->setPost(null);
-            }
+        if ($this->comments->removeElement($comment) && $comment->getPost() === $this) {
+            $comment->setPost(null);
         }
         return $this;
     }

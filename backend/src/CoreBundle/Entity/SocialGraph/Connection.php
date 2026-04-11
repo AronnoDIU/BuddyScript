@@ -16,9 +16,9 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Index(name: 'idx_social_connection_status', columns: ['status'])]
 class Connection
 {
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_ACCEPTED = 'accepted';
-    public const STATUS_REJECTED = 'rejected';
+    public const string STATUS_PENDING = 'pending';
+    public const string STATUS_ACCEPTED = 'accepted';
+    public const string STATUS_REJECTED = 'rejected';
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
@@ -117,4 +117,3 @@ class Connection
         return $this->updatedAt;
     }
 }
-

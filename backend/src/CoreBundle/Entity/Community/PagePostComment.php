@@ -37,11 +37,11 @@ class PagePostComment
     private ?self $parent = null;
 
     /** @var Collection<int, self> */
-    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class)]
+    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent')]
     private Collection $replies;
 
     /** @var Collection<int, PagePostCommentLike> */
-    #[ORM\OneToMany(mappedBy: 'comment', targetEntity: PagePostCommentLike::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PagePostCommentLike::class, mappedBy: 'comment', cascade: ['persist', 'remove'])]
     private Collection $likes;
 
     #[ORM\Column]
@@ -154,10 +154,8 @@ class PagePostComment
 
     public function removeLike(PagePostCommentLike $like): self
     {
-        if ($this->likes->removeElement($like)) {
-            if ($like->getComment() === $this) {
-                $like->setComment(null);
-            }
+        if ($this->likes->removeElement($like) && $like->getComment() === $this) {
+            $like->setComment(null);
         }
         return $this;
     }

@@ -54,11 +54,11 @@ class Group
     private User $creator;
 
     /** @var Collection<int, GroupMembership> */
-    #[ORM\OneToMany(mappedBy: 'group', targetEntity: GroupMembership::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: GroupMembership::class, mappedBy: 'group', cascade: ['persist', 'remove'])]
     private Collection $memberships;
 
     /** @var Collection<int, GroupPost> */
-    #[ORM\OneToMany(mappedBy: 'group', targetEntity: GroupPost::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: GroupPost::class, mappedBy: 'group', cascade: ['persist', 'remove'])]
     private Collection $posts;
 
     public function __construct()
