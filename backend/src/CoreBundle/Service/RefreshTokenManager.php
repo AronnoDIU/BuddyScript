@@ -26,10 +26,11 @@ readonly class RefreshTokenManager
     {
         $plainToken = $this->generatePlainToken();
 
-        $refreshToken = (new RefreshToken())
-            ->setUser($user)
-            ->setTokenHash($this->hashToken($plainToken))
-            ->setExpiresAt((new \DateTimeImmutable())->modify(sprintf('+%d seconds', $this->refreshTokenTtl)));
+        $refreshToken = sprintf('+%d seconds', $this->refreshTokenTtl)
+                |> (new \DateTimeImmutable())(...)
+                |> new RefreshToken()
+                    ->setUser($user)
+                    ->setTokenHash($this->hashToken($plainToken))(...);
 
         $this->entityManager->persist($refreshToken);
         $this->entityManager->flush();
@@ -53,10 +54,11 @@ readonly class RefreshTokenManager
 
         $currentToken->setRevokedAt($now);
 
-        $newToken = (new RefreshToken())
-            ->setUser($currentToken->getUser())
-            ->setTokenHash($this->hashToken($newPlainToken))
-            ->setExpiresAt($now->modify(sprintf('+%d seconds', $this->refreshTokenTtl)));
+        $newToken = sprintf('+%d seconds', $this->refreshTokenTtl)
+                |> $now(...)
+                |> new RefreshToken()
+                    ->setUser($currentToken->getUser())
+                    ->setTokenHash($this->hashToken($newPlainToken))(...);
 
         $this->entityManager->persist($newToken);
         $this->entityManager->flush();
@@ -80,12 +82,13 @@ readonly class RefreshTokenManager
 
     public function createCookie(string $plainToken, bool $isSecureRequest): Cookie
     {
-        return Cookie::create($this->refreshTokenCookieName, $plainToken)
-            ->withHttpOnly(true)
-            ->withSecure($isSecureRequest)
-            ->withSameSite(Cookie::SAMESITE_LAX)
-            ->withPath('/api')
-            ->withExpires((new \DateTimeImmutable())->modify(sprintf('+%d seconds', $this->refreshTokenTtl)));
+        return sprintf('+%d seconds', $this->refreshTokenTtl)
+                |> (new \DateTimeImmutable())(...)
+                |> Cookie::create($this->refreshTokenCookieName, $plainToken)
+                    ->withHttpOnly(true)
+                    ->withSecure($isSecureRequest)
+                    ->withSameSite(Cookie::SAMESITE_LAX)
+                    ->withPath('/api')(...);
     }
 
     public function createClearedCookie(bool $isSecureRequest): Cookie
@@ -106,7 +109,11 @@ readonly class RefreshTokenManager
 
     private function generatePlainToken(): string
     {
-        return rtrim(strtr(base64_encode(random_bytes(64)), '+/', '-_'), '=');
+        return 64
+                |> random_bytes(...)
+                |> base64_encode(...)
+                |> (static fn($x) => strtr($x, '+/', '-_'))
+                |> (static fn($x) => rtrim($x, '='));
     }
 
     private function hashToken(string $plainToken): string
@@ -124,4 +131,3 @@ readonly class RefreshTokenManager
         return $repository;
     }
 }
-
