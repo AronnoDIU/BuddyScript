@@ -78,6 +78,7 @@ readonly class ApiFormatter
             'likes' => $likes,
             'likedByMe' => $likedByMe,
             'comments' => $comments,
+            'canDelete' => $post->getAuthor()->getId()->equals($viewer->getId()),
         ];
     }
 
@@ -263,6 +264,7 @@ readonly class ApiFormatter
             'likedByMe' => $likedByMe,
             'comments' => $comments,
             'commentsCount' => $post->getCommentCount(),
+            'canDelete' => $post->getAuthor()->getId()->equals($viewer->getId()),
         ];
     }
 

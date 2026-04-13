@@ -4,13 +4,14 @@ import { groupsApi } from '../../api/groups';
 import PostComment from './PostComment.jsx';
 import './GroupPost.css';
 
-export default function GroupPost({ post, group, permissions, onPostDeleted }) {
+export default function GroupPost({ post, group, onPostDeleted }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [localPost, setLocalPost] = useState(post);
+  const canDelete = Boolean(localPost?.canDelete);
 
   const handleLike = async () => {
     try {
@@ -95,32 +96,30 @@ export default function GroupPost({ post, group, permissions, onPostDeleted }) {
           </div>
         </div>
 
-        {showMenu && (
-          <div className="group-post__menu">
-            <button
-              className="group-post__menu-btn"
-              onClick={() => setShowMenu(!showMenu)}
-            >
-              <MoreHorizontal size={20} />
-            </button>
-            
-            {showMenu && (
-              <div className="group-post__dropdown">
-                {permissions?.admin && (
-                  <button className="group-post__dropdown-item danger" onClick={handleDelete}>
-                    Delete Post
-                  </button>
-                )}
-                <button className="group-post__dropdown-item">
-                  Report Post
+        <div className="group-post__menu">
+          <button
+            className="group-post__menu-btn"
+            onClick={() => setShowMenu(!showMenu)}
+          >
+            <MoreHorizontal size={20} />
+          </button>
+
+          {showMenu && (
+            <div className="group-post__dropdown">
+              {canDelete && (
+                <button className="group-post__dropdown-item danger" onClick={handleDelete}>
+                  Delete Post
                 </button>
-                <button className="group-post__dropdown-item">
-                  Turn Off Notifications
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+              <button className="group-post__dropdown-item">
+                Report Post
+              </button>
+              <button className="group-post__dropdown-item">
+                Turn Off Notifications
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Post Content */}

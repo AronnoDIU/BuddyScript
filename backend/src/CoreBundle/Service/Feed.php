@@ -184,6 +184,26 @@ class Feed
     /**
      * @return array<string,mixed>|null
      */
+    public function deletePost(User $user, string $postId): ?array
+    {
+        $post = $this->getPostRepository()->findAccessibleForUser($postId, $user);
+        if (!$post instanceof Post) {
+            return null;
+        }
+
+        if (!$post->getAuthor()->getId()->equals($user->getId())) {
+            return null;
+        }
+
+        $this->entityManager->remove($post);
+        $this->entityManager->flush();
+
+        return ['message' => 'Post deleted successfully.'];
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
     public function addReply(User $user, string $commentId, string $content): ?array
     {
         $parent = $this->getCommentRepository()->findAccessibleForUser($commentId, $user);

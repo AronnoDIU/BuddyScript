@@ -332,11 +332,12 @@ function CommentItem({ comment, onReply, onShowLikes, onOpenProfile, onPickReact
 }
 
 /* ─── Post Item ─────────────────────────────────────────────────────── */
-function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onPickReaction, reactionStateFor, reactionCatalog = [] }) {
+function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onPickReaction, onDeletePost, reactionStateFor, reactionCatalog = [] }) {
   const [commentText, setCommentText] = useState('');
   const [commentError, setCommentError] = useState('');
   const [isCommenting, setIsCommenting] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropRef = useRef(null);
 
@@ -424,6 +425,34 @@ function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onP
                       Hide
                     </button>
                   </li>
+                  {post.canDelete && (
+                    <li className="_feed_timeline_dropdown_item">
+                      <button
+                        type="button"
+                        className="_feed_timeline_dropdown_link"
+                        disabled={isDeleting}
+                        onClick={async () => {
+                          const confirmed = window.confirm('Are you sure you want to delete this post?');
+                          if (!confirmed) return;
+
+                          setIsDeleting(true);
+                          try {
+                            await onDeletePost?.(post.id);
+                          } finally {
+                            setShowDropdown(false);
+                            setIsDeleting(false);
+                          }
+                        }}
+                      >
+                        <span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 18 18">
+                            <path stroke="#1890FF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M2.25 4.5h13.5M6 4.5V3a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0112 3v1.5m2.25 0V15a1.5 1.5 0 01-1.5 1.5h-7.5a1.5 1.5 0 01-1.5-1.5V4.5h10.5zM7.5 8.25v4.5M10.5 8.25v4.5" />
+                          </svg>
+                        </span>
+                        {isDeleting ? 'Deleting...' : 'Delete Post'}
+                      </button>
+                    </li>
+                  )}
                 </ul>
               </div>
             )}
@@ -840,6 +869,16 @@ export default function FeedPage() {
     } catch (submitError) {
       setError(submitError.response?.data?.message || 'Failed to add reply.');
       throw submitError;
+    }
+  };
+
+  const deletePost = async (postId) => {
+    try {
+      await api.delete(`/v1/posts/${postId}`);
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    } catch (deleteError) {
+      setError(deleteError.response?.data?.message || 'Failed to delete post.');
+      throw deleteError;
     }
   };
 
@@ -1528,6 +1567,7 @@ export default function FeedPage() {
                         onShowLikes={setLikesViewer}
                         onOpenProfile={goToProfile}
                         onPickReaction={pickReaction}
+                        onDeletePost={deletePost}
                         reactionStateFor={reactionStateFor}
                         reactionCatalog={reactionCatalog}
                       />

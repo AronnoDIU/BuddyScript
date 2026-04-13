@@ -164,9 +164,15 @@ This command orchestrates the local stack and will:
 - `POST /api/v1/groups/{id}/posts` - Create group post
 - `GET /api/v1/groups/{id}/posts` - List group posts (with search)
 - `GET /api/v1/group-posts/{id}` - Get group post details
+- `DELETE /api/v1/group-posts/{id}` - Delete your own group post
 - `POST /api/v1/group-posts/{id}/likes/toggle` - Toggle like on group post
 - `POST /api/v1/group-posts/{id}/comments` - Add comment to group post
 - `POST /api/v1/group-post-comments/{id}/likes/toggle` - Toggle like on comment
+
+### Feed posts endpoints
+
+- `POST /api/v1/posts` - Create post
+- `DELETE /api/v1/posts/{id}` - Delete your own post
 
 ## Operational Notes
 

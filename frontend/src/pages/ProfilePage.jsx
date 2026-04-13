@@ -25,6 +25,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [activeTab, setActiveTab] = useState('all');
+  const [deletingPostId, setDeletingPostId] = useState(null);
 
   const initials = useMemo(() => {
     if (!profile?.displayName) return '?';
@@ -99,6 +100,24 @@ export default function ProfilePage() {
       setActiveTab('all');
     }
   }, [activeTab, profile]);
+
+  const handleDeletePost = async (postId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this post?');
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingPostId(postId);
+    setError('');
+    try {
+      await api.delete(`/v1/posts/${postId}`);
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    } catch (deleteError) {
+      setError(deleteError?.response?.data?.message || 'Failed to delete post.');
+    } finally {
+      setDeletingPostId(null);
+    }
+  };
 
   return (
     <div className="profile_page">
@@ -209,7 +228,19 @@ export default function ProfilePage() {
                         <strong>{post.author?.displayName || profile.displayName}</strong>
                         <p className="profile_meta profile_post_meta">{formatDate(post.createdAt)}</p>
                       </div>
-                      <span className="profile_post_visibility">{post.visibility}</span>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span className="profile_post_visibility">{post.visibility}</span>
+                        {post.canDelete && (
+                          <button
+                            type="button"
+                            className="profile_tab"
+                            disabled={deletingPostId === post.id}
+                            onClick={() => handleDeletePost(post.id)}
+                          >
+                            {deletingPostId === post.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <p className="profile_meta profile_post_meta">By {getDisplayName(post.author)}</p>
                     <p className="profile_post_content">{post.content}</p>

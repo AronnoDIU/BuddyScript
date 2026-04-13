@@ -162,7 +162,6 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
                 <GroupPost
                   post={post}
                   group={group}
-                  permissions={permissions}
                   onPostUpdated={handlePostUpdated}
                   onPostDeleted={handlePostDeleted}
                 />

@@ -108,10 +108,8 @@ class GroupPostService
             return null;
         }
 
-        $group = $post->getGroup();
         $isAuthor = $post->getAuthor()->getId()->equals($user->getId());
-        $canModerate = $group->hasPermission($user, 'moderate') || $group->hasPermission($user, 'admin');
-        if (!$isAuthor && !$canModerate) {
+        if (!$isAuthor) {
             return null;
         }
 
@@ -308,6 +306,7 @@ class GroupPostService
             'likedByMe' => $likedByMe,
             'comments' => $comments,
             'commentsCount' => $post->getCommentCount(),
+            'canDelete' => $post->getAuthor()->getId()->equals($viewer->getId()),
         ];
     }
 

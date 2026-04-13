@@ -35,6 +35,7 @@ class FeedValidator extends AbstractValidator
             case 'toggle_comment_like':
             case 'post_likes':
             case 'comment_likes':
+            case 'delete_post':
                 $this->rules['id'] = new AllOf(new StringType(), new Not(new Blank()));
                 break;
             case 'discovery':

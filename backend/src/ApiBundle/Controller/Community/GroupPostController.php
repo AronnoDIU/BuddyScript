@@ -37,6 +37,7 @@ class GroupPostController extends BaseController
         }
 
         $payload = $this->combineRequestData($request);
+        unset($payload['image']);
         $payload['groupId'] = $id;
 
         try {
@@ -129,8 +130,7 @@ class GroupPostController extends BaseController
             return $this->json(['errors' => $e->getErrors()], 422);
         }
 
-        $deletePost = [$this->groupPostService, 'deletePost'];
-        $result = is_callable($deletePost) ? call_user_func($deletePost, $user, $id) : null;
+        $result = $this->groupPostService->deletePost($user, $id);
         if ($result === null) {
             return $this->json(['message' => 'Post not found or insufficient permissions.'], 404);
         }
