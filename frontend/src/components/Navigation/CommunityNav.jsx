@@ -1,4 +1,4 @@
-import { Home, Users, MessageCircle, Bell, Heart, Network, Search } from 'lucide-react';
+import { Home, Users, MessageCircle, Bell, Heart, Network, Search, Flag } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import './CommunityNav.css';
 
@@ -6,6 +6,7 @@ export default function CommunityNav() {
   const navItems = [
     { path: '/feed', icon: <Home size={20} />, label: 'Feed' },
     { path: '/groups', icon: <Users size={20} />, label: 'Groups' },
+    { path: '/pages', icon: <Flag size={20} />, label: 'Pages' },
     { path: '/messenger', icon: <MessageCircle size={20} />, label: 'Messenger' },
     { path: '/notifications', icon: <Bell size={20} />, label: 'Notifications' },
     { path: '/social', icon: <Network size={20} />, label: 'Social' },

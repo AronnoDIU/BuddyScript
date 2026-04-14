@@ -101,6 +101,7 @@ This command orchestrates the local stack and will:
   - Pages with admin/editor/member roles
   - Events with organizer/coorganizer/speaker/attendee roles
   - Group posts with comments and likes
+  - Pages screen (`/pages`) with create page + page posting workflow
   - Community moderation and member management
   - Group visibility settings (public, private, secret)
 
@@ -168,6 +169,11 @@ This command orchestrates the local stack and will:
 - `POST /api/v1/group-posts/{id}/likes/toggle` - Toggle like on group post
 - `POST /api/v1/group-posts/{id}/comments` - Add comment to group post
 - `POST /api/v1/group-post-comments/{id}/likes/toggle` - Toggle like on comment
+
+### Pages endpoints (frontend integration)
+
+- Frontend now calls `GET/POST /api/v1/pages`, `GET /api/v1/pages/public`, `POST /api/v1/pages/{id}/follow`, `POST /api/v1/pages/{id}/unfollow`, `GET/POST /api/v1/pages/{id}/posts`.
+- If these endpoints are not available yet, `frontend/src/api/pages.js` automatically falls back to local browser storage so page creation and posting still work in the UI.
 
 ### Feed posts endpoints
 

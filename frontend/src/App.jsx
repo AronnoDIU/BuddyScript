@@ -5,6 +5,7 @@ import FeedPage from './pages/FeedPage';
 import LoginPage from './pages/LoginPage';
 import MessengerPage from './pages/MessengerPage';
 import NotificationsPage from './pages/NotificationsPage';
+import PagesPage from './pages/PagesPage';
 import ProfilePage from './pages/ProfilePage';
 import ReactionsPage from './pages/ReactionsPage';
 import RegisterPage from './pages/RegisterPage';
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/social" element={<SocialGraphPage />} />
         <Route path="/reactions" element={<ReactionsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/pages" element={<PagesPage />} />
         <Route path="/messenger" element={<MessengerPage />} />
         <Route path="/groups" element={<GroupsPage />} />
       </Route>
