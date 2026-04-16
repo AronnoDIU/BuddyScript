@@ -52,6 +52,34 @@ export default function MessengerPage() {
   const activeConversationId = activeConversation?.id || null;
   const sinceRef = useRef('');
 
+  const upsertConversation = (nextConversation) => {
+    if (!nextConversation?.id) return;
+
+    setConversations((prev) => {
+      const map = new Map(prev.map((item) => [item.id, item]));
+      map.set(nextConversation.id, nextConversation);
+      return Array.from(map.values());
+    });
+
+    setActiveConversation((prev) => (prev?.id === nextConversation.id ? nextConversation : prev));
+  };
+
+  const upsertConversationPreview = (message) => {
+    if (!message?.conversationId) return;
+
+    setConversations((prev) => prev.map((item) => (
+      item.id === message.conversationId
+        ? { ...item, latestMessage: message, lastMessageAt: message.createdAt }
+        : item
+    )));
+
+    setActiveConversation((prev) => (
+      prev?.id === message.conversationId
+        ? { ...prev, latestMessage: message, lastMessageAt: message.createdAt }
+        : prev
+    ));
+  };
+
   const activeTitle = useMemo(() => {
     if (!activeConversation) return 'Select conversation';
     const names = (activeConversation.participants || []).map((user) => user.displayName).filter(Boolean);
@@ -128,7 +156,9 @@ export default function MessengerPage() {
     });
 
     await api.post(`/v1/messenger/conversations/${conversationId}/read`);
-    await loadConversations({ reset: true });
+    if (response.data?.conversation) {
+      upsertConversation(response.data.conversation);
+    }
   };
 
   useEffect(() => {
@@ -212,7 +242,7 @@ export default function MessengerPage() {
           updates.forEach((item) => map.set(item.id, item));
           return Array.from(map.values()).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         });
-        await loadConversations({ reset: true });
+        updates.forEach((item) => upsertConversationPreview(item));
       } catch {
         // Ignore malformed stream events.
       }
@@ -234,8 +264,7 @@ export default function MessengerPage() {
       const updated = response.data?.conversation;
       if (!updated) return;
 
-      setActiveConversation(updated);
-      setConversations((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      upsertConversation(updated);
     } catch (prefError) {
       setError(prefError.response?.data?.message || 'Failed to update conversation preference.');
     }
@@ -263,7 +292,7 @@ export default function MessengerPage() {
             relevant.forEach((item) => map.set(item.id, item));
             return Array.from(map.values()).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
           });
-          await loadConversations({ reset: true });
+          relevant.forEach((item) => upsertConversationPreview(item));
         }
       } catch {
         // Keep silent for periodic polling failures.
@@ -308,18 +337,15 @@ export default function MessengerPage() {
       const conversation = response.data?.conversation;
 
       if (conversation) {
-        setActiveConversation(conversation);
+        upsertConversation(conversation);
       }
       if (createdMessage) {
         setMessages((prev) => [...prev, createdMessage]);
+        upsertConversationPreview(createdMessage);
       }
 
       setContent('');
       setAttachment(null);
-      await loadConversations({ reset: true });
-      if (conversation?.id) {
-        await loadMessages(conversation.id);
-      }
     } catch (sendError) {
       setError(sendError.response?.data?.message || 'Failed to send message.');
     } finally {

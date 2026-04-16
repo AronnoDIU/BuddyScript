@@ -123,6 +123,10 @@ const collectErrorMessages = (value, messages = []) => {
       return collectErrorMessages(value.errors, messages);
     }
 
+    if ('children' in value) {
+      return collectErrorMessages(value.children, messages);
+    }
+
     Object.values(value).forEach((item) => collectErrorMessages(item, messages));
   }
 
@@ -135,8 +139,12 @@ export const getApiFieldErrors = (error) => {
     return {};
   }
 
+  const fieldSource = responseErrors.children && typeof responseErrors.children === 'object'
+    ? responseErrors.children
+    : responseErrors;
+
   return Object.fromEntries(
-    Object.entries(responseErrors).map(([field, value]) => [field, collectErrorMessages(value).join(' ')])
+    Object.entries(fieldSource).map(([field, value]) => [field, collectErrorMessages(value).join(' ')])
   );
 };
 
@@ -151,6 +159,10 @@ export const getApiErrorMessage = (error, fallback = 'Something went wrong. Plea
 
   if (typeof response?.message === 'string' && response.message.trim()) {
     return response.message.trim();
+  }
+
+  if (typeof error?.message === 'string' && error.message.trim() && error.message !== 'Network Error') {
+    return error.message.trim();
   }
 
   if (status === 401 && fallback) {
@@ -169,8 +181,6 @@ export const apiErrorUtils = {
   getApiFieldErrors,
 };
 
-void getApiErrorMessage;
-void getApiFieldErrors;
 
 export const resolveMediaUrl = (path) => {
   if (!path) return '';

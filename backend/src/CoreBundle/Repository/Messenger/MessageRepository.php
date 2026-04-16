@@ -29,6 +29,11 @@ class MessageRepository extends ServiceEntityRepository
         $conversationId = $conversation->getId();
 
         $qb = $this->createQueryBuilder('message')
+            ->distinct()
+            ->leftJoin('message.sender', 'sender')->addSelect('sender')
+            ->leftJoin('message.attachments', 'attachment')->addSelect('attachment')
+            ->leftJoin('message.receipts', 'receipt')->addSelect('receipt')
+            ->leftJoin('receipt.recipient', 'recipient')->addSelect('recipient')
             ->where('IDENTITY(message.conversation) = :conversationId')
             ->setParameter('conversationId', $conversationId, UuidType::NAME)
             ->setMaxResults($limit);
@@ -63,6 +68,10 @@ class MessageRepository extends ServiceEntityRepository
     public function findLatestForConversation(Conversation $conversation): ?Message
     {
         return $this->createQueryBuilder('message')
+            ->leftJoin('message.sender', 'sender')->addSelect('sender')
+            ->leftJoin('message.attachments', 'attachment')->addSelect('attachment')
+            ->leftJoin('message.receipts', 'receipt')->addSelect('receipt')
+            ->leftJoin('receipt.recipient', 'recipient')->addSelect('recipient')
             ->where('IDENTITY(message.conversation) = :conversationId')
             ->setParameter('conversationId', $conversation->getId(), UuidType::NAME)
             ->orderBy('message.createdAt', 'DESC')
@@ -95,6 +104,10 @@ class MessageRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('message')
             ->innerJoin('message.conversation', 'conversation')
             ->innerJoin('conversation.participants', 'participant')
+            ->leftJoin('message.sender', 'sender')->addSelect('sender')
+            ->leftJoin('message.attachments', 'attachment')->addSelect('attachment')
+            ->leftJoin('message.receipts', 'receipt')->addSelect('receipt')
+            ->leftJoin('receipt.recipient', 'recipient')->addSelect('recipient')
             ->where('participant.user = :viewer')
             ->setParameter('viewer', $viewer)
             ->orderBy('message.createdAt', 'DESC')

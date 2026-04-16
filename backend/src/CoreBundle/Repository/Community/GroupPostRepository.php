@@ -47,15 +47,18 @@ class GroupPostRepository extends ServiceEntityRepository
     /**
      * @return list<GroupPost>
      */
-    public function findByGroup(Group $group, User $viewer, int $limit = 20): array
+    public function findByGroup(Group $group, User $viewer, int $limit = 20, int $offset = 0): array
     {
         if (!$group->hasPermission($viewer, 'view')) {
             return [];
         }
 
         return $this->createQueryBuilder('post')
+            ->distinct()
             ->innerJoin('post.author', 'author')
             ->addSelect('author')
+            ->innerJoin('post.group', 'grp')
+            ->addSelect('grp')
             ->leftJoin('post.likes', 'postLike')
             ->addSelect('postLike')
             ->leftJoin('postLike.user', 'likeUser')
@@ -71,7 +74,7 @@ class GroupPostRepository extends ServiceEntityRepository
             ->where('post.group = :group')
             ->setParameter('group', $group)
             ->orderBy('post.createdAt', 'DESC')
-            ->addOrderBy('comment.createdAt', 'ASC')
+            ->setFirstResult(max(0, $offset))
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -102,7 +105,7 @@ class GroupPostRepository extends ServiceEntityRepository
     /**
      * @return list<GroupPost>
      */
-    public function searchInGroup(Group $group, User $viewer, string $query, int $limit = 20): array
+    public function searchInGroup(Group $group, User $viewer, string $query, int $limit = 20, int $offset = 0): array
     {
         if (!$group->hasPermission($viewer, 'view')) {
             return [];
@@ -111,8 +114,11 @@ class GroupPostRepository extends ServiceEntityRepository
         $search = '%' . mb_strtolower(trim($query)) . '%';
 
         return $this->createQueryBuilder('post')
+            ->distinct()
             ->innerJoin('post.author', 'author')
             ->addSelect('author')
+            ->innerJoin('post.group', 'grp')
+            ->addSelect('grp')
             ->leftJoin('post.likes', 'postLike')
             ->addSelect('postLike')
             ->leftJoin('postLike.user', 'likeUser')
@@ -122,6 +128,7 @@ class GroupPostRepository extends ServiceEntityRepository
             ->setParameter('group', $group)
             ->setParameter('search', $search)
             ->orderBy('post.createdAt', 'DESC')
+            ->setFirstResult(max(0, $offset))
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

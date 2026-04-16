@@ -15,8 +15,12 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
   const lastPostRef = useRef(null);
 
   useEffect(() => {
-    fetchPosts();
-  }, [group]);
+    const timeout = setTimeout(() => {
+      fetchPosts(searchQuery);
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [group?.id, searchQuery]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -39,19 +43,34 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
     };
   }, [hasMore, loadingMore]);
 
-  const fetchPosts = async (query = '') => {
+  const fetchPosts = async (query = '', { offset = 0, append = false } = {}) => {
     try {
-      setLoading(true);
-      const response = await groupsApi.getGroupPosts(group.id, { 
-        q: query, 
-        limit: 20 
+      if (!append) {
+        setLoading(true);
+      }
+      const response = await groupsApi.getGroupPosts(group.id, {
+        q: query,
+        limit: 20,
+        offset,
       });
-      setPosts(response.data.posts || []);
-      setHasMore(response.data.posts?.length === 20);
+      const nextPosts = response.data.posts || [];
+      const pagination = response.data.pagination || {};
+
+      setPosts((prev) => {
+        if (append) {
+          const map = new Map([...prev, ...nextPosts].map((item) => [item.id, item]));
+          return Array.from(map.values());
+        }
+
+        return nextPosts;
+      });
+      setHasMore(Boolean(pagination.hasMore) || nextPosts.length === 20);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
     } finally {
-      setLoading(false);
+      if (!append) {
+        setLoading(false);
+      }
     }
   };
 
@@ -60,15 +79,7 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
 
     try {
       setLoadingMore(true);
-      const response = await groupsApi.getGroupPosts(group.id, { 
-        q: searchQuery, 
-        limit: 20,
-        offset: posts.length 
-      });
-      
-      const newPosts = response.data.posts || [];
-      setPosts(prev => [...prev, ...newPosts]);
-      setHasMore(newPosts.length === 20);
+      await fetchPosts(searchQuery, { offset: posts.length, append: true });
     } catch (error) {
       console.error('Failed to load more posts:', error);
     } finally {
@@ -77,13 +88,11 @@ export default function GroupFeed({ group, permissions, onPostCreated }) {
   };
 
   const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    fetchPosts(query);
+    setSearchQuery(e.target.value);
   };
 
   const handlePostCreated = (newPost) => {
-    setPosts([newPost.post, ...posts]);
+    setPosts((prev) => [newPost.post, ...prev]);
     setShowCreatePost(false);
     onPostCreated();
   };

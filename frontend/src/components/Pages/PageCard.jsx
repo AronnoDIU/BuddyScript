@@ -1,11 +1,20 @@
 import { Globe, User } from 'lucide-react';
 
 export default function PageCard({ page, selected, onSelect, onToggleFollow }) {
+  const handleSelect = () => onSelect?.(page);
+
   return (
-    <button
-      type="button"
+    <div
       className={`pages-card ${selected ? 'is-selected' : ''}`}
-      onClick={() => onSelect?.(page)}
+      role="button"
+      tabIndex={0}
+      onClick={handleSelect}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          handleSelect();
+        }
+      }}
     >
       <span className="pages-card__avatar" aria-hidden="true">
         {page.avatarUrl ? (
@@ -40,7 +49,7 @@ export default function PageCard({ page, selected, onSelect, onToggleFollow }) {
           </button>
         )}
       </span>
-    </button>
+    </div>
   );
 }
 

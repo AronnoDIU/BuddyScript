@@ -88,6 +88,10 @@ class GroupPostValidator
                     'notInRangeMessage' => 'Limit must be between {{ min }} and {{ max }}.',
                 ]),
             ],
+            'offset' => [
+                new Assert\Type(['type' => 'integer', 'message' => 'Offset must be an integer.']),
+                new Assert\GreaterThanOrEqual(['value' => 0, 'message' => 'Offset cannot be negative.']),
+            ],
             'query' => [
                 new Assert\Type(['type' => 'string', 'message' => 'Query must be a string.']),
                 new Assert\Length([

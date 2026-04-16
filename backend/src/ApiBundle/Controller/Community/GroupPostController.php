@@ -72,26 +72,33 @@ class GroupPostController extends BaseController
         }
 
         $limit = max(5, min(50, (int) $request->query->get('limit', 20)));
+        $offset = max(0, (int) $request->query->get('offset', 0));
         $query = (string) $request->query->get('q', '');
 
         try {
-            $this->groupPostValidator->setAction('list_posts')->validate(['groupId' => $id, 'limit' => $limit, 'query' => $query]);
+            $this->groupPostValidator->setAction('list_posts')->validate(['groupId' => $id, 'limit' => $limit, 'offset' => $offset, 'query' => $query]);
         } catch (ValidationException $e) {
             return $this->json(['errors' => $e->getErrors()], 422);
         }
 
         try {
             if ($query !== '') {
-                $posts = $this->groupPostService->searchPosts($user, $id, $query, $limit);
+                $posts = $this->groupPostService->searchPosts($user, $id, $query, $limit, $offset);
             } else {
-                $posts = $this->groupPostService->getPosts($user, $id, $limit);
+                $posts = $this->groupPostService->getPosts($user, $id, $limit, $offset);
             }
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], 422);
         }
 
+        $postItems = $posts['posts'] ?? [];
+        if (!is_array($postItems)) {
+            $postItems = [];
+        }
+
         return $this->json([
-            'posts' => array_map(fn (GroupPost $post): array => $this->formatter->groupPost($post, $user), $posts),
+            'posts' => array_map(fn (GroupPost $post): array => $this->formatter->groupPost($post, $user), $postItems),
+            'pagination' => $posts['pagination'],
             'query' => $query,
         ]);
     }

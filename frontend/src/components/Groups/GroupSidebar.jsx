@@ -16,7 +16,7 @@ export default function GroupSidebar({ group, onClose, onGroupUpdated }) {
       setGroupDetails(group);
       fetchMembers();
     }
-  }, [group]);
+  }, [group?.id]);
 
   const fetchMembers = async () => {
     if (!group) return;

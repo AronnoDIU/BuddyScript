@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CoreBundle\Service\Community;
 
 use CoreBundle\Entity\Community\Group;
+use CoreBundle\Entity\Community\GroupMembership;
 use CoreBundle\Entity\Community\GroupPost;
 use CoreBundle\Entity\Community\GroupPostComment;
 use CoreBundle\Entity\Community\GroupPostCommentLike;
@@ -15,6 +16,7 @@ use CoreBundle\Repository\Community\GroupPostCommentRepository;
 use CoreBundle\Repository\Community\GroupPostLikeRepository;
 use CoreBundle\Repository\Community\GroupPostRepository;
 use CoreBundle\Repository\Community\GroupRepository;
+use CoreBundle\Repository\Community\GroupMembershipRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -70,29 +72,29 @@ class GroupPostService
     }
 
     /**
-     * @return list<GroupPost>
+     * @return array{posts:list<GroupPost>, pagination:array{limit:int, offset:int, nextOffset:int, hasMore:bool}}
      */
-    public function getPosts(User $viewer, string $groupId, int $limit = 20): array
+    public function getPosts(User $viewer, string $groupId, int $limit = 20, int $offset = 0): array
     {
         $group = $this->getGroupRepository()->findAccessibleForUser($groupId, $viewer);
         if (!$group instanceof Group) {
             throw new \InvalidArgumentException('Group not found or inaccessible.');
         }
 
-        return $this->getGroupPostRepository()->findByGroup($group, $viewer, $limit);
+        return $this->paginatePosts($this->getGroupPostRepository()->findByGroup($group, $viewer, $limit + 1, $offset), $limit, $offset);
     }
 
     /**
-     * @return list<GroupPost>
+     * @return array{posts:list<GroupPost>, pagination:array{limit:int, offset:int, nextOffset:int, hasMore:bool}}
      */
-    public function searchPosts(User $viewer, string $groupId, string $query, int $limit = 20): array
+    public function searchPosts(User $viewer, string $groupId, string $query, int $limit = 20, int $offset = 0): array
     {
         $group = $this->getGroupRepository()->findAccessibleForUser($groupId, $viewer);
         if (!$group instanceof Group) {
             throw new \InvalidArgumentException('Group not found or inaccessible.');
         }
 
-        return $this->getGroupPostRepository()->searchInGroup($group, $viewer, $query, $limit);
+        return $this->paginatePosts($this->getGroupPostRepository()->searchInGroup($group, $viewer, $query, $limit + 1, $offset), $limit, $offset);
     }
 
     public function getAccessiblePost(string $id, User $user): ?GroupPost
@@ -395,5 +397,39 @@ class GroupPostService
             throw new \LogicException('GroupPostCommentLike repository is not configured correctly.');
         }
         return $repository;
+    }
+
+    private function getGroupMembershipRepository(): GroupMembershipRepository
+    {
+        $repository = $this->entityManager->getRepository(\CoreBundle\Entity\Community\GroupMembership::class);
+        if (!$repository instanceof GroupMembershipRepository) {
+            throw new \LogicException('GroupMembership repository is not configured correctly.');
+        }
+        return $repository;
+    }
+
+    /**
+     * @param list<GroupPost> $posts
+     * @return array{posts:list<GroupPost>, pagination:array{limit:int, offset:int, nextOffset:int, hasMore:bool}}
+     */
+    private function paginatePosts(array $posts, int $limit, int $offset): array
+    {
+        $safeLimit = max(1, min(50, $limit));
+        $safeOffset = max(0, $offset);
+        $hasMore = count($posts) > $safeLimit;
+
+        if ($hasMore) {
+            array_pop($posts);
+        }
+
+        return [
+            'posts' => $posts,
+            'pagination' => [
+                'limit' => $safeLimit,
+                'offset' => $safeOffset,
+                'nextOffset' => $safeOffset + count($posts),
+                'hasMore' => $hasMore,
+            ],
+        ];
     }
 }

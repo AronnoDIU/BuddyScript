@@ -116,7 +116,15 @@ export default function PagesPage() {
       await pagesApi.followPage(page.id);
     }
 
-    await fetchPages(searchQuery);
+    const nextPage = {
+      ...page,
+      isFollowing: !page.isFollowing,
+      followersCount: Math.max((page.followersCount || 0) + (page.isFollowing ? -1 : 1), 0),
+    };
+
+    setMyPages((prev) => prev.map((item) => (item.id === page.id ? nextPage : item)));
+    setDiscoverPages((prev) => prev.map((item) => (item.id === page.id ? nextPage : item)));
+    setSelectedPage((prev) => (prev?.id === page.id ? nextPage : prev));
   };
 
   return (

@@ -19,13 +19,27 @@ export default function GroupsPage() {
   const [activeTab, setActiveTab] = useState('my-groups');
 
   useEffect(() => {
+    fetchGroups();
+    fetchPublicGroups();
+  }, []);
+
+  useEffect(() => {
     const timeout = setTimeout(() => {
       fetchGroups(searchQuery);
-      fetchPublicGroups();
     }, 250);
 
     return () => clearTimeout(timeout);
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (activeTab !== 'discover') return undefined;
+
+    const timeout = setTimeout(() => {
+      fetchPublicGroups(searchQuery);
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [activeTab, searchQuery]);
 
   const fetchGroups = async (query = '') => {
     try {
@@ -54,16 +68,21 @@ export default function GroupsPage() {
   };
 
   const handleGroupCreated = (newGroup) => {
-    setGroups([newGroup.group, ...groups]);
+    setGroups((prev) => [newGroup.group, ...prev]);
+    setPublicGroups((prev) => [newGroup.group, ...prev.filter((group) => group.id !== newGroup.group.id)]);
     setShowCreateModal(false);
   };
 
   const handleGroupJoined = () => {
-    fetchGroups();
+    fetchGroups(searchQuery);
+    if (activeTab === 'discover') {
+      fetchPublicGroups(searchQuery);
+    }
   };
 
   const handleGroupLeft = (groupId) => {
-    setGroups(groups.filter(g => g.id !== groupId));
+    setGroups((prev) => prev.filter((group) => group.id !== groupId));
+    setPublicGroups((prev) => prev.filter((group) => group.id !== groupId));
     if (selectedGroup?.id === groupId) {
       setSelectedGroup(null);
     }
