@@ -98,6 +98,18 @@ class Auth
     }
 
     /**
+     * @return array{token:string,user:array<string,mixed>,refreshToken:string}
+     */
+    public function issueAuthTokens(User $user): array
+    {
+        return [
+            'token' => $this->jwtTokenManager->create($user),
+            'user' => $this->formatter->user($user),
+            'refreshToken' => $this->refreshTokenManager->issueForUser($user),
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function extractPayload(Request $request): array

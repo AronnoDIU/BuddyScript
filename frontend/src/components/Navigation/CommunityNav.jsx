@@ -1,4 +1,18 @@
-import { Home, Users, MessageCircle, Bell, Heart, Network, Search, Flag, CalendarDays } from 'lucide-react';
+import {
+  Home,
+  Users,
+  MessageCircle,
+  Bell,
+  Heart,
+  Network,
+  Search,
+  Flag,
+  CalendarDays,
+  Store,
+  ShieldAlert,
+  ShieldCheck,
+  Lock,
+} from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import './CommunityNav.css';
 
@@ -8,6 +22,10 @@ export default function CommunityNav() {
     { path: '/groups', icon: <Users size={20} />, label: 'Groups' },
     { path: '/pages', icon: <Flag size={20} />, label: 'Pages' },
     { path: '/events', icon: <CalendarDays size={20} />, label: 'Events' },
+    { path: '/marketplace', icon: <Store size={20} />, label: 'Marketplace' },
+    { path: '/trust-safety', icon: <ShieldAlert size={20} />, label: 'Trust & Safety' },
+    { path: '/privacy-checkup', icon: <ShieldCheck size={20} />, label: 'Privacy Checkup' },
+    { path: '/security/2fa', icon: <Lock size={20} />, label: '2FA' },
     { path: '/messenger', icon: <MessageCircle size={20} />, label: 'Messenger' },
     { path: '/notifications', icon: <Bell size={20} />, label: 'Notifications' },
     { path: '/social', icon: <Network size={20} />, label: 'Social' },

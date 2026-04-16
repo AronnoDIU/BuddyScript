@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace ApiBundle\Security;
 
 use CoreBundle\Entity\User as UserEntity;
-use CoreBundle\Service\ApiFormatter;
-use CoreBundle\Service\RefreshTokenManager;
-use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use CoreBundle\Service\Auth as AuthService;
+use CoreBundle\Service\Auth\TwoFactorService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,9 +16,8 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerI
 class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
     public function __construct(
-        private readonly JWTTokenManagerInterface $jwtTokenManager,
-        private readonly RefreshTokenManager $refreshTokenManager,
-        private readonly ApiFormatter $formatter,
+        private readonly AuthService $authService,
+        private readonly TwoFactorService $twoFactorService,
     ) {
     }
 
@@ -30,15 +28,25 @@ class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterf
             return new JsonResponse(['message' => 'Authentication failed.'], 401);
         }
 
-        $accessToken = $this->jwtTokenManager->create($user);
-        $refreshToken = $this->refreshTokenManager->issueForUser($user);
+        if ($user->isTwoFactorEnabled()) {
+            $challenge = $this->twoFactorService->createLoginChallenge($user);
+
+            return new JsonResponse([
+                'twoFactorRequired' => true,
+                'challengeId' => $challenge->getId()->toRfc4122(),
+                'expiresAt' => $challenge->getExpiresAt()->format(DATE_ATOM),
+                'message' => 'Two-factor verification required.',
+            ], 202);
+        }
+
+        $result = $this->authService->issueAuthTokens($user);
 
         $response = new JsonResponse([
-            'token' => $accessToken,
-            'user' => $this->formatter->user($user),
+            'token' => $result['token'],
+            'user' => $result['user'],
         ]);
 
-        $response->headers->setCookie($this->refreshTokenManager->createCookie($refreshToken, $request->isSecure()));
+        $response->headers->setCookie($this->authService->getRefreshTokenManager()->createCookie($result['refreshToken'], $request->isSecure()));
 
         return $response;
     }

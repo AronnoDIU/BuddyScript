@@ -105,6 +105,13 @@ This command orchestrates the local stack and will:
   - Events screen (`/events`) with create event + attendance + event posting workflow
   - Community moderation and member management
   - Group visibility settings (public, private, secret)
+- **Phase 5 Commerce/Safety Features:**
+  - Marketplace listing creation, browsing, search, and seller management
+  - Listing lifecycle controls (active/sold/archived/delete)
+  - Trust & safety reporting for abusive users/content/listings
+  - User blocking and unblock management
+  - Privacy checkup recommendations + editable privacy controls
+  - End-to-end TOTP 2FA setup/confirm/disable + login challenge verification
 
 ## API Overview
 
@@ -112,6 +119,7 @@ This command orchestrates the local stack and will:
 
 - `POST /api/v1/register`
 - `POST /api/auth/login_check`
+- `POST /api/v1/2fa/verify`
 - `POST /api/v1/refresh`
 - `POST /api/v1/logout`
 
@@ -147,6 +155,24 @@ This command orchestrates the local stack and will:
 - `POST /api/v1/messenger/conversations/{id}/archive`
 - `GET /api/v1/messenger/updates`
 - `GET /api/v1/messenger/stream`
+- `GET /api/v1/marketplace/listings`
+- `POST /api/v1/marketplace/listings`
+- `GET /api/v1/marketplace/listings/{id}`
+- `PUT /api/v1/marketplace/listings/{id}`
+- `DELETE /api/v1/marketplace/listings/{id}`
+- `POST /api/v1/marketplace/listings/{id}/mark-sold`
+- `GET /api/v1/marketplace/my/listings`
+- `POST /api/v1/safety/reports`
+- `GET /api/v1/safety/reports/me`
+- `POST /api/v1/safety/blocks/{userId}`
+- `DELETE /api/v1/safety/blocks/{userId}`
+- `GET /api/v1/safety/blocks`
+- `GET /api/v1/privacy-checkup`
+- `PUT /api/v1/privacy-checkup`
+- `GET /api/v1/2fa/status`
+- `POST /api/v1/2fa/setup/init`
+- `POST /api/v1/2fa/setup/confirm`
+- `POST /api/v1/2fa/disable`
 
 ### Community endpoints (Groups)
 
@@ -214,9 +240,41 @@ This command orchestrates the local stack and will:
 - `POST /api/v1/posts` - Create post
 - `DELETE /api/v1/posts/{id}` - Delete your own post
 
+### Marketplace endpoints
+
+- `GET /api/v1/marketplace/listings` - Browse listings with optional search/category
+- `POST /api/v1/marketplace/listings` - Create listing
+- `GET /api/v1/marketplace/listings/{id}` - Get listing details
+- `PUT /api/v1/marketplace/listings/{id}` - Update own listing
+- `DELETE /api/v1/marketplace/listings/{id}` - Delete own listing
+- `POST /api/v1/marketplace/listings/{id}/mark-sold` - Mark own listing as sold
+- `GET /api/v1/marketplace/my/listings` - List your listings
+
+### Trust & Safety endpoints
+
+- `POST /api/v1/safety/reports` - Submit trust/safety report
+- `GET /api/v1/safety/reports/me` - List your submitted reports
+- `POST /api/v1/safety/blocks/{userId}` - Block user
+- `DELETE /api/v1/safety/blocks/{userId}` - Unblock user
+- `GET /api/v1/safety/blocks` - List blocked users
+
+### Privacy Checkup endpoints
+
+- `GET /api/v1/privacy-checkup` - Get privacy checklist + recommendations
+- `PUT /api/v1/privacy-checkup` - Update privacy settings
+
+### Two-Factor Authentication endpoints
+
+- `GET /api/v1/2fa/status` - Current 2FA status for signed-in user
+- `POST /api/v1/2fa/setup/init` - Start authenticator setup and return secret/otpauth URI
+- `POST /api/v1/2fa/setup/confirm` - Confirm setup with 6-digit TOTP code
+- `POST /api/v1/2fa/disable` - Disable 2FA with current TOTP code
+- `POST /api/v1/2fa/verify` - Complete login challenge for 2FA-enabled accounts
+
 ## Operational Notes
 
 - Uploaded post images are stored in `backend/public/uploads/posts`.
+- Marketplace listing images are stored in `backend/public/uploads/marketplace`.
 - Group avatars are stored in `backend/public/uploads/groups`.
 - Page avatars are stored in `backend/public/uploads/pages`.
 - Group post images are stored in `backend/public/uploads/group-posts`.

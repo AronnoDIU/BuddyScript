@@ -64,6 +64,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
     #[JMS\Groups(['user_details'])]
     private array $roles = [];
 
+    #[ORM\Column(type: 'json')]
+    private array $privacySettings = [];
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $twoFactorEnabled = false;
+
+    #[ORM\Column(length: 128, nullable: true)]
+    private ?string $twoFactorSecret = null;
+
+    #[ORM\Column(length: 128, nullable: true)]
+    private ?string $twoFactorPendingSecret = null;
+
     #[ORM\OneToMany(targetEntity: Post::class, mappedBy: 'author')]
     private Collection $posts;
 
@@ -96,6 +108,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
         $this->notifications = new ArrayCollection();
         $this->messengerParticipations = new ArrayCollection();
         $this->sentMessages = new ArrayCollection();
+        $this->privacySettings = [
+            'profileVisibility' => 'public',
+            'discoverability' => 'everyone',
+            'allowMessagesFrom' => 'connections',
+            'shareActivityStatus' => true,
+            'adPersonalization' => false,
+        ];
         $this->createdAt->getTimestamp();
         $this->posts->count();
         $this->comments->count();
@@ -188,6 +207,62 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, \String
     public function setRoles(array $roles): self
     {
         $this->roles = $roles;
+
+        return $this;
+    }
+
+    public function getPrivacySettings(): array
+    {
+        return $this->privacySettings;
+    }
+
+    public function setPrivacySettings(array $privacySettings): self
+    {
+        $defaults = [
+            'profileVisibility' => 'public',
+            'discoverability' => 'everyone',
+            'allowMessagesFrom' => 'connections',
+            'shareActivityStatus' => true,
+            'adPersonalization' => false,
+        ];
+
+        $this->privacySettings = array_merge($defaults, array_intersect_key($privacySettings, $defaults));
+
+        return $this;
+    }
+
+    public function isTwoFactorEnabled(): bool
+    {
+        return $this->twoFactorEnabled;
+    }
+
+    public function setTwoFactorEnabled(bool $twoFactorEnabled): self
+    {
+        $this->twoFactorEnabled = $twoFactorEnabled;
+
+        return $this;
+    }
+
+    public function getTwoFactorSecret(): ?string
+    {
+        return $this->twoFactorSecret;
+    }
+
+    public function setTwoFactorSecret(?string $twoFactorSecret): self
+    {
+        $this->twoFactorSecret = $twoFactorSecret;
+
+        return $this;
+    }
+
+    public function getTwoFactorPendingSecret(): ?string
+    {
+        return $this->twoFactorPendingSecret;
+    }
+
+    public function setTwoFactorPendingSecret(?string $twoFactorPendingSecret): self
+    {
+        $this->twoFactorPendingSecret = $twoFactorPendingSecret;
 
         return $this;
     }

@@ -4,13 +4,17 @@ import AppShell from './components/Navigation/AppShell';
 import FeedPage from './pages/FeedPage';
 import LoginPage from './pages/LoginPage';
 import MessengerPage from './pages/MessengerPage';
+import MarketplacePage from './pages/MarketplacePage';
 import NotificationsPage from './pages/NotificationsPage';
 import EventsPage from './pages/EventsPage';
 import PagesPage from './pages/PagesPage';
+import PrivacyCheckupPage from './pages/PrivacyCheckupPage';
 import ProfilePage from './pages/ProfilePage';
 import ReactionsPage from './pages/ReactionsPage';
 import RegisterPage from './pages/RegisterPage';
 import SocialGraphPage from './pages/SocialGraphPage';
+import TrustSafetyPage from './pages/TrustSafetyPage';
+import TwoFactorPage from './pages/TwoFactorPage';
 import GroupsPage from './pages/GroupsPage';
 import './App.css';
 
@@ -33,6 +37,10 @@ export default function App() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/pages" element={<PagesPage />} />
         <Route path="/events" element={<EventsPage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
+        <Route path="/trust-safety" element={<TrustSafetyPage />} />
+        <Route path="/privacy-checkup" element={<PrivacyCheckupPage />} />
+        <Route path="/security/2fa" element={<TwoFactorPage />} />
         <Route path="/messenger" element={<MessengerPage />} />
         <Route path="/groups" element={<GroupsPage />} />
       </Route>

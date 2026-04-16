@@ -65,6 +65,7 @@ security:
     access_control:
         - { path: ^/api/auth/login_check, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/2fa/verify, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/refresh, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/logout, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1, roles: ROLE_USER }

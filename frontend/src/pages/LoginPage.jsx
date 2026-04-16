@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, setToken } from '../api';
+import { securityApi } from '../api/security';
 import StatePanel from '../components/StatePanel';
 
 export default function LoginPage() {
@@ -9,6 +10,8 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState(null);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
 
   const onChange = (event) => {
     setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
@@ -19,7 +22,23 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
+      if (twoFactorChallenge) {
+        const verifyResponse = await securityApi.verifyLoginChallenge({
+          challengeId: twoFactorChallenge.challengeId,
+          code: twoFactorCode,
+        });
+        setToken(verifyResponse.data.token);
+        navigate('/feed');
+        return;
+      }
+
       const response = await api.post('/auth/login_check', form);
+      if (response.data?.twoFactorRequired) {
+        setTwoFactorChallenge(response.data);
+        setError('Two-factor verification required. Enter the code from your authenticator app.');
+        return;
+      }
+
       setToken(response.data.token);
       navigate('/feed');
     } catch (submitError) {
@@ -101,9 +120,27 @@ export default function LoginPage() {
                           value={form.password}
                           onChange={onChange}
                           required
+                          disabled={Boolean(twoFactorChallenge)}
                         />
                       </div>
                     </div>
+
+                    {twoFactorChallenge && (
+                      <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                        <div className="_social_login_form_input _mar_b14">
+                          <label className="_social_login_label _mar_b8">Two-Factor Code</label>
+                          <input
+                            type="text"
+                            name="twoFactorCode"
+                            className="form-control _social_login_input"
+                            value={twoFactorCode}
+                            onChange={(event) => setTwoFactorCode(event.target.value)}
+                            required
+                            maxLength={6}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {error && (
@@ -148,7 +185,7 @@ export default function LoginPage() {
                           className="_social_login_form_btn_link _btn1"
                           disabled={loading}
                         >
-                          {loading ? 'Logging in...' : 'Login now'}
+                          {loading ? 'Logging in...' : twoFactorChallenge ? 'Verify code' : 'Login now'}
                         </button>
                       </div>
                     </div>
