@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, Plus } from 'lucide-react';
 import { pagesApi } from '../api/pages';
+import { getApiErrorMessage } from '../api';
 import CreatePageModal from '../components/Pages/CreatePageModal';
 import CreatePagePost from '../components/Pages/CreatePagePost';
 import PageCard from '../components/Pages/PageCard';
@@ -42,7 +43,7 @@ export default function PagesPage() {
         setSelectedPage(own[0]);
       }
     } catch (loadError) {
-      setError(loadError?.response?.data?.message || 'Failed to load pages.');
+      setError(getApiErrorMessage(loadError, 'Failed to load pages.'));
     } finally {
       setLoading(false);
     }
@@ -59,24 +60,26 @@ export default function PagesPage() {
       const response = await pagesApi.getPagePosts(page.id, { limit: 30 });
       setPosts(response.data?.posts || []);
     } catch (loadError) {
-      setError(loadError?.response?.data?.message || 'Failed to load page posts.');
+      setError(getApiErrorMessage(loadError, 'Failed to load page posts.'));
     } finally {
       setLoadingPosts(false);
     }
   };
 
   useEffect(() => {
-    fetchPages();
-  }, []);
+    const timeout = setTimeout(() => {
+      fetchPages(searchQuery);
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchPosts(selectedPage);
   }, [selectedPage?.id]);
 
   const onSearch = (event) => {
-    const query = event.target.value;
-    setSearchQuery(query);
-    fetchPages(query);
+    setSearchQuery(event.target.value);
   };
 
   const onCreatePage = async (payload) => {

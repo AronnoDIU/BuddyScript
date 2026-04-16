@@ -48,7 +48,10 @@ class GroupRepository extends ServiceEntityRepository
     public function findGroupsForUser(User $user, int $limit = 20): array
     {
         return $this->createQueryBuilder('grp')
+            ->distinct()
+            ->leftJoin('grp.creator', 'creator')->addSelect('creator')
             ->innerJoin('grp.memberships', 'membership')
+            ->leftJoin('grp.posts', 'post')->addSelect('post')
             ->where('IDENTITY(membership.user) = :userId')
             ->setParameter('userId', $user->getId(), UuidType::NAME)
             ->orderBy('membership.joinedAt', 'DESC')
@@ -63,6 +66,10 @@ class GroupRepository extends ServiceEntityRepository
     public function findPublicGroups(int $limit = 50): array
     {
         return $this->createQueryBuilder('grp')
+            ->distinct()
+            ->leftJoin('grp.creator', 'creator')->addSelect('creator')
+            ->leftJoin('grp.memberships', 'membership')->addSelect('membership')
+            ->leftJoin('grp.posts', 'post')->addSelect('post')
             ->where('grp.visibility = :public')
             ->setParameter('public', Group::VISIBILITY_PUBLIC)
             ->orderBy('grp.createdAt', 'DESC')
@@ -79,6 +86,10 @@ class GroupRepository extends ServiceEntityRepository
         $search = '%' . mb_strtolower(trim($query)) . '%';
 
         return $this->createQueryBuilder('grp')
+            ->distinct()
+            ->leftJoin('grp.creator', 'creator')->addSelect('creator')
+            ->leftJoin('grp.memberships', 'membership')->addSelect('membership')
+            ->leftJoin('grp.posts', 'post')->addSelect('post')
             ->where('LOWER(grp.name) LIKE :search OR LOWER(grp.description) LIKE :search')
             ->andWhere('grp.visibility = :public OR IDENTITY(grp.creator) = :viewerId OR EXISTS (
                 SELECT 1 FROM CoreBundle\Entity\Community\GroupMembership gm

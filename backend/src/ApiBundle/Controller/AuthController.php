@@ -2,6 +2,7 @@
 
 namespace ApiBundle\Controller;
 
+use ApiBundle\Attribute\RateLimit;
 use ApiBundle\Exception\ValidationException;
 use ApiBundle\Validation\AuthValidator;
 use CoreBundle\Entity\User;
@@ -32,6 +33,7 @@ class AuthController extends BaseController
     }
 
     #[Route('/register', name: 'api_register', methods: ['POST'])]
+    #[RateLimit(5, 300)]
     public function register(Request $request): JsonResponse
     {
         $payload = $this->authService->extractPayload($request);
@@ -64,6 +66,7 @@ class AuthController extends BaseController
     }
 
     #[Route('/refresh', name: 'api_auth_refresh', methods: ['POST'])]
+    #[RateLimit(20, 60)]
     public function refresh(Request $request): JsonResponse
     {
         $refreshTokenManager = $this->authService->getRefreshTokenManager();
@@ -88,6 +91,7 @@ class AuthController extends BaseController
     }
 
     #[Route('/logout', name: 'api_auth_logout', methods: ['POST'])]
+    #[RateLimit(60, 60)]
     public function logout(Request $request): JsonResponse
     {
         $refreshTokenManager = $this->authService->getRefreshTokenManager();
@@ -114,6 +118,7 @@ class AuthController extends BaseController
     }
 
     #[Route('/2fa/setup/init', name: 'api_auth_2fa_setup_init', methods: ['POST'])]
+    #[RateLimit(5, 300)]
     public function initTwoFactorSetup(#[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -130,6 +135,7 @@ class AuthController extends BaseController
     }
 
     #[Route('/2fa/setup/confirm', name: 'api_auth_2fa_setup_confirm', methods: ['POST'])]
+    #[RateLimit(10, 300)]
     public function confirmTwoFactorSetup(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -150,6 +156,7 @@ class AuthController extends BaseController
     }
 
     #[Route('/2fa/disable', name: 'api_auth_2fa_disable', methods: ['POST'])]
+    #[RateLimit(10, 300)]
     public function disableTwoFactor(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -170,6 +177,7 @@ class AuthController extends BaseController
     }
 
     #[Route('/2fa/verify', name: 'api_auth_2fa_verify', methods: ['POST'])]
+    #[RateLimit(10, 300)]
     public function verifyTwoFactorLogin(Request $request): JsonResponse
     {
         $payload = $this->authService->extractPayload($request);

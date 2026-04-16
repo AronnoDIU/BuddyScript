@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, setToken } from '../api';
+import { api, getApiErrorMessage, getApiFieldErrors, setToken } from '../api';
 import { securityApi } from '../api/security';
 import StatePanel from '../components/StatePanel';
 
@@ -10,17 +10,21 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [twoFactorChallenge, setTwoFactorChallenge] = useState(null);
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
   const onChange = (event) => {
-    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const onSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError('');
+    setFieldErrors({});
     try {
       if (twoFactorChallenge) {
         const verifyResponse = await securityApi.verifyLoginChallenge({
@@ -42,7 +46,8 @@ export default function LoginPage() {
       setToken(response.data.token);
       navigate('/feed');
     } catch (submitError) {
-      setError(submitError.response?.data?.message || 'Invalid login credentials.');
+      setFieldErrors(getApiFieldErrors(submitError));
+      setError(getApiErrorMessage(submitError, 'Invalid credentials.'));
     } finally {
       setLoading(false);
     }
@@ -108,6 +113,7 @@ export default function LoginPage() {
                           onChange={onChange}
                           required
                         />
+                        {fieldErrors.identifier && <small className="text-danger d-block mt-1">{fieldErrors.identifier}</small>}
                       </div>
                     </div>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
@@ -122,6 +128,7 @@ export default function LoginPage() {
                           required
                           disabled={Boolean(twoFactorChallenge)}
                         />
+                        {fieldErrors.password && <small className="text-danger d-block mt-1">{fieldErrors.password}</small>}
                       </div>
                     </div>
 
@@ -138,6 +145,7 @@ export default function LoginPage() {
                             required
                             maxLength={6}
                           />
+                          {fieldErrors.code && <small className="text-danger d-block mt-1">{fieldErrors.code}</small>}
                         </div>
                       </div>
                     )}

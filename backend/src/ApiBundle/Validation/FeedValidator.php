@@ -10,6 +10,7 @@ use Respect\Validation\Validators\IntVal;
 use Respect\Validation\Validators\Not;
 use Respect\Validation\Validators\Positive;
 use Respect\Validation\Validators\StringType;
+use Respect\Validation\Validators\Regex;
 
 class FeedValidator extends AbstractValidator
 {
@@ -23,13 +24,17 @@ class FeedValidator extends AbstractValidator
 
         switch ($this->action) {
             case 'create_post':
-                $this->rules['content'] = new AllOf(new StringType(), new Not(new Blank()));
+                $this->rules['content'] = new AllOf(new StringType(), new Not(new Blank()), new Regex('/^.{1,2000}$/s'));
                 $this->rules['visibility'] = new In([Post::VISIBILITY_PUBLIC, Post::VISIBILITY_PRIVATE]);
+                break;
+            case 'feed':
+                $this->rules['q'] = new AllOf(new StringType(), new Regex('/^.{0,120}$/s'));
+                $this->rules['limit'] = new AllOf(new IntVal(), new Positive());
                 break;
             case 'add_comment':
             case 'add_reply':
                 $this->rules['id'] = new AllOf(new StringType(), new Not(new Blank()));
-                $this->rules['content'] = new AllOf(new StringType(), new Not(new Blank()));
+                $this->rules['content'] = new AllOf(new StringType(), new Not(new Blank()), new Regex('/^.{1,1000}$/s'));
                 break;
             case 'toggle_post_like':
             case 'toggle_comment_like':

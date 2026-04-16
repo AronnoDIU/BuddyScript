@@ -47,7 +47,10 @@ class PageRepository extends ServiceEntityRepository
     public function findPagesForUser(User $user, int $limit = 20): array
     {
         return $this->createQueryBuilder('page')
+            ->distinct()
+            ->leftJoin('page.creator', 'creator')->addSelect('creator')
             ->innerJoin('page.memberships', 'membership')
+            ->leftJoin('page.posts', 'post')->addSelect('post')
             ->where('membership.user = :user')
             ->setParameter('user', $user)
             ->orderBy('membership.joinedAt', 'DESC')
@@ -62,6 +65,10 @@ class PageRepository extends ServiceEntityRepository
     public function findPublicPages(int $limit = 50): array
     {
         return $this->createQueryBuilder('page')
+            ->distinct()
+            ->leftJoin('page.creator', 'creator')->addSelect('creator')
+            ->leftJoin('page.memberships', 'membership')->addSelect('membership')
+            ->leftJoin('page.posts', 'post')->addSelect('post')
             ->orderBy('page.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
@@ -76,6 +83,10 @@ class PageRepository extends ServiceEntityRepository
         $search = '%' . mb_strtolower(trim($query)) . '%';
 
         return $this->createQueryBuilder('page')
+            ->distinct()
+            ->leftJoin('page.creator', 'creator')->addSelect('creator')
+            ->leftJoin('page.memberships', 'membership')->addSelect('membership')
+            ->leftJoin('page.posts', 'post')->addSelect('post')
             ->where('LOWER(page.name) LIKE :search OR LOWER(page.description) LIKE :search')
             ->andWhere('page.creator = :user OR EXISTS (
                 SELECT 1 FROM CoreBundle\Entity\Community\PageMembership pm

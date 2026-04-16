@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { securityApi } from '../api/security';
+import { getApiErrorMessage, getApiFieldErrors } from '../api';
 
 export default function TwoFactorPage() {
   const [status, setStatus] = useState({ twoFactorEnabled: false, hasPendingSetup: false });
@@ -8,15 +9,17 @@ export default function TwoFactorPage() {
   const [disableCode, setDisableCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const loadStatus = async () => {
     setLoading(true);
     setError('');
+    setFieldErrors({});
     try {
       const response = await securityApi.getTwoFactorStatus();
       setStatus(response.data || { twoFactorEnabled: false, hasPendingSetup: false });
     } catch (loadError) {
-      setError(loadError?.response?.data?.message || 'Failed to load two-factor status.');
+      setError(getApiErrorMessage(loadError, 'Failed to load two-factor status.'));
     } finally {
       setLoading(false);
     }
@@ -33,32 +36,36 @@ export default function TwoFactorPage() {
       setSetup(response.data || null);
       await loadStatus();
     } catch (setupError) {
-      setError(setupError?.response?.data?.message || 'Failed to start 2FA setup.');
+      setError(getApiErrorMessage(setupError, 'Failed to start 2FA setup.'));
     }
   };
 
   const confirmSetup = async (event) => {
     event.preventDefault();
     setError('');
+    setFieldErrors({});
     try {
       await securityApi.confirmTwoFactorSetup(verifyCode);
       setVerifyCode('');
       setSetup(null);
       await loadStatus();
     } catch (confirmError) {
-      setError(confirmError?.response?.data?.message || 'Failed to confirm 2FA setup.');
+      setFieldErrors(getApiFieldErrors(confirmError));
+      setError(getApiErrorMessage(confirmError, 'Failed to confirm 2FA setup.'));
     }
   };
 
   const disableTwoFactor = async (event) => {
     event.preventDefault();
     setError('');
+    setFieldErrors({});
     try {
       await securityApi.disableTwoFactor(disableCode);
       setDisableCode('');
       await loadStatus();
     } catch (disableError) {
-      setError(disableError?.response?.data?.message || 'Failed to disable 2FA.');
+      setFieldErrors(getApiFieldErrors(disableError));
+      setError(getApiErrorMessage(disableError, 'Failed to disable 2FA.'));
     }
   };
 
@@ -99,6 +106,7 @@ export default function TwoFactorPage() {
               <h2 className="profile_section_title">Disable 2FA</h2>
               <form onSubmit={disableTwoFactor} style={{ display: 'grid', gap: 8 }}>
                 <input className="form-control" placeholder="Current 2FA code" value={disableCode} onChange={(event) => setDisableCode(event.target.value)} required />
+                {fieldErrors.code && <small className="text-danger">{fieldErrors.code}</small>}
                 <button type="submit" className="profile_tab">Disable</button>
               </form>
             </section>
@@ -115,6 +123,7 @@ export default function TwoFactorPage() {
               <p className="profile_meta" style={{ wordBreak: 'break-all' }}>otpauth URI: {setup.otpauthUri}</p>
               <form onSubmit={confirmSetup} style={{ display: 'grid', gap: 8, marginTop: 12 }}>
                 <input className="form-control" placeholder="6-digit code from authenticator app" value={verifyCode} onChange={(event) => setVerifyCode(event.target.value)} required />
+                {fieldErrors.code && <small className="text-danger">{fieldErrors.code}</small>}
                 <button type="submit" className="profile_tab profile_tab_active">Confirm setup</button>
               </form>
             </div>

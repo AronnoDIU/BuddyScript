@@ -32,7 +32,7 @@ class EventRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('event')
             ->where('event.id = :id')
             ->andWhere('event.creator = :user OR EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\EventMembership em 
+                SELECT 1 FROM CoreBundle\Entity\Community\EventMembership em
                 WHERE em.event = event.id AND em.user = :user
             )')
             ->setParameter('id', $uuid, UuidType::NAME)
@@ -47,7 +47,10 @@ class EventRepository extends ServiceEntityRepository
     public function findEventsForUser(User $user, int $limit = 20): array
     {
         return $this->createQueryBuilder('event')
+            ->distinct()
+            ->leftJoin('event.creator', 'creator')->addSelect('creator')
             ->innerJoin('event.memberships', 'membership')
+            ->leftJoin('event.posts', 'post')->addSelect('post')
             ->where('membership.user = :user')
             ->setParameter('user', $user)
             ->orderBy('membership.joinedAt', 'DESC')
@@ -62,8 +65,12 @@ class EventRepository extends ServiceEntityRepository
     public function findUpcomingEvents(int $limit = 50): array
     {
         $now = new \DateTimeImmutable();
-        
+
         return $this->createQueryBuilder('event')
+            ->distinct()
+            ->leftJoin('event.creator', 'creator')->addSelect('creator')
+            ->leftJoin('event.memberships', 'membership')->addSelect('membership')
+            ->leftJoin('event.posts', 'post')->addSelect('post')
             ->where('event.startDate > :now')
             ->andWhere('event.status = :status')
             ->setParameter('now', $now)
@@ -82,9 +89,13 @@ class EventRepository extends ServiceEntityRepository
         $search = '%' . mb_strtolower(trim($query)) . '%';
 
         return $this->createQueryBuilder('event')
+            ->distinct()
+            ->leftJoin('event.creator', 'creator')->addSelect('creator')
+            ->leftJoin('event.memberships', 'membership')->addSelect('membership')
+            ->leftJoin('event.posts', 'post')->addSelect('post')
             ->where('LOWER(event.name) LIKE :search OR LOWER(event.description) LIKE :search')
             ->andWhere('event.creator = :user OR EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\EventMembership em 
+                SELECT 1 FROM CoreBundle\Entity\Community\EventMembership em
                 WHERE em.event = event.id AND em.user = :user
             )')
             ->setParameter('search', $search)
@@ -116,7 +127,7 @@ class EventRepository extends ServiceEntityRepository
     public function findPastEvents(int $limit = 20): array
     {
         $now = new \DateTimeImmutable();
-        
+
         return $this->createQueryBuilder('event')
             ->where('event.endDate < :now')
             ->setParameter('now', $now)

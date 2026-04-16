@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Clock3, Image, MapPin, Plus, Search, Users } from 'lucide-react';
 import { eventsApi } from '../api/events';
+import { getApiErrorMessage } from '../api';
 import './EventsPage.css';
 
 const INITIAL_EVENT_FORM = {
@@ -61,7 +62,7 @@ export default function EventsPage() {
         setSelectedEvent(own[0]);
       }
     } catch (loadError) {
-      setError(loadError?.response?.data?.message || 'Failed to load events.');
+      setError(getApiErrorMessage(loadError, 'Failed to load events.'));
     } finally {
       setLoading(false);
     }
@@ -78,24 +79,26 @@ export default function EventsPage() {
       const response = await eventsApi.getEventPosts(event.id, { limit: 30 });
       setPosts(response.data?.posts || []);
     } catch (loadError) {
-      setError(loadError?.response?.data?.message || 'Failed to load event posts.');
+      setError(getApiErrorMessage(loadError, 'Failed to load event posts.'));
     } finally {
       setLoadingPosts(false);
     }
   };
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    const timeout = setTimeout(() => {
+      fetchEvents(searchQuery);
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchPosts(selectedEvent);
   }, [selectedEvent?.id]);
 
   const onSearch = (event) => {
-    const query = event.target.value;
-    setSearchQuery(query);
-    fetchEvents(query);
+    setSearchQuery(event.target.value);
   };
 
   const onCreateEvent = async (event) => {
@@ -117,7 +120,7 @@ export default function EventsPage() {
       setCreateForm(INITIAL_EVENT_FORM);
       setShowCreateModal(false);
     } catch (submitError) {
-      setError(submitError?.response?.data?.message || 'Failed to create event.');
+      setError(getApiErrorMessage(submitError, 'Failed to create event.'));
     } finally {
       setCreating(false);
     }
@@ -136,7 +139,7 @@ export default function EventsPage() {
         setSelectedEvent(refreshed.data?.event || event);
       }
     } catch (toggleError) {
-      setError(toggleError?.response?.data?.message || 'Failed to update attendance.');
+      setError(getApiErrorMessage(toggleError, 'Failed to update attendance.'));
     }
   };
 
@@ -158,7 +161,7 @@ export default function EventsPage() {
       setPostContent('');
       setPostFile(null);
     } catch (submitError) {
-      setError(submitError?.response?.data?.message || 'Failed to publish event post.');
+      setError(getApiErrorMessage(submitError, 'Failed to publish event post.'));
     } finally {
       setPosting(false);
     }

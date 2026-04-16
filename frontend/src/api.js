@@ -74,7 +74,7 @@ api.interceptors.response.use(
       const newToken = refreshResponse?.data?.token;
 
       if (!newToken) {
-        throw new Error('Refresh endpoint did not return an access token.');
+        return Promise.reject(new Error('Refresh endpoint did not return an access token.'));
       }
 
       setToken(newToken);
@@ -101,6 +101,76 @@ export const clearToken = () => {
 };
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
+
+const collectErrorMessages = (value, messages = []) => {
+  if (!value) {
+    return messages;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) messages.push(trimmed);
+    return messages;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectErrorMessages(item, messages));
+    return messages;
+  }
+
+  if (typeof value === 'object') {
+    if ('errors' in value) {
+      return collectErrorMessages(value.errors, messages);
+    }
+
+    Object.values(value).forEach((item) => collectErrorMessages(item, messages));
+  }
+
+  return messages;
+};
+
+export const getApiFieldErrors = (error) => {
+  const responseErrors = error?.response?.data?.errors;
+  if (!responseErrors || typeof responseErrors !== 'object' || Array.isArray(responseErrors)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(responseErrors).map(([field, value]) => [field, collectErrorMessages(value).join(' ')])
+  );
+};
+
+export const getApiErrorMessage = (error, fallback = 'Something went wrong. Please try again.') => {
+  const status = error?.response?.status;
+  const response = error?.response?.data;
+
+  const fieldMessages = collectErrorMessages(response?.errors);
+  if (fieldMessages.length > 0) {
+    return fieldMessages[0];
+  }
+
+  if (typeof response?.message === 'string' && response.message.trim()) {
+    return response.message.trim();
+  }
+
+  if (status === 401 && fallback) {
+    return fallback;
+  }
+
+  if (status === 403 && fallback) {
+    return fallback;
+  }
+
+  return fallback;
+};
+
+export const apiErrorUtils = {
+  getApiErrorMessage,
+  getApiFieldErrors,
+};
+
+void getApiErrorMessage;
+void getApiFieldErrors;
 
 export const resolveMediaUrl = (path) => {
   if (!path) return '';

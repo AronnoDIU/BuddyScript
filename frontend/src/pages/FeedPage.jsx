@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, clearToken, resolveMediaUrl } from '../api';
+import { api, clearToken, getApiErrorMessage, resolveMediaUrl } from '../api';
 import StatePanel from '../components/StatePanel';
 
 const getDisplayName = (user) => user?.displayName || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Unknown user';
@@ -610,6 +610,9 @@ export default function FeedPage() {
   const [visibility, setVisibility] = useState('public');
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [feedLoading, setFeedLoading] = useState(true);
+  const [feedLoadingMore, setFeedLoadingMore] = useState(false);
+  const [feedPagination, setFeedPagination] = useState({ hasMore: false, nextOffset: 0, limit: 20 });
   const [error, setError] = useState('');
   const [profileDropOpen, setProfileDropOpen] = useState(false);
   const [notifyDropOpen, setNotifyDropOpen] = useState(false);
@@ -703,24 +706,80 @@ export default function FeedPage() {
     }
   }, []);
 
-  const loadData = useCallback(async (query = '') => {
-    const normalizedQuery = query.trim();
-    const [meResponse, feedResponse, discoveryResponse, topicResponse] = await Promise.all([
+  const loadBootstrapData = useCallback(async () => {
+    const [meResponse, discoveryResponse, topicResponse] = await Promise.all([
       api.get('/v1/me'),
-      api.get('/v1/feed', { params: normalizedQuery ? { q: normalizedQuery } : {} }),
       api.get('/v1/discover', { params: { limit: 12 } }),
       api.get('/v1/discover/topics', { params: { limit: 12 } }),
     ]);
-    const feedPosts = feedResponse.data.posts || [];
+
     setMe(meResponse.data.user);
-    setPosts(feedPosts);
     setDiscoveryData({
       stories: discoveryResponse.data?.stories || [],
       reels: discoveryResponse.data?.reels || [],
       live: discoveryResponse.data?.live || [],
       trendingTopics: topicResponse.data?.topics || discoveryResponse.data?.trendingTopics || [],
     });
-    await hydrateReactionSummaries(feedPosts);
+  }, []);
+
+  const loadFeed = useCallback(async ({ query = '', offset = 0, append = false } = {}) => {
+    const normalizedQuery = query.trim();
+    const safeOffset = Math.max(0, offset);
+
+    if (append) {
+      setFeedLoadingMore(true);
+    } else {
+      setFeedLoading(true);
+    }
+
+    try {
+      const response = await api.get('/v1/feed', {
+        params: {
+          q: normalizedQuery || undefined,
+          limit: 20,
+          offset: safeOffset,
+        },
+      });
+
+      const feedPosts = response.data?.posts || [];
+      const pagination = response.data?.pagination || {};
+      let mergedPosts = feedPosts;
+
+      setPosts((prevPosts) => {
+        if (!append) {
+          mergedPosts = feedPosts;
+          return feedPosts;
+        }
+
+        const map = new Map(prevPosts.map((post) => [post.id, post]));
+        feedPosts.forEach((post) => map.set(post.id, post));
+        mergedPosts = Array.from(map.values());
+        return mergedPosts;
+      });
+
+      setFeedPagination({
+        hasMore: Boolean(pagination.hasMore),
+        nextOffset: Number.isFinite(pagination.nextOffset) ? pagination.nextOffset : safeOffset + feedPosts.length,
+        limit: Number.isFinite(pagination.limit) ? pagination.limit : 20,
+      });
+
+      await hydrateReactionSummaries(mergedPosts);
+    } catch (loadError) {
+      const status = loadError?.response?.status;
+      if (status === 401 || status === 403) {
+        clearToken();
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      setError(getApiErrorMessage(loadError, 'Failed to load feed data.'));
+      if (!append) {
+        setPosts([]);
+      }
+    } finally {
+      setFeedLoading(false);
+      setFeedLoadingMore(false);
+    }
   }, [hydrateReactionSummaries]);
 
   useEffect(() => {
@@ -757,7 +816,7 @@ export default function FeedPage() {
   }, [searchQuery]);
 
   useEffect(() => {
-    loadData(searchQuery).catch((loadError) => {
+    loadBootstrapData().catch((loadError) => {
       const status = loadError?.response?.status;
       if (status === 401 || status === 403) {
         clearToken();
@@ -765,9 +824,13 @@ export default function FeedPage() {
         return;
       }
 
-      setError(loadError?.response?.data?.message || 'Failed to load feed data.');
+      setError(getApiErrorMessage(loadError, 'Failed to load the feed.'));
     });
-  }, [loadData, navigate, searchQuery]);
+  }, [loadBootstrapData, navigate]);
+
+  useEffect(() => {
+    loadFeed({ query: searchQuery, offset: 0, append: false });
+  }, [loadFeed, searchQuery]);
 
   useEffect(() => {
     let mounted = true;
@@ -818,10 +881,10 @@ export default function FeedPage() {
       if (createdPost) {
         setPosts((prevPosts) => [createdPost, ...prevPosts]);
       } else {
-        await loadData();
+        await loadFeed({ query: searchQuery, offset: 0, append: false });
       }
     } catch (submitError) {
-      setError(submitError.response?.data?.message || 'Failed to create post.');
+      setError(getApiErrorMessage(submitError, 'Failed to create post.'));
     } finally {
       setLoading(false);
     }
@@ -839,10 +902,10 @@ export default function FeedPage() {
             : post
         )));
       } else {
-        await loadData();
+        await loadFeed({ query: searchQuery, offset: 0, append: false });
       }
     } catch (submitError) {
-      setError(submitError.response?.data?.message || 'Failed to add comment.');
+      setError(getApiErrorMessage(submitError, 'Failed to add comment.'));
       throw submitError;
     }
   };
@@ -861,13 +924,13 @@ export default function FeedPage() {
         });
 
         if (!changed) {
-          await loadData();
+          await loadFeed({ query: searchQuery, offset: 0, append: false });
         }
       } else {
-        await loadData();
+        await loadFeed({ query: searchQuery, offset: 0, append: false });
       }
     } catch (submitError) {
-      setError(submitError.response?.data?.message || 'Failed to add reply.');
+      setError(getApiErrorMessage(submitError, 'Failed to add reply.'));
       throw submitError;
     }
   };
@@ -877,9 +940,17 @@ export default function FeedPage() {
       await api.delete(`/v1/posts/${postId}`);
       setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
     } catch (deleteError) {
-      setError(deleteError.response?.data?.message || 'Failed to delete post.');
+      setError(getApiErrorMessage(deleteError, 'Failed to delete post.'));
       throw deleteError;
     }
+  };
+
+  const loadMorePosts = async () => {
+    if (!feedPagination.hasMore || feedLoadingMore) {
+      return;
+    }
+
+    await loadFeed({ query: searchQuery, offset: feedPagination.nextOffset, append: true });
   };
 
   const logout = async () => {
@@ -1558,20 +1629,39 @@ export default function FeedPage() {
                     </div>
 
                     {/* Posts */}
-                    {posts.map((post) => (
-                      <PostItem
-                        key={post.id}
-                        post={post}
-                        onAddComment={addComment}
-                        onReply={addReply}
-                        onShowLikes={setLikesViewer}
-                        onOpenProfile={goToProfile}
-                        onPickReaction={pickReaction}
-                        onDeletePost={deletePost}
-                        reactionStateFor={reactionStateFor}
-                        reactionCatalog={reactionCatalog}
-                      />
-                    ))}
+                    {feedLoading ? (
+                      <StatePanel variant="info" title="Loading feed" message="Fetching posts..." compact className="mt-2" />
+                    ) : (
+                      <>
+                        {posts.map((post) => (
+                          <PostItem
+                            key={post.id}
+                            post={post}
+                            onAddComment={addComment}
+                            onReply={addReply}
+                            onShowLikes={setLikesViewer}
+                            onOpenProfile={goToProfile}
+                            onPickReaction={pickReaction}
+                            onDeletePost={deletePost}
+                            reactionStateFor={reactionStateFor}
+                            reactionCatalog={reactionCatalog}
+                          />
+                        ))}
+
+                        {feedPagination.hasMore && (
+                          <div className="d-flex justify-content-center my-3">
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary"
+                              onClick={loadMorePosts}
+                              disabled={feedLoadingMore}
+                            >
+                              {feedLoadingMore ? 'Loading more...' : 'Load more posts'}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

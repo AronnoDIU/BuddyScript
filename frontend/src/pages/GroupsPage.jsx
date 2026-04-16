@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Users, Settings } from 'lucide-react';
 import { groupsApi } from '../api/groups';
+import { getApiErrorMessage } from '../api';
 import CreateGroupModal from '../components/Groups/CreateGroupModal';
 import GroupCard from '../components/Groups/GroupCard';
 import GroupSidebar from '../components/Groups/GroupSidebar';
+import StatePanel from '../components/StatePanel';
 import './GroupsPage.css';
 
 export default function GroupsPage() {
@@ -11,22 +13,28 @@ export default function GroupsPage() {
   const [publicGroups, setPublicGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeTab, setActiveTab] = useState('my-groups');
 
   useEffect(() => {
-    fetchGroups();
-    fetchPublicGroups();
-  }, []);
+    const timeout = setTimeout(() => {
+      fetchGroups(searchQuery);
+      fetchPublicGroups();
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   const fetchGroups = async (query = '') => {
     try {
       setLoading(true);
+      setError('');
       const response = await groupsApi.getGroups({ q: query, limit: 20 });
       setGroups(response.data.groups || []);
     } catch (error) {
-      console.error('Failed to fetch groups:', error);
+      setError(getApiErrorMessage(error, 'Failed to load your groups.'));
     } finally {
       setLoading(false);
     }
@@ -37,14 +45,12 @@ export default function GroupsPage() {
       const response = await groupsApi.getPublicGroups({ limit: 12 });
       setPublicGroups(response.data.groups || []);
     } catch (error) {
-      console.error('Failed to fetch public groups:', error);
+      setError(getApiErrorMessage(error, 'Failed to load public groups.'));
     }
   };
 
   const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    fetchGroups(query);
+    setSearchQuery(e.target.value);
   };
 
   const handleGroupCreated = (newGroup) => {
@@ -119,6 +125,8 @@ export default function GroupsPage() {
       </div>
 
       <div className="groups-page__content">
+        {error && <StatePanel variant="error" title="Could not load groups" message={error} className="mb-3" compact />}
+
         <div className="groups-page__main">
           {activeTab === 'my-groups' && (
             <>

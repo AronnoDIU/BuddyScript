@@ -21,9 +21,9 @@ class AuthValidator extends AbstractValidator
 
         switch ($this->action) {
             case 'register':
-                $this->rules['firstName'] = new AllOf(new StringType(), new Not(new Blank()));
-                $this->rules['lastName'] = new AllOf(new StringType(), new Not(new Blank()));
-                $this->rules['email'] = new AllOf(new StringType(), new Not(new Blank()), new Email());
+                $this->rules['firstName'] = new AllOf(new StringType(), new Not(new Blank()), new Regex('/^.{1,120}$/s'));
+                $this->rules['lastName'] = new AllOf(new StringType(), new Not(new Blank()), new Regex('/^.{1,120}$/s'));
+                $this->rules['email'] = new AllOf(new StringType(), new Not(new Blank()), new Regex('/^.{5,255}$/s'), new Email());
                 $this->rules['password'] = new AllOf(new StringType(), new Not(new Blank()), new Regex('/^.{8,255}$/s'));
                 break;
             default:

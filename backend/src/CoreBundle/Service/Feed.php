@@ -39,14 +39,30 @@ class Feed
     /**
      * @return array<string,mixed>
      */
-    public function feed(User $user, string $query): array
+    public function feed(User $user, string $query, int $limit = 20, int $offset = 0): array
     {
         $normalizedQuery = trim($query);
-        $posts = $this->getPostRepository()->findFeedForUser($user, 50, $normalizedQuery === '' ? null : $normalizedQuery);
+        $safeLimit = max(5, min(50, $limit));
+        $safeOffset = max(0, $offset);
+        $posts = $this->getPostRepository()->findFeedForUser(
+            $user,
+            $safeLimit + 1,
+            $normalizedQuery === '' ? null : $normalizedQuery,
+            $safeOffset,
+        );
+
+        $hasMore = count($posts) > $safeLimit;
+        $pagePosts = array_slice($posts, 0, $safeLimit);
 
         return [
-            'posts' => array_map(fn (Post $post): array => $this->formatter->post($post, $user), $posts),
+            'posts' => array_map(fn (Post $post): array => $this->formatter->post($post, $user), $pagePosts),
             'query' => $normalizedQuery,
+            'pagination' => [
+                'limit' => $safeLimit,
+                'offset' => $safeOffset,
+                'nextOffset' => $safeOffset + count($pagePosts),
+                'hasMore' => $hasMore,
+            ],
         ];
     }
 

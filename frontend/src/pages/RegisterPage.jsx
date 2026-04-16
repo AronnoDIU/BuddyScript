@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../api';
+import { api, getApiErrorMessage, getApiFieldErrors } from '../api';
 import StatePanel from '../components/StatePanel';
 
 export default function RegisterPage() {
@@ -15,13 +15,17 @@ export default function RegisterPage() {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const onChange = (event) => {
-    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const onSubmit = async (event) => {
     event.preventDefault();
+    setFieldErrors({});
     if (!form.firstName.trim() || !form.lastName.trim()) {
       setError('First name and last name are required.');
       return;
@@ -45,7 +49,8 @@ export default function RegisterPage() {
       });
       navigate('/login');
     } catch (submitError) {
-      setError(submitError.response?.data?.message || submitError.response?.data?.errors || 'Failed to register.');
+      setFieldErrors(getApiFieldErrors(submitError));
+      setError(getApiErrorMessage(submitError, 'Failed to register.'));
     } finally {
       setLoading(false);
     }
@@ -115,6 +120,7 @@ export default function RegisterPage() {
                           required
                           maxLength={120}
                         />
+                        {fieldErrors.firstName && <small className="text-danger d-block mt-1">{fieldErrors.firstName}</small>}
                       </div>
                     </div>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
@@ -129,6 +135,7 @@ export default function RegisterPage() {
                           required
                           maxLength={120}
                         />
+                        {fieldErrors.lastName && <small className="text-danger d-block mt-1">{fieldErrors.lastName}</small>}
                       </div>
                     </div>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
@@ -142,6 +149,7 @@ export default function RegisterPage() {
                           onChange={onChange}
                           required
                         />
+                        {fieldErrors.email && <small className="text-danger d-block mt-1">{fieldErrors.email}</small>}
                       </div>
                     </div>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
@@ -156,6 +164,7 @@ export default function RegisterPage() {
                           required
                           minLength={8}
                         />
+                        {fieldErrors.password && <small className="text-danger d-block mt-1">{fieldErrors.password}</small>}
                       </div>
                     </div>
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
@@ -169,6 +178,7 @@ export default function RegisterPage() {
                           onChange={onChange}
                           required
                         />
+                        {fieldErrors.repeatPassword && <small className="text-danger d-block mt-1">{fieldErrors.repeatPassword}</small>}
                       </div>
                     </div>
                   </div>

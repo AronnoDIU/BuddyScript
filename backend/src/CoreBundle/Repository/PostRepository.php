@@ -27,9 +27,10 @@ class PostRepository extends ServiceEntityRepository
     /**
      * @return list<Post>
      */
-    public function findFeedForUser(User $viewer, int $limit = 50, ?string $query = null): array
+    public function findFeedForUser(User $viewer, int $limit = 50, ?string $query = null, int $offset = 0): array
     {
         $query = $query !== null ? trim($query) : null;
+        $safeOffset = max(0, $offset);
 
         $commentsByViewerDql = $this->getEntityManager()->createQueryBuilder()
             ->select('1')
@@ -45,6 +46,7 @@ class PostRepository extends ServiceEntityRepository
             ->setParameter('public', Post::VISIBILITY_PUBLIC)
             ->setParameter('viewer', $viewer)
             ->orderBy('p.createdAt', 'DESC')
+            ->setFirstResult($safeOffset)
             ->setMaxResults($limit);
 
         if ($query !== null && $query !== '') {

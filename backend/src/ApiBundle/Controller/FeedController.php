@@ -2,6 +2,7 @@
 
 namespace ApiBundle\Controller;
 
+use ApiBundle\Attribute\RateLimit;
 use ApiBundle\Exception\ValidationException;
 use ApiBundle\Validation\FeedValidator;
 use CoreBundle\Entity\User;
@@ -26,16 +27,32 @@ class FeedController extends BaseController
     }
 
     #[Route('/feed', name: 'api_feed', methods: ['GET'])]
+    #[RateLimit(60, 60)]
     public function feed(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
             return $this->json(['message' => 'Unauthorized.'], 401);
         }
 
-        return $this->json($this->feedService->feed($user, (string) $request->query->get('q', '')));
+        $query = trim((string) $request->query->get('q', ''));
+        $limit = max(5, min(50, (int) $request->query->get('limit', 20)));
+        $offset = max(0, (int) $request->query->get('offset', 0));
+
+        try {
+            $this->feedValidator->setAction('feed')->validate([
+                'q' => $query,
+                'limit' => $limit,
+                'offset' => $offset,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->json(['errors' => $e->getErrors()], 422);
+        }
+
+        return $this->json($this->feedService->feed($user, $query, $limit, $offset));
     }
 
     #[Route('/posts', name: 'api_post_create', methods: ['POST'])]
+    #[RateLimit(20, 60)]
     public function createPost(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -66,6 +83,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/posts/{id}/comments', name: 'api_post_comment_create', methods: ['POST'])]
+    #[RateLimit(30, 60)]
     public function addComment(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -95,6 +113,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/comments/{id}/replies', name: 'api_comment_reply_create', methods: ['POST'])]
+    #[RateLimit(30, 60)]
     public function addReply(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -124,6 +143,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/posts/{id}/likes/toggle', name: 'api_post_like_toggle', methods: ['POST'])]
+    #[RateLimit(60, 60)]
     public function togglePostLike(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -145,6 +165,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/posts/{id}', name: 'api_post_delete', methods: ['DELETE'])]
+    #[RateLimit(20, 60)]
     public function deletePost(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -166,6 +187,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/comments/{id}/likes/toggle', name: 'api_comment_like_toggle', methods: ['POST'])]
+    #[RateLimit(60, 60)]
     public function toggleCommentLike(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -187,6 +209,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/posts/{id}/likes', name: 'api_post_likes', methods: ['GET'])]
+    #[RateLimit(60, 60)]
     public function postLikes(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -208,6 +231,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/comments/{id}/likes', name: 'api_comment_likes', methods: ['GET'])]
+    #[RateLimit(60, 60)]
     public function commentLikes(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -229,6 +253,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/discover', name: 'api_discovery', methods: ['GET'])]
+    #[RateLimit(30, 60)]
     public function discovery(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -247,6 +272,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/discover/search', name: 'api_discovery_search', methods: ['GET'])]
+    #[RateLimit(30, 60)]
     public function discoverySearch(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
@@ -269,6 +295,7 @@ class FeedController extends BaseController
     }
 
     #[Route('/discover/topics', name: 'api_discovery_topics', methods: ['GET'])]
+    #[RateLimit(30, 60)]
     public function discoveryTopics(Request $request, #[CurrentUser] ?User $user): JsonResponse
     {
         if ($user === null) {
