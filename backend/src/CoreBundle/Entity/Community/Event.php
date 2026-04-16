@@ -338,12 +338,9 @@ class Event
     {
         $role = $this->getMembershipRole($user);
 
-        if ($role === null) {
-            return false;
-        }
-
         return match ($permission) {
-            'view' => true, // Events are generally public
+            'view' => true,
+            'discover' => true,
             'post' => in_array($role, [self::ROLE_ORGANIZER, self::ROLE_COORGANIZER, self::ROLE_SPEAKER], true) || ($this->settings['allow_public_posts'] ?? true),
             'moderate' => in_array($role, [self::ROLE_ORGANIZER, self::ROLE_COORGANIZER], true),
             'admin' => $role === self::ROLE_ORGANIZER,

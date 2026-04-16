@@ -32,7 +32,7 @@ class PageRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('page')
             ->where('page.id = :id')
             ->andWhere('page.creator = :user OR EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\PageMembership pm 
+                SELECT 1 FROM CoreBundle\Entity\Community\PageMembership pm
                 WHERE pm.page = page.id AND pm.user = :user
             )')
             ->setParameter('id', $uuid, UuidType::NAME)
@@ -78,13 +78,12 @@ class PageRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('page')
             ->where('LOWER(page.name) LIKE :search OR LOWER(page.description) LIKE :search')
             ->andWhere('page.creator = :user OR EXISTS (
-                SELECT 1 FROM CoreBundle\Entity\Community\PageMembership pm 
+                SELECT 1 FROM CoreBundle\Entity\Community\PageMembership pm
                 WHERE pm.page = page.id AND pm.user = :user
             )')
             ->setParameter('search', $search)
             ->setParameter('user', $user)
-            ->orderBy('page.memberCount', 'DESC')
-            ->addOrderBy('page.createdAt', 'DESC')
+            ->orderBy('page.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

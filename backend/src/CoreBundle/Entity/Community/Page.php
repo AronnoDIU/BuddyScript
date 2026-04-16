@@ -21,6 +21,7 @@ class Page
     public const string CATEGORY_BUSINESS = 'business';
     public const string CATEGORY_ORGANIZATION = 'organization';
     public const string CATEGORY_COMMUNITY = 'community';
+    public const string CATEGORY_NEWS = 'news';
     public const string CATEGORY_ENTERTAINMENT = 'entertainment';
     public const string CATEGORY_BRAND = 'brand';
     public const string CATEGORY_CAUSE = 'cause';
@@ -141,6 +142,7 @@ class Page
             self::CATEGORY_BUSINESS,
             self::CATEGORY_ORGANIZATION,
             self::CATEGORY_COMMUNITY,
+            self::CATEGORY_NEWS,
             self::CATEGORY_ENTERTAINMENT,
             self::CATEGORY_BRAND,
             self::CATEGORY_CAUSE,
@@ -266,12 +268,9 @@ class Page
     {
         $role = $this->getMembershipRole($user);
 
-        if ($role === null) {
-            return false;
-        }
-
         return match ($permission) {
-            'view' => true, // Pages are generally public
+            'view' => true,
+            'discover' => true,
             'post' => in_array($role, [self::ROLE_ADMIN, self::ROLE_EDITOR], true) || ($this->settings['allow_public_posts'] ?? false),
             'edit' => in_array($role, [self::ROLE_ADMIN, self::ROLE_EDITOR], true),
             'admin' => $role === self::ROLE_ADMIN,

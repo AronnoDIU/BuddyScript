@@ -190,7 +190,7 @@ export default function PagesPage() {
                 </div>
               </article>
 
-              {selectedPage.isOwner ? (
+              {selectedPage.isOwner || selectedPage.permissions?.post ? (
                 <CreatePagePost page={selectedPage} onCreatePost={onCreatePost} />
               ) : (
                 <div className="card-ui fb-pages__empty">Follow this page to see updates.</div>

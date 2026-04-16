@@ -102,6 +102,7 @@ This command orchestrates the local stack and will:
   - Events with organizer/coorganizer/speaker/attendee roles
   - Group posts with comments and likes
   - Pages screen (`/pages`) with create page + page posting workflow
+  - Events screen (`/events`) with create event + attendance + event posting workflow
   - Community moderation and member management
   - Group visibility settings (public, private, secret)
 
@@ -160,6 +161,34 @@ This command orchestrates the local stack and will:
 - `PUT /api/v1/groups/{id}/members/{userId}` - Update member role (admin only)
 - `DELETE /api/v1/groups/{id}/members/{userId}` - Remove member (admin only)
 
+### Community endpoints (Pages)
+
+- `POST /api/v1/pages` - Create a new page
+- `GET /api/v1/pages` - List user's pages (with search)
+- `GET /api/v1/pages/public` - List public pages
+- `GET /api/v1/pages/{id}` - Get page details
+- `POST /api/v1/pages/{id}/follow` - Follow a page
+- `POST /api/v1/pages/{id}/unfollow` - Unfollow a page
+- `GET /api/v1/pages/{id}/members` - List page members
+- `PUT /api/v1/pages/{id}/members/{userId}` - Update member role (admin only)
+- `DELETE /api/v1/pages/{id}/members/{userId}` - Remove member (admin only)
+- `GET /api/v1/pages/{id}/posts` - List page posts
+- `POST /api/v1/pages/{id}/posts` - Create page post
+
+### Community endpoints (Events)
+
+- `POST /api/v1/events` - Create a new event
+- `GET /api/v1/events` - List user's events (with search)
+- `GET /api/v1/events/public` - List public upcoming events
+- `GET /api/v1/events/{id}` - Get event details
+- `POST /api/v1/events/{id}/join` - Join an event
+- `POST /api/v1/events/{id}/leave` - Leave an event
+- `GET /api/v1/events/{id}/members` - List event members
+- `PUT /api/v1/events/{id}/members/{userId}` - Update member role (organizer only)
+- `DELETE /api/v1/events/{id}/members/{userId}` - Remove member (organizer only)
+- `GET /api/v1/events/{id}/posts` - List event posts
+- `POST /api/v1/events/{id}/posts` - Create event post
+
 ### Group Posts endpoints
 
 - `POST /api/v1/groups/{id}/posts` - Create group post
@@ -172,8 +201,13 @@ This command orchestrates the local stack and will:
 
 ### Pages endpoints (frontend integration)
 
-- Frontend now calls `GET/POST /api/v1/pages`, `GET /api/v1/pages/public`, `POST /api/v1/pages/{id}/follow`, `POST /api/v1/pages/{id}/unfollow`, `GET/POST /api/v1/pages/{id}/posts`.
-- If these endpoints are not available yet, `frontend/src/api/pages.js` automatically falls back to local browser storage so page creation and posting still work in the UI.
+- Frontend now calls `GET/POST /api/v1/pages`, `GET /api/v1/pages/public`, `POST /api/v1/pages/{id}/follow`, `POST /api/v1/pages/{id}/unfollow`, `GET/POST /api/v1/pages/{id}/posts`, and the page member management endpoints above.
+- `frontend/src/api/pages.js` still keeps a local browser-storage fallback for offline/dev scenarios.
+
+### Events endpoints (frontend integration)
+
+- Frontend now calls `GET/POST /api/v1/events`, `GET /api/v1/events/public`, `POST /api/v1/events/{id}/join`, `POST /api/v1/events/{id}/leave`, and `GET/POST /api/v1/events/{id}/posts`.
+- `frontend/src/api/events.js` keeps a local browser-storage fallback for offline/dev scenarios.
 
 ### Feed posts endpoints
 
@@ -184,7 +218,11 @@ This command orchestrates the local stack and will:
 
 - Uploaded post images are stored in `backend/public/uploads/posts`.
 - Group avatars are stored in `backend/public/uploads/groups`.
+- Page avatars are stored in `backend/public/uploads/pages`.
 - Group post images are stored in `backend/public/uploads/group-posts`.
+- Page post images are stored in `backend/public/uploads/page-posts`.
+- Event avatars are stored in `backend/public/uploads/events`.
+- Event post images are stored in `backend/public/uploads/event-posts`.
 - Existing BuddyScript design assets are reused from `frontend/public/assets`.
 - Access JWTs are auto-refreshed via HttpOnly refresh-token cookies when the API responds with `401 Expired JWT Token`.
 
