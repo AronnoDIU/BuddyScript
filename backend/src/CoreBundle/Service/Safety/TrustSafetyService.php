@@ -11,10 +11,10 @@ use CoreBundle\Repository\Safety\ReportRepository;
 use CoreBundle\Repository\Safety\UserBlockRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-class TrustSafetyService
+readonly class TrustSafetyService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -23,7 +23,7 @@ class TrustSafetyService
      */
     public function submitReport(User $reporter, array $payload): array
     {
-        $report = (new Report())
+        $report = new Report()
             ->setReporter($reporter)
             ->setTargetType((string) $payload['targetType'])
             ->setTargetId((string) $payload['targetId'])
@@ -60,7 +60,7 @@ class TrustSafetyService
 
         $existing = $this->getUserBlockRepository()->findByUsers($blocker, $blocked);
         if (!$existing instanceof UserBlock) {
-            $block = (new UserBlock())
+            $block = new UserBlock()
                 ->setBlocker($blocker)
                 ->setBlocked($blocked);
             $this->entityManager->persist($block);
@@ -153,4 +153,3 @@ class TrustSafetyService
         return $repository;
     }
 }
-

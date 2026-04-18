@@ -30,4 +30,3 @@ class NotificationValidator extends AbstractValidator
         return $this->rules;
     }
 }
-

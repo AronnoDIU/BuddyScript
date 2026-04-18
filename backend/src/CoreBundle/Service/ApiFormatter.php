@@ -45,7 +45,9 @@ readonly class ApiFormatter
 
     private function avatarUrl(User $user): string
     {
-        $email = mb_strtolower(trim($user->getEmail()));
+        $email = $user->getEmail()
+                |> trim(...)
+                |> mb_strtolower(...);
         $hash = md5($email);
 
         return sprintf('https://www.gravatar.com/avatar/%s?d=identicon&s=128', $hash);

@@ -67,4 +67,3 @@ class NotificationController extends BaseController
         return $this->json($this->notificationService->markAllRead($user));
     }
 }
-

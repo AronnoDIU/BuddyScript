@@ -65,12 +65,15 @@ class EventController extends BaseController
         $events = $query !== ''
             ? array_filter(
                 $this->getEventRepository()->findUpcomingEvents($limit * 2),
-                fn (Event $event): bool => mb_stripos($event->getName() . ' ' . ($event->getDescription() ?? '') . ' ' . ($event->getLocation() ?? ''), $query) !== false,
+                static fn (Event $event): bool => mb_stripos($event->getName() . ' ' . ($event->getDescription() ?? '') . ' ' . ($event->getLocation() ?? ''), $query) !== false,
             )
             : $this->getEventRepository()->findUpcomingEvents($limit);
 
         return $this->json([
-            'events' => array_map(fn (Event $event): array => $this->formatter->event($event, $user), array_slice(array_values($events), 0, $limit)),
+            'events' => $events
+                    |> array_values(...)
+                    |> (static fn($x) => array_slice($x, 0, $limit))
+                    |> (fn($x) => array_map(fn(Event $event): array => $this->formatter->event($event, $user), $x)),
         ]);
     }
 
@@ -397,7 +400,11 @@ class EventController extends BaseController
     {
         $incoming = [];
         if (is_string($settings) && $settings !== '') {
-            $decoded = json_decode($settings, true);
+            try {
+                $decoded = json_decode($settings, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\Exception $e) {
+                throw new \RuntimeException(sprintf('Invalid JSON settings: %s', $e->getMessage()), 422);
+            }
             if (is_array($decoded)) {
                 $incoming = $decoded;
             }
@@ -405,17 +412,15 @@ class EventController extends BaseController
             $incoming = $settings;
         }
 
-        return array_merge([
-            'allow_public_posts' => true,
-            'require_approval' => false,
-            'enable_discussion' => true,
-            'send_reminders' => true,
-        ], array_intersect_key($incoming, array_flip([
-            'allow_public_posts',
-            'require_approval',
-            'enable_discussion',
-            'send_reminders',
-        ])));
+        return [
+                'allow_public_posts',
+                'require_approval',
+                'enable_discussion',
+                'send_reminders',
+            ]
+                |> array_flip(...)
+                |> (static fn($x) => array_intersect_key($incoming, $x))
+                |> (static fn($x) => array_merge(['allow_public_posts' => true, 'require_approval' => false, 'enable_discussion' => true, 'send_reminders' => true,], $x));
     }
 
     private function storeImage(UploadedFile $file, string $folder): ?string
@@ -456,7 +461,9 @@ class EventController extends BaseController
     {
         preg_match_all('/(?:^|\s)#([\p{L}\p{N}_-]{2,50})/u', $content, $matches);
 
-        return array_values(array_unique(array_map(static fn (string $tag): string => mb_strtolower($tag), $matches[1] ?? [])));
+        return array_map(static fn(string $tag): string => mb_strtolower($tag), $matches[1] ?? [])
+                |> array_unique(...)
+                |> array_values(...);
     }
 
     private function resolveUser(string $userId): ?User
@@ -507,5 +514,3 @@ class EventController extends BaseController
         return $repository;
     }
 }
-
-

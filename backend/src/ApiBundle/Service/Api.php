@@ -6,9 +6,6 @@ use CoreBundle\Service\Cache as CacheService;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
-/**
- * Class Api
- */
 readonly class Api
 {
     private AuthorizationCheckerInterface $authorizationChecker;

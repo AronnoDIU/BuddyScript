@@ -58,4 +58,3 @@ class FeedValidator extends AbstractValidator
         return $this->rules;
     }
 }
-

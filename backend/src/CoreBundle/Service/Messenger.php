@@ -20,13 +20,13 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Uid\Uuid;
 
-class Messenger
+readonly class Messenger
 {
-    private readonly EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager;
 
-    private readonly ApiFormatter $formatter;
+    private ApiFormatter $formatter;
 
-    private readonly string $projectDir;
+    private string $projectDir;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -103,9 +103,7 @@ class Messenger
             $this->entityManager->flush();
         }
         $oldest = $messages[0] ?? null;
-        $hasMore = $oldest instanceof Message
-            ? $this->getMessageRepository()->countOlderThan($conversation, $oldest->getCreatedAt()) > 0
-            : false;
+        $hasMore = $oldest instanceof Message && $this->getMessageRepository()->countOlderThan($conversation, $oldest->getCreatedAt()) > 0;
 
 
         return [
@@ -240,7 +238,7 @@ class Messenger
 
         return [
             'updates' => array_map(fn (Message $message): array => $this->formatMessage($message, $viewer), $messages),
-            'serverTime' => (new \DateTimeImmutable())->format(DATE_ATOM),
+            'serverTime' => new \DateTimeImmutable()->format(DATE_ATOM),
         ];
     }
 
@@ -262,7 +260,13 @@ class Messenger
         return ['conversation' => $this->formatConversation($conversation, $viewer)];
     }
 
-    /** @return array<string,mixed>|null */
+    /**
+     * @param User $viewer
+     * @param string $conversationId
+     * @param int $minutes
+     * @return array<string,mixed>|null
+     * @throws \Exception
+     */
     public function muteConversation(User $viewer, string $conversationId, int $minutes): ?array
     {
         $viewer = $this->resolveManagedUser($viewer);
@@ -273,7 +277,7 @@ class Messenger
 
         $participant = $this->getParticipantRepository()->findOneByConversationAndUser($conversation, $viewer);
         if ($participant instanceof ConversationParticipant) {
-            $participant->setMutedUntil($minutes > 0 ? (new \DateTimeImmutable())->modify(sprintf('+%d minutes', $minutes)) : null);
+            $participant->setMutedUntil($minutes > 0 ? new \DateTimeImmutable()->modify(sprintf('+%d minutes', $minutes)) : null);
             $this->entityManager->flush();
         }
 
@@ -614,10 +618,8 @@ class Messenger
                 mb_strtolower($counterparty->getUsername() ?? ''),
             ];
 
-            foreach ($haystacks as $haystack) {
-                if ($haystack !== '' && str_contains($haystack, $needle)) {
-                    return true;
-                }
+            if (array_any($haystacks, fn($haystack) => $haystack !== '' && str_contains($haystack, $needle))) {
+                return true;
             }
         }
 
@@ -651,4 +653,3 @@ class Messenger
         return null;
     }
 }
-

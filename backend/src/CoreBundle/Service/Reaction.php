@@ -187,4 +187,3 @@ class Reaction
         return sprintf('%s:%s', $targetType, $targetId);
     }
 }
-

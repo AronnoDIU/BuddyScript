@@ -8,11 +8,11 @@ use CoreBundle\Repository\PostRepository;
 use CoreBundle\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-class Profile
+readonly class Profile
 {
-    private readonly EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager;
 
-    private readonly ApiFormatter $formatter;
+    private ApiFormatter $formatter;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -61,4 +61,3 @@ class Profile
         return $repository;
     }
 }
-

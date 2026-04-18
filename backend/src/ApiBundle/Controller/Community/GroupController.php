@@ -10,6 +10,7 @@ use CoreBundle\Entity\Community\GroupMembership;
 use CoreBundle\Entity\User;
 use CoreBundle\Service\ApiFormatter;
 use CoreBundle\Service\Community\GroupService;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
@@ -51,7 +52,7 @@ class GroupController extends BaseController
                 (string) $payload['name'],
                 (string) ($payload['description'] ?? ''),
                 (string) ($payload['visibility'] ?? Group::VISIBILITY_PUBLIC),
-                $request->files->get('avatar') instanceof \Symfony\Component\HttpFoundation\File\UploadedFile ? $request->files->get('avatar') : null,
+                $request->files->get('avatar') instanceof UploadedFile ? $request->files->get('avatar') : null,
                 (array) ($payload['settings'] ?? [])
             );
         } catch (\InvalidArgumentException $e) {
@@ -156,7 +157,7 @@ class GroupController extends BaseController
                 (string) ($payload['name'] ?? ''),
                 (string) ($payload['description'] ?? ''),
                 (string) ($payload['visibility'] ?? ''),
-                $request->files->get('avatar') instanceof \Symfony\Component\HttpFoundation\File\UploadedFile ? $request->files->get('avatar') : null,
+                $request->files->get('avatar') instanceof UploadedFile ? $request->files->get('avatar') : null,
                 (array) ($payload['settings'] ?? [])
             );
         } catch (\InvalidArgumentException $e) {
@@ -184,7 +185,7 @@ class GroupController extends BaseController
         }
 
         $deleteGroup = [$this->groupService, 'deleteGroup'];
-        $result = is_callable($deleteGroup) ? call_user_func($deleteGroup, $user, $id) : null;
+        $result = is_callable($deleteGroup) ? $deleteGroup($user, $id) : null;
         if ($result === null) {
             return $this->json(['message' => 'Group not found or insufficient permissions.'], 404);
         }
@@ -338,7 +339,11 @@ class GroupController extends BaseController
             return $payload;
         }
 
-        $decoded = json_decode($payload['settings'], true);
+        try {
+            $decoded = json_decode($payload['settings'], true, 512, JSON_THROW_ON_ERROR);
+        } catch (\Exception $e) {
+            throw new \RuntimeException(sprintf('Invalid JSON settings: %s', $e->getMessage()), 422);
+        }
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             $payload['settings'] = $decoded;
         }

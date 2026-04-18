@@ -120,8 +120,8 @@ class TrustSafetyController extends BaseController
 
         try {
             $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return [];
+        } catch (\Exception) {
+            throw new \RuntimeException('Invalid JSON payload.', 422);
         }
 
         return is_array($decoded) ? $decoded : [];

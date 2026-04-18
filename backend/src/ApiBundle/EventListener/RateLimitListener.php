@@ -55,7 +55,11 @@ class RateLimitListener
 
     private function handleMethodAttributes(\ReflectionClass $controller, string $method): void
     {
-        $reflectionMethod = $controller->getMethod($method);
+        try {
+            $reflectionMethod = $controller->getMethod($method);
+        } catch (\ReflectionException $e) {
+            throw new \RuntimeException('Failed to read method reflection!', previous: $e);
+        }
         $attributes = $reflectionMethod->getAttributes(RateLimitAttribute::class);
 
         if (\count($attributes) > 0) {

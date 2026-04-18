@@ -100,7 +100,11 @@ abstract class AbstractValidator
         $errors = $this->getValidationErrors();
 
         if (\count($errors) > 0) {
-            $this->throwValidationException($errors);
+            try {
+                $this->throwValidationException($errors);
+            } catch (ValidationException $e) {
+                $this->errors = $e->getErrors();
+            }
         }
 
         return true;
@@ -137,10 +141,9 @@ abstract class AbstractValidator
         }
 
         return match ($operator) {
-            self::OPERATOR_EQ => $dependencyValue == $expectedValue,
-            self::OPERATOR_NOT_EQ => $dependencyValue != $expectedValue,
+            self::OPERATOR_EQ => $dependencyValue === $expectedValue,
+            self::OPERATOR_NOT_EQ => $dependencyValue !== $expectedValue,
             default => false,
         };
     }
-
 }

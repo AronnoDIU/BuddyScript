@@ -13,11 +13,11 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
 
-class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterface
+readonly class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
     public function __construct(
-        private readonly AuthService $authService,
-        private readonly TwoFactorService $twoFactorService,
+        private AuthService      $authService,
+        private TwoFactorService $twoFactorService,
     ) {
     }
 

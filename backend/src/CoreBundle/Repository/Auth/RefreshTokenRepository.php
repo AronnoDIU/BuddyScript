@@ -5,19 +5,10 @@ declare(strict_types=1);
 namespace CoreBundle\Repository\Auth;
 
 use CoreBundle\Entity\Auth\RefreshToken;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use CoreBundle\Repository\BaseRepository;
 
-/**
- * @extends ServiceEntityRepository<RefreshToken>
- */
-class RefreshTokenRepository extends ServiceEntityRepository
+class RefreshTokenRepository extends BaseRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
-        parent::__construct($registry, RefreshToken::class);
-    }
-
     public function findActiveByTokenHash(string $tokenHash, \DateTimeImmutable $now): ?RefreshToken
     {
         return $this->createQueryBuilder('rt')
@@ -35,4 +26,3 @@ class RefreshTokenRepository extends ServiceEntityRepository
         return $this->findOneBy(['tokenHash' => $tokenHash]);
     }
 }
-

@@ -17,13 +17,13 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Uid\Uuid;
 
-class Feed
+readonly class Feed
 {
-    private readonly EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager;
 
-    private readonly ApiFormatter $formatter;
+    private ApiFormatter $formatter;
 
-    private readonly string $projectDir;
+    private string $projectDir;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -347,7 +347,7 @@ class Feed
     {
         try {
             $decoded = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (\Exception) {
             throw new \InvalidArgumentException('Invalid JSON.');
         }
 
@@ -434,10 +434,12 @@ class Feed
     private function extractDiscoveryTokens(string $content): array
     {
         preg_match_all('/#([\p{L}\p{N}_]{2,50})/u', $content, $hashtagMatches);
-        $hashtags = array_values(array_unique(array_map(
-            static fn (string $tag): string => mb_strtolower($tag),
-            $hashtagMatches[1] ?? []
-        )));
+        $hashtags = array_map(
+                static fn(string $tag): string => mb_strtolower($tag),
+                $hashtagMatches[1] ?? []
+            )
+                |> array_unique(...)
+                |> array_values(...);
 
         $normalized = preg_replace('/#[\p{L}\p{N}_]+/u', ' ', mb_strtolower($content));
         $normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', (string) $normalized);

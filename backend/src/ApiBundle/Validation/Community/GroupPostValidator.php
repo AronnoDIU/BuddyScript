@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ApiBundle\Validation\Community;
 
+use ApiBundle\Exception\ValidationException;
 use ApiBundle\Validation\Traits\EntityValidatorTrait;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validation;
@@ -37,7 +38,7 @@ class GroupPostValidator
         };
 
         if (!empty($this->errors)) {
-            throw new \ApiBundle\Exception\ValidationException('Validation failed.', $this->errors);
+            throw new ValidationException('Validation failed.', $this->errors);
         }
     }
 

@@ -106,11 +106,10 @@ class SocialGraphController extends BaseController
 
         try {
             $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (\Exception) {
             return [];
         }
 
         return is_array($decoded) ? $decoded : [];
     }
 }
-

@@ -28,4 +28,3 @@ class ProfileValidator extends AbstractValidator
         return $this->rules;
     }
 }
-

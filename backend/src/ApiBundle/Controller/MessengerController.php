@@ -78,12 +78,9 @@ class MessengerController extends BaseController
         }
 
         try {
-            $result = $this->messengerService->messages(
-                $user,
-                $id,
-                (string) $request->query->get('before', ''),
-                max(1, min(200, (int) $request->query->get('limit', 80))),
-            );
+            $result = min(200, (int)$request->query->get('limit', 80))
+                    |> (static fn($x) => max(1, $x))
+                    |> (fn($x) => $this->messengerService->messages($user, $id, (string)$request->query->get('before', ''), $x,));
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], 422);
         }
@@ -299,7 +296,7 @@ class MessengerController extends BaseController
 
         try {
             $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (\Exception) {
             return [];
         }
 
@@ -325,4 +322,3 @@ class MessengerController extends BaseController
         return $this->userRepository->findOneById($userId);
     }
 }
-

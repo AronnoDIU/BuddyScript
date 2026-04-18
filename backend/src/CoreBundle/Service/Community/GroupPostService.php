@@ -22,10 +22,10 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Uid\Uuid;
 
-class GroupPostService
+readonly class GroupPostService
 {
-    private readonly EntityManagerInterface $entityManager;
-    private readonly string $projectDir;
+    private EntityManagerInterface $entityManager;
+    private string $projectDir;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -149,7 +149,7 @@ class GroupPostService
 
         return [
             'liked' => $liked,
-            'likes' => array_map(fn ($like) => [
+            'likes' => array_map(static fn ($like) => [
                 'id' => $like->getUser()->getId()->toRfc4122(),
                 'username' => $like->getUser()->getUsername(),
                 'displayName' => $like->getUser()->getFirstName() . ' ' . $like->getUser()->getLastName(),
@@ -221,10 +221,12 @@ class GroupPostService
     private function extractHashtags(string $content): array
     {
         preg_match_all('/#([\p{L}\p{N}_]{2,50})/u', $content, $matches);
-        return array_values(array_unique(array_map(
-            static fn (string $tag): string => mb_strtolower($tag),
-            $matches[1] ?? []
-        )));
+        return array_map(
+                static fn(string $tag): string => mb_strtolower($tag),
+                $matches[1] ?? []
+            )
+                |> array_unique(...)
+                |> array_values(...);
     }
 
     private function storePostImage(UploadedFile $file): ?string
@@ -401,7 +403,7 @@ class GroupPostService
 
     private function getGroupMembershipRepository(): GroupMembershipRepository
     {
-        $repository = $this->entityManager->getRepository(\CoreBundle\Entity\Community\GroupMembership::class);
+        $repository = $this->entityManager->getRepository(GroupMembership::class);
         if (!$repository instanceof GroupMembershipRepository) {
             throw new \LogicException('GroupMembership repository is not configured correctly.');
         }

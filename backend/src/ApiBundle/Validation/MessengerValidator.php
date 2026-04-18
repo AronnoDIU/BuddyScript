@@ -45,9 +45,8 @@ class MessengerValidator extends AbstractValidator
                 $this->rules['recipientId'] = new OneOf(new NullType(), $uuidRule);
                 $this->rules['content'] = new OneOf(new NullType(), new StringType());
                 break;
-            case 'updates':
-                break;
             case 'conversation_list':
+            case 'updates':
                 break;
             default:
                 throw new \RuntimeException(sprintf('Unsupported messenger validator action: %s', $this->action));
@@ -56,4 +55,3 @@ class MessengerValidator extends AbstractValidator
         return $this->rules;
     }
 }
-

@@ -7,10 +7,10 @@ namespace CoreBundle\Service\Safety;
 use CoreBundle\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 
-class PrivacyCheckupService
+readonly class PrivacyCheckupService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -91,4 +91,3 @@ class PrivacyCheckupService
         return $this->checkup($user);
     }
 }
-

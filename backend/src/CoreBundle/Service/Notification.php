@@ -9,11 +9,11 @@ use CoreBundle\Entity\User;
 use CoreBundle\Repository\NotificationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-class Notification
+readonly class Notification
 {
-    private readonly EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager;
 
-    private readonly ApiFormatter $formatter;
+    private ApiFormatter $formatter;
 
     public function __construct(EntityManagerInterface $entityManager, ApiFormatter $formatter)
     {
@@ -108,4 +108,3 @@ class Notification
         return $repository;
     }
 }
-

@@ -3,11 +3,9 @@
 namespace CoreBundle\Service;
 
 use CoreBundle\Entity\User as UserEntity;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberUtil;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -79,7 +77,7 @@ class BaseService
             throw new \RuntimeException(\sprintf('%s not found, id: %d.', end($shortClassName), $obj));
         }
 
-        return $this->validateCompanyAccess($this->em->getRepository($className)->find($obj));
+        return $this->em->getRepository($className)->find($obj);
     }
 
     protected function getDateTimeObject(?string $date): ?\DateTime
@@ -90,7 +88,7 @@ class BaseService
 
         try {
             return new \DateTime($date);
-        } catch (\DateMalformedStringException $e) {
+        } catch (\Exception $e) {
             throw new \RuntimeException(\sprintf('Invalid date format: %s', $date));
         }
     }

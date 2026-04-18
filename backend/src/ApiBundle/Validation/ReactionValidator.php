@@ -51,4 +51,3 @@ class ReactionValidator extends AbstractValidator
         return $this->rules;
     }
 }
-

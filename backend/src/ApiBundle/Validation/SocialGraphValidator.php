@@ -34,4 +34,3 @@ class SocialGraphValidator extends AbstractValidator
         return $this->rules;
     }
 }
-

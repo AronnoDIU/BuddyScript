@@ -28,7 +28,7 @@ readonly class MessengerStreamToken
 
         try {
             $encodedPayload = $this->base64UrlEncode((string)json_encode($payload, JSON_THROW_ON_ERROR));
-        } catch (\JsonException $e) {
+        } catch (\Exception $e) {
             // This should never happen since the payload is always valid, but just in case...
             throw new \RuntimeException('Failed to encode token payload', 0, $e);
         }
@@ -39,7 +39,7 @@ readonly class MessengerStreamToken
                 'token' => $encodedPayload . '.' . $signature,
                 'expiresAt' => new \DateTimeImmutable('@' . $expiresAt)->setTimezone(new \DateTimeZone('UTC'))->format(DATE_ATOM),
             ];
-        } catch (\DateMalformedStringException $e) {
+        } catch (\Exception $e) {
             // This should never happen since the timestamp is always valid, but just in case...
             throw new \RuntimeException('Failed to generate token expiration time', 0, $e);
         }
@@ -64,8 +64,8 @@ readonly class MessengerStreamToken
 
         try {
             $payload = json_decode($decoded, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            return null;
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Failed to decode token payload', 0, $e);
         }
         if (!is_array($payload)) {
             return null;
@@ -115,4 +115,3 @@ readonly class MessengerStreamToken
         return $decoded === false ? null : $decoded;
     }
 }
-

@@ -66,12 +66,15 @@ class PageController extends BaseController
         $pages = $query !== ''
             ? array_filter(
                 $this->getPageRepository()->findPublicPages($limit * 2),
-                fn (Page $page): bool => mb_stripos($page->getName() . ' ' . ($page->getDescription() ?? '') . ' ' . $page->getCategory(), $query) !== false,
+                static fn (Page $page): bool => mb_stripos($page->getName() . ' ' . ($page->getDescription() ?? '') . ' ' . $page->getCategory(), $query) !== false,
             )
             : $this->getPageRepository()->findPublicPages($limit);
 
         return $this->json([
-            'pages' => array_map(fn (Page $page): array => $this->formatter->page($page, $user), array_slice(array_values($pages), 0, $limit)),
+            'pages' => $pages
+                    |> array_values(...)
+                    |> (static fn($x) => array_slice($x, 0, $limit))
+                    |> (fn($x) => array_map(fn(Page $page): array => $this->formatter->page($page, $user), $x)),
         ]);
     }
 
@@ -381,7 +384,11 @@ class PageController extends BaseController
     {
         $incoming = [];
         if (is_string($settings) && $settings !== '') {
-            $decoded = json_decode($settings, true);
+            try {
+                $decoded = json_decode($settings, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\Exception $e) {
+                throw new \RuntimeException(sprintf('Invalid JSON settings: %s', $e->getMessage()), 422);
+            }
             if (is_array($decoded)) {
                 $incoming = $decoded;
             }
@@ -389,17 +396,15 @@ class PageController extends BaseController
             $incoming = $settings;
         }
 
-        return array_merge([
-            'allow_public_posts' => false,
-            'require_approval' => true,
-            'enable_comments' => true,
-            'show_member_list' => true,
-        ], array_intersect_key($incoming, array_flip([
-            'allow_public_posts',
-            'require_approval',
-            'enable_comments',
-            'show_member_list',
-        ])));
+        return [
+                'allow_public_posts',
+                'require_approval',
+                'enable_comments',
+                'show_member_list',
+            ]
+                |> array_flip(...)
+                |> (static fn($x) => array_intersect_key($incoming, $x))
+                |> (static fn($x) => array_merge(['allow_public_posts' => false, 'require_approval' => true, 'enable_comments' => true, 'show_member_list' => true,], $x));
     }
 
     private function normalizePageCategory(string $category): string
@@ -454,7 +459,9 @@ class PageController extends BaseController
     {
         preg_match_all('/(?:^|\s)#([\p{L}\p{N}_-]{2,50})/u', $content, $matches);
 
-        return array_values(array_unique(array_map(static fn (string $tag): string => mb_strtolower($tag), $matches[1] ?? [])));
+        return array_map(static fn(string $tag): string => mb_strtolower($tag), $matches[1] ?? [])
+                |> array_unique(...)
+                |> array_values(...);
     }
 
     private function resolveUser(string $userId): ?User
@@ -471,7 +478,7 @@ class PageController extends BaseController
         try {
             return $this->entityManager->find(Page::class, Uuid::fromString($id));
         } catch (\Throwable $e) {
-            return null;
+            throw new \RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -505,5 +512,3 @@ class PageController extends BaseController
         return $repository;
     }
 }
-
-

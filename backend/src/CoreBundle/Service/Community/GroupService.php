@@ -10,14 +10,16 @@ use CoreBundle\Entity\User;
 use CoreBundle\Repository\Community\GroupMembershipRepository;
 use CoreBundle\Repository\Community\GroupRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\OptimisticLockException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Uid\Uuid;
 
-class GroupService
+readonly class GroupService
 {
-    private readonly EntityManagerInterface $entityManager;
-    private readonly string $projectDir;
+    private EntityManagerInterface $entityManager;
+    private string $projectDir;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -234,7 +236,13 @@ class GroupService
     }
 
     /**
+     * @param User $admin
+     * @param string $groupId
+     * @param string $userId
+     * @param string $role
      * @return array<string,mixed>|null
+     * @throws ORMException
+     * @throws OptimisticLockException
      */
     public function updateMemberRole(User $admin, string $groupId, string $userId, string $role): ?array
     {
@@ -280,7 +288,12 @@ class GroupService
     }
 
     /**
+     * @param User $admin
+     * @param string $groupId
+     * @param string $userId
      * @return array<string,mixed>|null
+     * @throws ORMException
+     * @throws OptimisticLockException
      */
     public function removeMember(User $admin, string $groupId, string $userId): ?array
     {

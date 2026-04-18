@@ -11,11 +11,11 @@ use CoreBundle\Repository\SocialGraph\ConnectionRepository;
 use CoreBundle\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-class SocialGraph
+readonly class SocialGraph
 {
-    private readonly EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager;
 
-    private readonly ApiFormatter $formatter;
+    private ApiFormatter $formatter;
 
     public function __construct(EntityManagerInterface $entityManager, ApiFormatter $formatter)
     {
@@ -167,4 +167,3 @@ class SocialGraph
         return $repository;
     }
 }
-

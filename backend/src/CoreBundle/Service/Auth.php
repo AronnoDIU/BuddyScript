@@ -9,17 +9,17 @@ use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class Auth
+readonly class Auth
 {
-    private readonly EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager;
 
-    private readonly UserPasswordHasherInterface $passwordHasher;
+    private UserPasswordHasherInterface $passwordHasher;
 
-    private readonly ApiFormatter $formatter;
+    private ApiFormatter $formatter;
 
-    private readonly JWTTokenManagerInterface $jwtTokenManager;
+    private JWTTokenManagerInterface $jwtTokenManager;
 
-    private readonly RefreshTokenManager $refreshTokenManager;
+    private RefreshTokenManager $refreshTokenManager;
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -126,7 +126,7 @@ class Auth
 
         try {
             $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (\Exception) {
             return [];
         }
 

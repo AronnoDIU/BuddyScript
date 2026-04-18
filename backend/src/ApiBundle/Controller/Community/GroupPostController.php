@@ -10,6 +10,7 @@ use CoreBundle\Entity\Community\GroupPost;
 use CoreBundle\Entity\User;
 use CoreBundle\Service\ApiFormatter;
 use CoreBundle\Service\Community\GroupPostService;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
@@ -51,7 +52,7 @@ class GroupPostController extends BaseController
                 $user,
                 $id,
                 (string) $payload['content'],
-                $request->files->get('image') instanceof \Symfony\Component\HttpFoundation\File\UploadedFile ? $request->files->get('image') : null
+                $request->files->get('image') instanceof UploadedFile ? $request->files->get('image') : null
             );
         } catch (\InvalidArgumentException $e) {
             return $this->json(['message' => $e->getMessage()], 422);

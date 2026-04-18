@@ -13,13 +13,13 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Uid\Uuid;
 
-class MarketplaceService
+readonly class MarketplaceService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly RequestStack $requestStack,
+        private EntityManagerInterface $entityManager,
+        private RequestStack           $requestStack,
         #[Autowire('%kernel.project_dir%')]
-        private readonly string $projectDir,
+        private string                 $projectDir,
     ) {
     }
 
@@ -234,7 +234,10 @@ class MarketplaceService
      */
     private function extractTags(string $tags): array
     {
-        $parts = preg_split('/[,\s]+/', mb_strtolower(trim($tags))) ?: [];
+        $parts = $tags
+            |> trim(...)
+            |> mb_strtolower(...)
+            |> (static fn($x) => preg_split('/[,\s]+/', $x)) ?: [];
 
         $clean = [];
         foreach ($parts as $part) {
@@ -276,7 +279,11 @@ class MarketplaceService
             'seller' => [
                 'id' => $listing->getSeller()->getId()->toRfc4122(),
                 'displayName' => $listing->getSeller()->getDisplayName(),
-                'avatarUrl' => sprintf('https://www.gravatar.com/avatar/%s?d=identicon&s=128', md5(mb_strtolower(trim($listing->getSeller()->getEmail())))),
+                'avatarUrl' => $listing->getSeller()->getEmail()
+                        |> trim(...)
+                        |> mb_strtolower(...)
+                        |> md5(...)
+                        |> (static fn($x) => sprintf('https://www.gravatar.com/avatar/%s?d=identicon&s=128', $x)),
             ],
         ];
     }
@@ -291,4 +298,3 @@ class MarketplaceService
         return $repository;
     }
 }
-

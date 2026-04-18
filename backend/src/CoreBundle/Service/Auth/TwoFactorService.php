@@ -8,11 +8,12 @@ use CoreBundle\Entity\Auth\TwoFactorChallenge;
 use CoreBundle\Entity\User;
 use CoreBundle\Repository\Auth\TwoFactorChallengeRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Random\RandomException;
 
-class TwoFactorService
+readonly class TwoFactorService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -72,10 +73,14 @@ class TwoFactorService
 
     public function createLoginChallenge(User $user): TwoFactorChallenge
     {
-        $challenge = (new TwoFactorChallenge())
-            ->setUser($user)
-            ->setPurpose('login')
-            ->setExpiresAt((new \DateTimeImmutable())->modify('+5 minutes'));
+        try {
+            $challenge = new TwoFactorChallenge()
+                ->setUser($user)
+                ->setPurpose('login')
+                ->setExpiresAt(new \DateTimeImmutable()->modify('+5 minutes'));
+        } catch (\Exception $e) {
+                throw new \LogicException('Failed to create two-factor challenge due to invalid date configuration.', 0, $e);
+        }
 
         $this->entityManager->persist($challenge);
         $this->entityManager->flush();
@@ -145,7 +150,11 @@ class TwoFactorService
 
     private function generateSecret(): string
     {
-        return $this->base32Encode(random_bytes(20));
+        try {
+            return $this->base32Encode(random_bytes(20));
+        } catch (RandomException $e) {
+            throw new \RuntimeException('Failed to generate a secure random secret for two-factor authentication.', 0, $e);
+        }
     }
 
     private function buildOtpAuthUri(User $user, string $secret): string
@@ -161,7 +170,10 @@ class TwoFactorService
         $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
         $bits = '';
         foreach (str_split($binary) as $char) {
-            $bits .= str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
+            $bits .= $char
+                    |> ord(...)
+                    |> decbin(...)
+                    |> (static fn($x) => str_pad($x, 8, '0', STR_PAD_LEFT));
         }
 
         $encoded = '';
@@ -209,4 +221,3 @@ class TwoFactorService
         return $repository;
     }
 }
-
