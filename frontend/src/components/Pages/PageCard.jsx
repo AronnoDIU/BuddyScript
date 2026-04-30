@@ -2,6 +2,7 @@ import { Globe, User } from 'lucide-react';
 
 export default function PageCard({ page, selected, onSelect, onToggleFollow }) {
   const handleSelect = () => onSelect?.(page);
+  const followButtonLabel = page.isFollowing ? `Unfollow ${page.name}` : `Follow ${page.name}`;
 
   return (
     <div
@@ -16,11 +17,11 @@ export default function PageCard({ page, selected, onSelect, onToggleFollow }) {
         }
       }}
     >
-      <span className="pages-card__avatar" aria-hidden="true">
+      <span className="pages-card__avatar">
         {page.avatarUrl ? (
-          <img src={page.avatarUrl} alt="" />
+          <img src={page.avatarUrl} alt={`Avatar for ${page.name}`} />
         ) : (
-          page.name?.charAt(0)?.toUpperCase() || 'P'
+          <span aria-hidden="true">{page.name?.charAt(0)?.toUpperCase() || 'P'}</span>
         )}
       </span>
 
@@ -43,6 +44,7 @@ export default function PageCard({ page, selected, onSelect, onToggleFollow }) {
               event.stopPropagation();
               onToggleFollow?.(page);
             }}
+            aria-label={followButtonLabel}
           >
             <User size={12} />
             {page.isFollowing ? 'Following' : 'Follow'}
@@ -52,4 +54,3 @@ export default function PageCard({ page, selected, onSelect, onToggleFollow }) {
     </div>
   );
 }
-

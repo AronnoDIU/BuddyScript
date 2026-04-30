@@ -16,6 +16,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 readonly class Feed
 {
@@ -25,15 +27,27 @@ readonly class Feed
 
     private string $projectDir;
 
+    private Analytics $analytics;
+
+    private SocialGraph $socialGraph;
+
+    private TagAwareCacheInterface $cacheService; // Inject Cache service
+
     public function __construct(
         EntityManagerInterface $entityManager,
         ApiFormatter $formatter,
         #[Autowire('%kernel.project_dir%')]
         string $projectDir,
+        Analytics $analytics,
+        SocialGraph $socialGraph,
+        TagAwareCacheInterface $cacheService,
     ) {
         $this->entityManager = $entityManager;
         $this->formatter = $formatter;
         $this->projectDir = $projectDir;
+        $this->analytics = $analytics;
+        $this->socialGraph = $socialGraph;
+        $this->cacheService = $cacheService;
     }
 
     /**
@@ -44,17 +58,37 @@ readonly class Feed
         $normalizedQuery = trim($query);
         $safeLimit = max(5, min(50, $limit));
         $safeOffset = max(0, $offset);
+
+        $cacheKey = sprintf('feed_user_%s_query_%s_limit_%d_offset_%d',
+            $user->getId()->toRfc4122(),
+            md5($normalizedQuery),
+            $safeLimit,
+            $safeOffset
+        );
+
+        // Try to retrieve from cache
+        $cachedFeed = $this->cacheService->getItem($cacheKey);
+        if ($cachedFeed->isHit()) {
+            $this->analytics->trackUserActivity($user, 'view_feed_cached', ['query' => $normalizedQuery]);
+            return $cachedFeed->get();
+        }
+
+        // We fetch more than needed to allow for ranking re-ordering
+        $fetchLimit = $safeLimit * 2;
+
         $posts = $this->getPostRepository()->findFeedForUser(
             $user,
-            $safeLimit + 1,
+            $fetchLimit,
             $normalizedQuery === '' ? null : $normalizedQuery,
             $safeOffset,
         );
 
-        $hasMore = count($posts) > $safeLimit;
-        $pagePosts = array_slice($posts, 0, $safeLimit);
+        $rankedPosts = $this->rankPosts($posts, $user);
 
-        return [
+        $hasMore = count($rankedPosts) > $safeLimit;
+        $pagePosts = array_slice($rankedPosts, 0, $safeLimit);
+
+        $feedData = [
             'posts' => array_map(fn (Post $post): array => $this->formatter->post($post, $user), $pagePosts),
             'query' => $normalizedQuery,
             'pagination' => [
@@ -64,6 +98,72 @@ readonly class Feed
                 'hasMore' => $hasMore,
             ],
         ];
+
+        // Cache the result
+        $cachedFeed->set($feedData);
+        $cachedFeed->expiresAfter(300); // Cache for 5 minutes
+        $cachedFeed->tag(['feed', 'user_feed_' . $user->getId()->toRfc4122()]); // Tag for invalidation
+        $this->cacheService->save($cachedFeed);
+
+        $this->analytics->trackUserActivity($user, 'view_feed', ['query' => $normalizedQuery]);
+
+        return $feedData;
+    }
+
+    /**
+     * @param list<Post> $posts
+     * @return list<Post>
+     */
+    private function rankPosts(array $posts, User $viewer): array
+    {
+        if ($posts === []) {
+            return [];
+        }
+
+        $followingIds = array_map(
+            fn(User $u) => $u->getId()->toRfc4122(),
+            $this->socialGraph->getFollowing($viewer)
+        );
+
+        $scoredPosts = [];
+        $now = new \DateTimeImmutable();
+
+        foreach ($posts as $post) {
+            $score = 1.0;
+
+            // Recency: newer posts get higher scores (exponential decay)
+            $ageInHours = ($now->getTimestamp() - $post->getCreatedAt()->getTimestamp()) / 3600;
+            $recencyScore = exp(-$ageInHours / 48); // Decay over 48 hours
+            $score *= (1 + $recencyScore);
+
+            // Engagement: likes and comments boost score
+            $engagement = count($post->getLikes()) * 2 + count($post->getComments()) * 5;
+            $score *= (1 + log1p($engagement));
+
+            // Social Relevance (Affinity): posts from followed users get a significant boost
+            if (in_array($post->getAuthor()->getId()->toRfc4122(), $followingIds, true)) {
+                $score *= 2.0; // Increased boost for followed users
+            }
+
+            // Media Boost: posts with images get a boost
+            if ($post->getImagePath() !== null) {
+                $score *= 1.3; // 30% boost for posts with images
+            }
+
+            // Placeholder for more advanced affinity based on interaction history
+            // if ($this->hasUserInteractedWithPost($viewer, $post)) {
+            //     $score *= 1.1;
+            // }
+
+            $scoredPosts[] = [
+                'post' => $post,
+                'score' => $score
+            ];
+        }
+
+        usort($scoredPosts, fn($a, $b) => $b['score'] <=> $a['score']);
+
+        return array_map(fn($item) => $item['post'], $scoredPosts);
     }
 
     /**
@@ -94,6 +194,13 @@ readonly class Feed
         $this->entityManager->persist($post);
         $this->entityManager->flush();
 
+        // Invalidate feed cache for the user and general feed
+        $this->cacheService->clearByTag('feed');
+        $this->cacheService->clearByTag('user_feed_' . $user->getId()->toRfc4122());
+
+
+        $this->analytics->trackUserActivity($user, 'create_post', ['post_id' => $post->getId()->toRfc4122()]);
+
         return ['post' => $this->formatter->post($post, $user)];
     }
 
@@ -107,6 +214,8 @@ readonly class Feed
         $stories = $this->getPostRepository()->findDiscoveryStories($safeLimit);
         $reels = $this->getPostRepository()->findDiscoveryReels($safeLimit);
         $live = $this->getPostRepository()->findDiscoveryLive($safeLimit);
+
+        $this->analytics->trackUserActivity($viewer, 'view_discovery');
 
         return [
             'stories' => array_map(fn (Post $post): array => $this->formatter->discoveryCard($post, $viewer, 'story'), $stories),
@@ -135,6 +244,8 @@ readonly class Feed
         $posts = $this->getPostRepository()->searchPublicPosts($normalized, $safeLimit);
         $users = $this->getPostRepository()->searchPublicAuthors($normalized, $safeLimit);
         $hashtags = $this->getPostRepository()->searchHashtags($normalized, 15);
+
+        $this->analytics->trackUserActivity($viewer, 'discovery_search', ['query' => $normalized]);
 
         return [
             'query' => $normalized,
@@ -194,6 +305,12 @@ readonly class Feed
         $this->entityManager->persist($comment);
         $this->entityManager->flush();
 
+        // Invalidate feed cache for the user and general feed
+        $this->cacheService->clearByTag('feed');
+        $this->cacheService->clearByTag('user_feed_' . $user->getId()->toRfc4122());
+
+        $this->analytics->trackUserActivity($user, 'add_comment', ['post_id' => $postId]);
+
         return ['comment' => $this->formatter->comment($comment, $user)];
     }
 
@@ -213,6 +330,10 @@ readonly class Feed
 
         $this->entityManager->remove($post);
         $this->entityManager->flush();
+
+        // Invalidate feed cache for the user and general feed
+        $this->cacheService->clearByTag('feed');
+        $this->cacheService->clearByTag('user_feed_' . $user->getId()->toRfc4122());
 
         return ['message' => 'Post deleted successfully.'];
     }
@@ -236,6 +357,12 @@ readonly class Feed
 
         $this->entityManager->persist($reply);
         $this->entityManager->flush();
+
+        // Invalidate feed cache for the user and general feed
+        $this->cacheService->clearByTag('feed');
+        $this->cacheService->clearByTag('user_feed_' . $user->getId()->toRfc4122());
+
+        $this->analytics->trackUserActivity($user, 'add_reply', ['comment_id' => $commentId]);
 
         return ['reply' => $this->formatter->comment($reply, $user)];
     }
@@ -263,6 +390,14 @@ readonly class Feed
         }
 
         $this->entityManager->flush();
+
+        // Invalidate feed cache for the user and general feed
+        $this->cacheService->clearByTag('feed');
+        $this->cacheService->clearByTag('user_feed_' . $user->getId()->toRfc4122());
+
+        if ($liked) {
+            $this->analytics->trackUserActivity($user, 'like_post', ['post_id' => $postId]);
+        }
 
         $likes = $this->getPostLikeRepository()->findBy(['post' => $post], ['createdAt' => 'DESC']);
 
@@ -295,6 +430,14 @@ readonly class Feed
         }
 
         $this->entityManager->flush();
+
+        // Invalidate feed cache for the user and general feed
+        $this->cacheService->clearByTag('feed');
+        $this->cacheService->clearByTag('user_feed_' . $user->getId()->toRfc4122());
+
+        if ($liked) {
+            $this->analytics->trackUserActivity($user, 'like_comment', ['comment_id' => $commentId]);
+        }
 
         $likes = $this->getCommentLikeRepository()->findBy(['comment' => $comment], ['createdAt' => 'DESC']);
 
