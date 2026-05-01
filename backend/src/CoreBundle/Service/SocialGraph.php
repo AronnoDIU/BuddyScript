@@ -40,6 +40,28 @@ readonly class SocialGraph
     }
 
     /**
+     * @return array<User>
+     */
+    public function getFollowing(User $user): array
+    {
+        $connections = $this->getConnectionRepository()->findAccepted($user);
+        $following = [];
+
+        foreach ($connections as $connection) {
+            // The user is following the addressee if they are the requester
+            if ($connection->getRequester()->getId()->equals($user->getId())) {
+                $following[] = $connection->getAddressee();
+            }
+            // Also include if user is the addressee (mutual following)
+            elseif ($connection->getAddressee()->getId()->equals($user->getId())) {
+                $following[] = $connection->getRequester();
+            }
+        }
+
+        return $following;
+    }
+
+    /**
      * @return array<string,mixed>
      */
     public function sendRequest(User $requester, string $targetUserId, ?string $listKey = null): array

@@ -17,6 +17,22 @@ class AnalyticsController extends BaseController
         $this->analyticsService = $analyticsService;
     }
 
+    protected function extractJsonPayload(Request $request): array
+    {
+        try {
+            $decoded = json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        } catch (\Exception) {
+            throw new \InvalidArgumentException('Invalid JSON.');
+        }
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    protected function apiResponse(array $data, int $statusCode = Response::HTTP_OK): JsonResponse
+    {
+        return $this->json($data, $statusCode);
+    }
+
     #[Route('/analytics/page-view', name: 'api_analytics_page_view', methods: ['POST'])]
     public function trackPageView(Request $request): JsonResponse
     {

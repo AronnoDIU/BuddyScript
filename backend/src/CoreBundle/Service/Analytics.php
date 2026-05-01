@@ -28,11 +28,11 @@ class Analytics extends BaseService
         $userId = null;
 
         // Attempt to get the current user if available
-        $token = $this->requestStack->getSession()->get('_security_main'); // Assuming 'main' firewall
-        if ($token && is_string($token)) {
-            $decodedToken = json_decode(base64_decode($token), true);
-            if (isset($decodedToken['user_id'])) {
-                $userId = $decodedToken['user_id'];
+        $token = $this->tokenStorage->getToken();
+        if ($token && $token->getUser()) {
+            $user = $token->getUser();
+            if ($user instanceof User) {
+                $userId = $user->getId()->toRfc4122();
             }
         }
 

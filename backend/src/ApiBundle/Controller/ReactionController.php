@@ -28,10 +28,7 @@ class ReactionController extends BaseController
     #[Route('/reactions/catalog', name: 'api_reaction_catalog', methods: ['GET'])]
     public function catalog(#[CurrentUser] ?User $user): JsonResponse
     {
-        if ($user === null) {
-            return $this->json(['message' => 'Unauthorized.'], 401);
-        }
-
+        // This endpoint is public - no authentication required
         return $this->json($this->reactionService->catalog());
     }
 
