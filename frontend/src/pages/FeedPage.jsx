@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, Smile, Paperclip, Bookmark, TrendingUp, Search, Plus } from 'lucide-react';
 import { api, clearToken, getApiErrorMessage, resolveMediaUrl } from '../api';
 import StatePanel from '../components/StatePanel';
 
@@ -514,7 +515,7 @@ function PostItem({ post, onAddComment, onReply, onShowLikes, onOpenProfile, onP
             <span>
               <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 19 19">
                 <path fill="#FFCC4D" d="M9.5 19a9.5 9.5 0 100-19 9.5 9.5 0 000 19z" />
-                <path fill="#664500" d="M9.5 11.083c-1.912 0-3.181-.222-4.75-.527-.358-.07-1.056 0-1.056 1.055 0 2.111 2.425 4.75 5.806 4.75 3.38 0 5.805-2.639 5.805-4.75 0-1.055-.697-1.125-1.055-1.055-1.57.305-2.838.527-4.75.527z" />
+                <path fill="#664500" d="M9.5 11.083c-1.912 0-3.181-.222-4.75-.527-.358-.07-1.056 0-1.056 1.055 0 2.111 2.425 4.75 5.806 4.75 3.38 0 5.805-2.639 5.805-4.75 0-1.055-.697-1.125-1.055-1.57.305-2.838.527-4.75.527z" />
                 <path fill="#fff" d="M4.75 11.611s1.583.528 4.75.528 4.75-.528 4.75-.528-1.056 2.111-4.75 2.111-4.75-2.11-4.75-2.11z" />
                 <path fill="#664500" d="M6.333 8.972c.729 0 1.32-.827 1.32-1.847s-.591-1.847-1.32-1.847c-.729 0-1.32.827-1.32 1.847s.591 1.847 1.32 1.847zM12.667 8.972c.729 0 1.32-.827 1.32-1.847s-.591-1.847-1.32-1.847c-.729 0-1.32.827-1.32 1.847s.591 1.847 1.32 1.847z" />
               </svg>
@@ -970,17 +971,67 @@ export default function FeedPage() {
   }, [navigate]);
 
   return (
-    <div className="_layout _layout_main_wrapper">
-      <div className="_main_layout">
-
-        {/* ── Desktop Navigation ── */}
-        <nav className="navbar navbar-expand-lg navbar-light _header_nav _padd_t10">
-          <div className="container _custom_container">
-            <div className="_logo_wrap">
-              <a className="navbar-brand" href="/feed">
-                <img src="/assets/images/logo.svg" alt="Image" className="_nav_logo" />
-              </a>
+    <div className="min-h-screen bg-surface">
+      <div className="container mx-auto px-4 py-6 lg:px-8 max-w-2xl">
+        
+        {/* Modern Header with Create Post */}
+        <div className="mb-6">
+          <div className="card p-4 hover-lift">
+            <div className="flex gap-3">
+              <div className="avatar">
+                <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                  <span className="text-white font-semibold">Y</span>
+                </div>
+              </div>
+              
+              <div className="flex-1">
+                <textarea
+                  placeholder="Share your thoughts..."
+                  className="w-full resize-none bg-transparent border-none outline-none text-primary placeholder-tertiary min-h-[60px]"
+                  rows={2}
+                />
+                
+                <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center gap-2">
+                    <button className="btn btn-ghost btn-sm">
+                      <ImageIcon className="w-4 h-4" />
+                    </button>
+                    <button className="btn btn-ghost btn-sm">
+                      <Paperclip className="w-4 h-4" />
+                    </button>
+                    <button className="btn btn-ghost btn-sm">
+                      <Smile className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <button className="btn btn-primary btn-sm">
+                    Post
+                  </button>
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Trending Topics */}
+        <div className="mb-6">
+          <div className="card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-primary">Trending Topics</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {['#technology', '#design', '#development', '#innovation', '#startup'].map((topic) => (
+                <span key={topic} className="badge cursor-pointer hover:bg-primary-50 hover:text-primary-600 hover:border-primary-300">
+                  {topic}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* ── Desktop Navigation Start ── */}
+        <nav className="navbar navbar-expand-lg navbar-light bg-light _header_area">
+          <div className="container-fluid">
             <button
               className="navbar-toggler bg-light"
               type="button"
@@ -1303,7 +1354,7 @@ export default function FeedPage() {
                       </div>
                       {[
                         { img: 'people1.png', name: 'Steve Jobs', role: 'CEO of Apple' },
-                        { img: 'people2.png', name: 'Ryan Roslansky', role: 'CEO of Linkedin' },
+                        { img: 'people2.png', name: 'Ryan Roslansky', role: 'CEO of Linkedin', online: true },
                         { img: 'people3.png', name: 'Dylan Field', role: 'CEO of Figma' },
                       ].map((person) => (
                         <div className="_left_inner_area_suggest_info" key={person.name}>
@@ -1630,29 +1681,111 @@ export default function FeedPage() {
 
                     {/* Posts */}
                     {feedLoading ? (
-                      <StatePanel variant="info" title="Loading feed" message="Fetching posts..." compact className="mt-2" />
+                      <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className="card p-4">
+                            <div className="flex gap-3 mb-4">
+                              <div className="skeleton w-10 h-10 rounded-full"></div>
+                              <div className="flex-1">
+                                <div className="skeleton h-4 w-32 rounded mb-2"></div>
+                                <div className="skeleton h-3 w-20 rounded"></div>
+                              </div>
+                            </div>
+                            <div className="skeleton h-16 rounded mb-4"></div>
+                            <div className="flex justify-between pt-3 border-t border-border">
+                              <div className="flex gap-4">
+                                <div className="skeleton h-8 w-16 rounded"></div>
+                                <div className="skeleton h-8 w-16 rounded"></div>
+                                <div className="skeleton h-8 w-16 rounded"></div>
+                              </div>
+                              <div className="skeleton h-8 w-8 rounded"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     ) : (
                       <>
-                        {posts.map((post) => (
-                          <PostItem
-                            key={post.id}
-                            post={post}
-                            onAddComment={addComment}
-                            onReply={addReply}
-                            onShowLikes={setLikesViewer}
-                            onOpenProfile={goToProfile}
-                            onPickReaction={pickReaction}
-                            onDeletePost={deletePost}
-                            reactionStateFor={reactionStateFor}
-                            reactionCatalog={reactionCatalog}
-                          />
-                        ))}
+                        <div className="space-y-4">
+                          {posts.map((post) => (
+                            <div key={post.id} className="card p-4 hover-lift animate-fade-in">
+                              {/* Post Header */}
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="avatar avatar-sm">
+                                    {post.author?.avatar ? (
+                                      <img src={resolveMediaUrl(post.author.avatar)} alt={getDisplayName(post.author)} />
+                                    ) : (
+                                      getInitials(post.author)
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-primary text-sm">
+                                      {getDisplayName(post.author)}
+                                    </h4>
+                                    <div className="flex items-center gap-2 text-xs text-tertiary">
+                                      <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                                      {post.visibility !== 'public' && (
+                                        <span className="badge badge-secondary size-xs">
+                                          {post.visibility}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <button className="btn btn-ghost btn-sm">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              {/* Post Content */}
+                              <div className="mb-4">
+                                <p className="text-primary whitespace-pre-wrap">{post.content}</p>
+                              </div>
+
+                              {/* Post Image */}
+                              {post.imagePath && (
+                                <div className="mb-4 rounded-lg overflow-hidden">
+                                  <img
+                                    src={resolveMediaUrl(post.imagePath)}
+                                    alt="Post image"
+                                    className="w-full object-cover max-h-96"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Post Actions */}
+                              <div className="flex items-center justify-between pt-3 border-t border-border">
+                                <div className="flex items-center gap-4">
+                                  <button
+                                    className="btn btn-ghost btn-sm text-secondary hover:text-accent-600 hover:bg-accent-50"
+                                  >
+                                    <Heart className="w-4 h-4" />
+                                    {post.likes?.length > 0 && <span className="ml-1 text-xs">{post.likes.length}</span>}
+                                  </button>
+                                  
+                                  <button className="btn btn-ghost btn-sm text-secondary hover:text-primary">
+                                    <MessageCircle className="w-4 h-4" />
+                                    {post.comments?.length > 0 && <span className="ml-1 text-xs">{post.comments.length}</span>}
+                                  </button>
+                                  
+                                  <button className="btn btn-ghost btn-sm text-secondary hover:text-primary">
+                                    <Share2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                
+                                <button className="btn btn-ghost btn-sm text-secondary hover:text-primary">
+                                  <Bookmark className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
 
                         {feedPagination.hasMore && (
-                          <div className="d-flex justify-content-center my-3">
+                          <div className="flex justify-center mt-6">
                             <button
-                              type="button"
-                              className="btn btn-outline-primary"
+                              className="btn btn-secondary"
                               onClick={loadMorePosts}
                               disabled={feedLoadingMore}
                             >

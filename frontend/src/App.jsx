@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppShell from './components/Navigation/AppShell';
@@ -32,14 +32,53 @@ function AnalyticsTracker() {
   return null;
 }
 
-// Loading fallback for Suspense
+// Modern Loading fallback for Suspense
 const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen bg-gray-100">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+  <div className="min-h-screen bg-surface flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+        <span className="text-white font-bold text-2xl">B</span>
+      </div>
+      <div className="flex items-center justify-center gap-2">
+        <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+        <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+        <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+      </div>
+      <p className="text-secondary mt-4">Loading...</p>
+    </div>
   </div>
 );
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // You could validate the token here or fetch user data
+      setUser({
+        id: '1',
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        displayName: 'John Doe',
+        avatar: null
+      });
+    }
+    setLoading(false);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    setUser(null);
+  };
+
+  if (loading) {
+    return <LoadingFallback />;
+  }
+
   return (
     <>
       <AnalyticsTracker />
@@ -50,7 +89,7 @@ export default function App() {
           <Route
             element={
               <ProtectedRoute>
-                <AppShell />
+                <AppShell user={user} onLogout={handleLogout} />
               </ProtectedRoute>
             }
           >
